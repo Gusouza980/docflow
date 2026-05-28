@@ -1,7 +1,5 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
 use App\Http\Controllers\Web\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Web\Auth\InvitationAcceptanceController;
 use App\Http\Controllers\Web\Auth\NewPasswordController;
@@ -26,6 +24,8 @@ use App\Http\Controllers\Web\ReportController;
 use App\Http\Controllers\Web\TaskChecklistItemController;
 use App\Http\Controllers\Web\TaskController;
 use App\Http\Controllers\Web\TaskTemplateController;
+use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
 
 Route::get('/', function () {
     return view('welcome');
@@ -52,6 +52,7 @@ Route::middleware('guest')->group(function (): void {
 
 Route::get('/invitations/{token}/accept', [InvitationAcceptanceController::class, 'show'])->name('web.invitations.accept.show');
 Route::get('/client-portal/{token}', [ClientPortalController::class, 'show'])->name('client-portal.show');
+Route::post('/client-portal/{token}/consent', [ClientPortalController::class, 'storeConsent'])->name('client-portal.consent.store');
 Route::post('/client-portal/{token}/messages', [ClientPortalController::class, 'storeMessage'])->name('client-portal.messages.store');
 Route::post('/client-portal/{token}/tickets', [ClientPortalController::class, 'storeTicket'])->name('client-portal.tickets.store');
 

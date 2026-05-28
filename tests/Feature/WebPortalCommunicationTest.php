@@ -6,6 +6,8 @@ use App\Models\Client;
 use App\Models\ClientMessage;
 use App\Models\ClientPortalAccess;
 use App\Models\CommunicationConsent;
+use App\Models\DocumentRequest;
+use App\Models\DocumentRequestItem;
 use App\Models\MessageTemplate;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
@@ -42,6 +44,14 @@ class WebPortalCommunicationTest extends TestCase
             ])
             ->assertRedirect('/portal')
             ->assertSessionHas('portal_url');
+
+        $portalUrl = session('portal_url');
+
+        $this->actingAs($user)
+            ->get('/portal')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('flash.portal_url', $portalUrl));
 
         $this->assertDatabaseHas('client_portal_accesses', [
             'organization_id' => $organization->id,
@@ -120,11 +130,60 @@ class WebPortalCommunicationTest extends TestCase
             'expires_at' => now()->addMonth(),
         ]);
 
+        $documentRequest = DocumentRequest::factory()->create([
+            'organization_id' => $organization->id,
+            'client_id' => $client->id,
+            'requested_by_user_id' => $user->id,
+            'title' => 'Documentos fiscais',
+        ]);
+        DocumentRequestItem::factory()->create([
+            'organization_id' => $organization->id,
+            'document_request_id' => $documentRequest->id,
+            'title' => 'Contrato social',
+            'instructions' => 'Enviar PDF legível.',
+        ]);
+
+        ClientMessage::query()->create([
+            'organization_id' => $organization->id,
+            'client_id' => $client->id,
+            'sent_by_user_id' => $user->id,
+            'channel' => 'portal',
+            'direction' => ClientMessage::DIRECTION_OUTBOUND,
+            'status' => ClientMessage::STATUS_SENT,
+            'body' => 'Olá, como posso ajudar?',
+            'sent_at' => now(),
+        ]);
+
         $this->get("/client-portal/{$token['plain']}")
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('ClientPortal/Show', false)
-                ->where('client.name', $client->display_name));
+                ->where('client.name', $client->display_name)
+                ->where('hasPortalCommunicationConsent', false)
+                ->has('documentRequests', 1)
+                ->where('documentRequests.0.title', 'Documentos fiscais')
+                ->has('documentRequests.0.items', 1)
+                ->where('documentRequests.0.items.0.title', 'Contrato social')
+                ->has('messages', 1)
+                ->where('messages.0.direction', ClientMessage::DIRECTION_OUTBOUND)
+                ->where('messages.0.body', 'Olá, como posso ajudar?'));
+
+        $this->post("/client-portal/{$token['plain']}/consent")
+            ->assertRedirect("/client-portal/{$token['plain']}");
+
+        $this->assertDatabaseHas('communication_consents', [
+            'organization_id' => $organization->id,
+            'client_id' => $client->id,
+            'channel' => 'portal',
+            'purpose' => 'general',
+            'status' => CommunicationConsent::STATUS_GRANTED,
+            'source' => 'client_portal',
+        ]);
+
+        $this->get("/client-portal/{$token['plain']}")
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('hasPortalCommunicationConsent', true));
 
         $this->post("/client-portal/{$token['plain']}/messages", [
             'body' => 'Preciso de retorno.',
