@@ -114,7 +114,7 @@ class PortalController extends Controller
             'token_hash' => $token['hash'],
         ]);
 
-        return redirect()->route('portal.index')->with('status', 'Acesso do portal criado.')->with('portal_url', route('client-portal.show', ['token' => $token['plain']], absolute: false));
+        return redirect()->route('portal.index')->with('status', 'Acesso do portal criado.')->with('portal_url', route('client-portal.show', ['token' => $token['plain']], absolute: true));
     }
 
     public function revokeAccess(ClientPortalAccess $access, Request $request, WebOrganizationContext $webOrganizationContext): RedirectResponse

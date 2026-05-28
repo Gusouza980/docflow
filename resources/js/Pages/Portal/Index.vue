@@ -25,6 +25,8 @@ const page = usePage();
 const accessModalOpen = ref(false);
 const messageModalOpen = ref(false);
 const ticketModalOpen = ref(false);
+const copiedPortalUrl = ref(false);
+const portalUrl = computed(() => page.props.flash?.portal_url ?? null);
 const withEmpty = (items, label = 'Selecione') => [{ value: '', label }, ...items];
 const selectedTemplate = computed(() => props.options.templates.find((template) => template.value === Number(messageForm.message_template_id)));
 
@@ -51,6 +53,18 @@ function submitTicket() {
 function revokeAccess(access) {
     useForm({}).patch(`/portal/accesses/${access.id}/revoke`, { preserveScroll: true });
 }
+
+async function copyPortalUrl() {
+    if (!portalUrl.value) {
+        return;
+    }
+
+    await navigator.clipboard.writeText(portalUrl.value);
+    copiedPortalUrl.value = true;
+    setTimeout(() => {
+        copiedPortalUrl.value = false;
+    }, 2000);
+}
 </script>
 
 <template>
@@ -58,8 +72,20 @@ function revokeAccess(access) {
     <AppLayout title="Portal do cliente" active-nav="portal" :breadcrumbs="[{ label: 'Portal' }]">
         <div class="grid gap-4">
             <Alert v-if="page.props.flash?.status" tone="success">{{ page.props.flash.status }}</Alert>
-            <Alert v-if="page.props.flash?.portal_url" tone="info">Link criado: {{ page.props.flash.portal_url }}</Alert>
             <Alert v-if="page.props.flash?.error" tone="danger">{{ page.props.flash.error }}</Alert>
+
+            <div v-if="portalUrl" class="rounded-lg border border-blue-200 bg-blue-50 p-4 ring-1 ring-inset ring-blue-200">
+                <p class="text-sm font-semibold text-blue-900">Link de acesso ao portal</p>
+                <p class="mt-1 text-sm text-blue-800">Envie este link para o cliente. Ele só será exibido nesta tela após a criação.</p>
+                <div class="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end">
+                    <div class="min-w-0 flex-1">
+                        <TextInput id="portal-url" :model-value="portalUrl" label="URL de acesso" readonly />
+                    </div>
+                    <Button variant="secondary" class="shrink-0" @click="copyPortalUrl">
+                        {{ copiedPortalUrl ? 'Copiado!' : 'Copiar link' }}
+                    </Button>
+                </div>
+            </div>
 
             <div class="grid gap-4 md:grid-cols-4">
                 <Card title="Acessos ativos"><p class="text-2xl font-semibold text-slate-950">{{ metrics.active_accesses }}</p></Card>
