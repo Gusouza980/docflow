@@ -12,7 +12,7 @@ defineEmits(['close']);
 
 <template>
     <div v-if="open" class="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-950/40 p-4" role="dialog" aria-modal="true">
-        <div class="flex max-h-[calc(100vh-2rem)] w-full max-w-lg flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-md">
+        <div class="flex max-h-[calc(100vh-2rem)] max-w-full w-4xl flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-md">
             <div class="shrink-0 border-b border-slate-200 p-5">
                 <h2 class="text-lg font-semibold text-slate-950">{{ title }}</h2>
                 <p v-if="description" class="mt-2 text-sm leading-6 text-slate-600">{{ description }}</p>
