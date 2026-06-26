@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import AppLayout from '../../Layouts/AppLayout.vue';
 import Alert from '../../Components/Feedback/Alert.vue';
@@ -10,7 +10,7 @@ import StatusPill from '../../Components/UI/StatusPill.vue';
 import Modal from '../../Components/Overlays/Modal.vue';
 import TextInput from '../../Components/Forms/TextInput.vue';
 import SelectInput from '../../Components/Forms/SelectInput.vue';
-import TextareaInput from '../../Components/Forms/TextareaInput.vue';
+import DisplayDate from '../../Components/UI/DisplayDate.vue';
 
 const props = defineProps({
     document: { type: Object, required: true },
@@ -30,17 +30,8 @@ const statusOptions = [
     { value: 'expired', label: 'Expirado' },
     { value: 'replaced', label: 'Substituído' },
 ];
-const visibilityOptions = [
-    { value: 'internal', label: 'Interno' },
-    { value: 'client', label: 'Cliente' },
-    { value: 'restricted', label: 'Restrito' },
-    { value: 'confidential', label: 'Confidencial' },
-];
-const sensitivityOptions = [
-    { value: 'normal', label: 'Normal' },
-    { value: 'sensitive', label: 'Sensível' },
-    { value: 'confidential', label: 'Confidencial' },
-];
+const visibilityOptions = computed(() => props.options.visibility ?? []);
+const sensitivityOptions = computed(() => props.options.sensitivity ?? []);
 const sourceOptions = [
     { value: 'internal', label: 'Interno' },
     { value: 'portal', label: 'Portal' },
@@ -92,8 +83,8 @@ function submitVersion() {
                 <div>
                     <div class="flex flex-wrap items-center gap-2">
                         <StatusPill :status="document.status" />
-                        <Badge tone="secondary">{{ document.visibility }}</Badge>
-                        <Badge v-if="document.sensitivity !== 'normal'" tone="warning">{{ document.sensitivity }}</Badge>
+                        <Badge tone="secondary">{{ document.visibility_label }}</Badge>
+                        <Badge v-if="document.sensitivity !== 'normal'" tone="warning">{{ document.sensitivity_label }}</Badge>
                     </div>
                     <p class="mt-2 text-sm text-slate-500">{{ document.description || 'Sem descrição' }}</p>
                 </div>
@@ -118,7 +109,7 @@ function submitVersion() {
                         </div>
                         <div>
                             <dt class="text-xs font-semibold uppercase text-slate-500">Vencimento</dt>
-                            <dd class="mt-1 text-sm text-slate-900">{{ document.expires_at || 'Sem vencimento' }}</dd>
+                            <dd class="mt-1 text-sm text-slate-900"><DisplayDate :value="document.expires_at" fallback="Sem vencimento" /></dd>
                         </div>
                         <div>
                             <dt class="text-xs font-semibold uppercase text-slate-500">Arquivo atual</dt>

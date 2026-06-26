@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Web;
 
+use App\Enums\CalendarEventType;
 use App\Models\CalendarEvent;
 use App\Models\OrganizationMember;
 use Illuminate\Foundation\Http\FormRequest;
@@ -25,7 +26,7 @@ class StoreCalendarEventRequest extends FormRequest
             'client_id' => ['nullable', 'integer', Rule::exists('clients', 'id')->where('organization_id', $organizationId)],
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            'type' => ['nullable', 'string', Rule::in([CalendarEvent::TYPE_INTERNAL, CalendarEvent::TYPE_MEETING, CalendarEvent::TYPE_DEADLINE, CalendarEvent::TYPE_HEARING])],
+            'type' => ['nullable', Rule::enum(CalendarEventType::class)],
             'status' => ['nullable', 'string', Rule::in([CalendarEvent::STATUS_SCHEDULED, CalendarEvent::STATUS_CONFIRMED, CalendarEvent::STATUS_CANCELLED, CalendarEvent::STATUS_DONE])],
             'starts_at' => ['required', 'date'],
             'ends_at' => ['nullable', 'date', 'after_or_equal:starts_at'],

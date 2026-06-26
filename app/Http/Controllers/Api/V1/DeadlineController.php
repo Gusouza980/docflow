@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Actions\Organizations\RecordAuditLog;
+use App\Enums\TaskPriority;
 use App\Http\Controllers\Controller;
 use App\Models\Client;
 use App\Models\Deadline;
@@ -126,7 +127,7 @@ class DeadlineController extends Controller
             'title' => [$required, 'string', 'max:255'],
             'description' => ['sometimes', 'nullable', 'string'],
             'type' => ['sometimes', 'string', 'max:64'],
-            'urgency' => ['sometimes', 'string', Rule::in([Deadline::URGENCY_LOW, Deadline::URGENCY_NORMAL, Deadline::URGENCY_HIGH, Deadline::URGENCY_CRITICAL])],
+            'urgency' => ['sometimes', Rule::enum(TaskPriority::class)],
             'due_at' => [$required, 'date'],
             'requires_review' => ['sometimes', 'boolean'],
         ]);

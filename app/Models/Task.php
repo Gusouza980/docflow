@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\TaskPriority;
+use Database\Factories\TaskFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,19 +12,18 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Task extends Model
 {
-    /** @use HasFactory<\Database\Factories\TaskFactory> */
+    /** @use HasFactory<TaskFactory> */
     use HasFactory, SoftDeletes;
 
     public const STATUS_PENDING = 'pending';
-    public const STATUS_IN_PROGRESS = 'in_progress';
-    public const STATUS_BLOCKED = 'blocked';
-    public const STATUS_COMPLETED = 'completed';
-    public const STATUS_CANCELLED = 'cancelled';
 
-    public const PRIORITY_LOW = 'low';
-    public const PRIORITY_NORMAL = 'normal';
-    public const PRIORITY_HIGH = 'high';
-    public const PRIORITY_CRITICAL = 'critical';
+    public const STATUS_IN_PROGRESS = 'in_progress';
+
+    public const STATUS_BLOCKED = 'blocked';
+
+    public const STATUS_COMPLETED = 'completed';
+
+    public const STATUS_CANCELLED = 'cancelled';
 
     protected $fillable = [
         'organization_id',
@@ -42,12 +43,13 @@ class Task extends Model
 
     protected $attributes = [
         'status' => self::STATUS_PENDING,
-        'priority' => self::PRIORITY_NORMAL,
+        'priority' => TaskPriority::Normal,
     ];
 
     protected function casts(): array
     {
         return [
+            'priority' => TaskPriority::class,
             'due_at' => 'date',
             'started_at' => 'datetime',
             'completed_at' => 'datetime',

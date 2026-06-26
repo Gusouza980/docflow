@@ -2,6 +2,9 @@
 
 namespace App\Models;
 
+use App\Enums\DocumentSensitivity;
+use App\Enums\DocumentVisibility;
+use Database\Factories\DocumentFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,7 +14,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Document extends Model
 {
-    /** @use HasFactory<\Database\Factories\DocumentFactory> */
+    /** @use HasFactory<DocumentFactory> */
     use HasFactory, SoftDeletes;
 
     public const STATUS_RECEIVED = 'received';
@@ -23,20 +26,6 @@ class Document extends Model
     public const STATUS_EXPIRED = 'expired';
 
     public const STATUS_REPLACED = 'replaced';
-
-    public const VISIBILITY_INTERNAL = 'internal';
-
-    public const VISIBILITY_CLIENT = 'client';
-
-    public const VISIBILITY_RESTRICTED = 'restricted';
-
-    public const VISIBILITY_CONFIDENTIAL = 'confidential';
-
-    public const SENSITIVITY_NORMAL = 'normal';
-
-    public const SENSITIVITY_SENSITIVE = 'sensitive';
-
-    public const SENSITIVITY_CONFIDENTIAL = 'confidential';
 
     protected $fillable = [
         'organization_id',
@@ -56,13 +45,15 @@ class Document extends Model
 
     protected $attributes = [
         'status' => self::STATUS_RECEIVED,
-        'visibility' => self::VISIBILITY_INTERNAL,
-        'sensitivity' => self::SENSITIVITY_NORMAL,
+        'visibility' => DocumentVisibility::Internal,
+        'sensitivity' => DocumentSensitivity::Normal,
     ];
 
     protected function casts(): array
     {
         return [
+            'visibility' => DocumentVisibility::class,
+            'sensitivity' => DocumentSensitivity::class,
             'expires_at' => 'date',
             'approved_at' => 'datetime',
             'rejected_at' => 'datetime',

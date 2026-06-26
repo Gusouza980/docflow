@@ -11,6 +11,7 @@ import StatusPill from '../../Components/UI/StatusPill.vue';
 import TextInput from '../../Components/Forms/TextInput.vue';
 import SelectInput from '../../Components/Forms/SelectInput.vue';
 import TextareaInput from '../../Components/Forms/TextareaInput.vue';
+import DisplayDate from '../../Components/UI/DisplayDate.vue';
 
 const props = defineProps({
     documentRequests: { type: Object, required: true },
@@ -123,6 +124,7 @@ function submitCreate() {
                 </template>
                 <template #cell-status="{ row }"><StatusPill :status="row.status" /></template>
                 <template #cell-client="{ row }">{{ row.client.name }}</template>
+                <template #cell-due_at="{ row }"><DisplayDate :value="row.due_at" fallback="Sem prazo" /></template>
                 <template #cell-progress="{ row }">{{ row.approved_items_count }}/{{ row.items_count }} aprovados</template>
                 <template #cell-actions="{ row }">
                     <div class="flex justify-end">

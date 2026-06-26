@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\ClientPriority;
+use Database\Factories\ClientFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,7 +14,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Client extends Model
 {
-    /** @use HasFactory<\Database\Factories\ClientFactory> */
+    /** @use HasFactory<ClientFactory> */
     use HasFactory, SoftDeletes;
 
     public const TYPE_INDIVIDUAL = 'individual';
@@ -28,12 +30,6 @@ class Client extends Model
     public const STATUS_DELINQUENT = 'delinquent';
 
     public const STATUS_CLOSED = 'closed';
-
-    public const PRIORITY_LOW = 'low';
-
-    public const PRIORITY_NORMAL = 'normal';
-
-    public const PRIORITY_HIGH = 'high';
 
     public const RISK_LOW = 'low';
 
@@ -65,7 +61,7 @@ class Client extends Model
 
     protected $attributes = [
         'status' => self::STATUS_ACTIVE,
-        'priority' => self::PRIORITY_NORMAL,
+        'priority' => ClientPriority::Normal,
         'risk_level' => self::RISK_LOW,
         'access_policy' => self::ACCESS_ALL_MEMBERS,
     ];
@@ -73,6 +69,7 @@ class Client extends Model
     protected function casts(): array
     {
         return [
+            'priority' => ClientPriority::class,
             'entered_at' => 'date',
             'closed_at' => 'datetime',
             'potential_revenue_cents' => 'integer',

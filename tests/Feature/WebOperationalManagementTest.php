@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Enums\CalendarEventType;
+use App\Enums\TaskPriority;
 use App\Models\CalendarEvent;
 use App\Models\Client;
 use App\Models\Deadline;
@@ -29,7 +31,12 @@ class WebOperationalManagementTest extends TestCase
             'created_by_user_id' => $user->id,
             'title' => 'Preparar contrato',
         ]);
-        Task::factory()->create(['title' => 'Tarefa oculta']);
+        Task::factory()->create([
+            'title' => 'Tarefa oculta',
+            'assigned_to_member_id' => $member->id,
+        ]);
+
+        $task->update(['priority' => TaskPriority::High]);
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
@@ -39,7 +46,9 @@ class WebOperationalManagementTest extends TestCase
                 ->component('Tasks/Index', false)
                 ->has('tasks.data', 1)
                 ->where('tasks.data.0.id', $task->id)
-                ->where('tasks.data.0.title', 'Preparar contrato'));
+                ->where('tasks.data.0.title', 'Preparar contrato')
+                ->where('tasks.data.0.priority', 'high')
+                ->where('tasks.data.0.priority_label', 'Alta'));
     }
 
     public function test_admin_can_create_task_manage_checklist_and_complete_from_web(): void
@@ -53,7 +62,7 @@ class WebOperationalManagementTest extends TestCase
                 'client_id' => $client->id,
                 'assigned_to_member_id' => $member->id,
                 'title' => 'Preparar contrato',
-                'priority' => Task::PRIORITY_HIGH,
+                'priority' => TaskPriority::High->value,
                 'due_at' => now()->addDays(3)->toDateString(),
             ])
             ->assertRedirect();
@@ -135,7 +144,7 @@ class WebOperationalManagementTest extends TestCase
         $template = TaskTemplate::factory()->create([
             'organization_id' => $organization->id,
             'name' => 'Onboarding antigo',
-            'priority' => Task::PRIORITY_NORMAL,
+            'priority' => TaskPriority::Normal,
         ]);
         TaskTemplateItem::factory()->create([
             'organization_id' => $organization->id,
@@ -148,19 +157,19 @@ class WebOperationalManagementTest extends TestCase
             ->patch("/task-templates/{$template->id}", [
                 'name' => 'Onboarding atualizado',
                 'description' => 'Fluxo revisado',
-                'priority' => Task::PRIORITY_HIGH,
+                'priority' => TaskPriority::High->value,
                 'is_active' => false,
                 'items' => [
                     [
                         'title' => 'Coletar documentos',
                         'description' => 'Documentos iniciais',
                         'due_in_days' => 2,
-                        'priority' => Task::PRIORITY_HIGH,
+                        'priority' => TaskPriority::High->value,
                     ],
                     [
                         'title' => 'Abrir processo',
                         'due_in_days' => 5,
-                        'priority' => Task::PRIORITY_NORMAL,
+                        'priority' => TaskPriority::Normal->value,
                     ],
                 ],
             ])
@@ -169,7 +178,7 @@ class WebOperationalManagementTest extends TestCase
         $this->assertDatabaseHas('task_templates', [
             'id' => $template->id,
             'name' => 'Onboarding atualizado',
-            'priority' => Task::PRIORITY_HIGH,
+            'priority' => TaskPriority::High->value,
             'is_active' => false,
         ]);
         $this->assertDatabaseMissing('task_template_items', [
@@ -239,7 +248,7 @@ class WebOperationalManagementTest extends TestCase
             ->post('/calendar-events', [
                 'client_id' => $client->id,
                 'title' => 'Reunião de alinhamento',
-                'type' => CalendarEvent::TYPE_MEETING,
+                'type' => CalendarEventType::Meeting->value,
                 'starts_at' => now()->addDay()->toISOString(),
                 'ends_at' => now()->addDay()->addHour()->toISOString(),
                 'participants' => [

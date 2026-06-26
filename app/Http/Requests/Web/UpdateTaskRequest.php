@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Web;
 
+use App\Enums\TaskPriority;
 use App\Models\OrganizationMember;
 use App\Models\Task;
 use Illuminate\Foundation\Http\FormRequest;
@@ -27,7 +28,7 @@ class UpdateTaskRequest extends FormRequest
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'status' => ['required', 'string', Rule::in([Task::STATUS_PENDING, Task::STATUS_IN_PROGRESS, Task::STATUS_BLOCKED, Task::STATUS_COMPLETED, Task::STATUS_CANCELLED])],
-            'priority' => ['required', 'string', Rule::in([Task::PRIORITY_LOW, Task::PRIORITY_NORMAL, Task::PRIORITY_HIGH, Task::PRIORITY_CRITICAL])],
+            'priority' => ['required', Rule::enum(TaskPriority::class)],
             'due_at' => ['required', 'date'],
         ];
     }

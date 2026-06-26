@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Actions\Organizations\RecordAuditLog;
+use App\Enums\DocumentVisibility;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StoreDocumentUploadRequest;
 use App\Http\Requests\Api\V1\StoreDocumentVersionRequest;
@@ -41,7 +42,7 @@ class DocumentController extends Controller
             ->when($request->boolean('expiring_soon'), fn ($query) => $query->whereBetween('expires_at', [now()->toDateString(), now()->addDays(30)->toDateString()]))
             ->when($request->string('search')->toString(), fn ($query, string $search) => $query->where('title', 'like', "%{$search}%"))
             ->when(! $membership?->isAdmin() && ! $membership?->isManager(), function ($query) use ($membership): void {
-                $query->where('visibility', '!=', Document::VISIBILITY_CONFIDENTIAL)
+                $query->where('visibility', '!=', DocumentVisibility::Confidential)
                     ->where(function ($query) use ($membership): void {
                         $query->whereNull('client_id')
                             ->orWhereHas('client', function ($query) use ($membership): void {

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import AppLayout from '../../Layouts/AppLayout.vue';
 import Alert from '../../Components/Feedback/Alert.vue';
@@ -84,11 +84,7 @@ const typeOptions = [
 ];
 
 const clientTypeOptions = typeOptions.filter((option) => option.value);
-const priorityOptions = [
-    { value: 'low', label: 'Baixa' },
-    { value: 'normal', label: 'Normal' },
-    { value: 'high', label: 'Alta' },
-];
+const priorityOptions = computed(() => props.options.priorities ?? []);
 const riskOptions = [
     { value: 'low', label: 'Baixo' },
     { value: 'medium', label: 'Médio' },
@@ -204,7 +200,7 @@ function submitCreate() {
                     <StatusPill :status="row.status" />
                 </template>
                 <template #cell-priority="{ row }">
-                    <span class="text-sm font-medium text-slate-700">{{ row.priority }}</span>
+                    <Badge :tone="row.priority === 'high' ? 'warning' : 'secondary'">{{ row.priority_label }}</Badge>
                 </template>
                 <template #cell-primary_responsible="{ row }">
                     <span class="text-sm text-slate-600">{{ row.primary_responsible?.name ?? 'Sem responsável' }}</span>

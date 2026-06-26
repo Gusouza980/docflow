@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\DocumentSensitivity;
+use Database\Factories\DocumentCategoryFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,14 +12,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class DocumentCategory extends Model
 {
-    /** @use HasFactory<\Database\Factories\DocumentCategoryFactory> */
+    /** @use HasFactory<DocumentCategoryFactory> */
     use HasFactory, SoftDeletes;
-
-    public const SENSITIVITY_NORMAL = 'normal';
-
-    public const SENSITIVITY_SENSITIVE = 'sensitive';
-
-    public const SENSITIVITY_CONFIDENTIAL = 'confidential';
 
     protected $fillable = [
         'organization_id',
@@ -29,13 +25,14 @@ class DocumentCategory extends Model
     ];
 
     protected $attributes = [
-        'sensitivity' => self::SENSITIVITY_NORMAL,
+        'sensitivity' => DocumentSensitivity::Normal,
         'is_active' => true,
     ];
 
     protected function casts(): array
     {
         return [
+            'sensitivity' => DocumentSensitivity::class,
             'validity_days' => 'integer',
             'is_active' => 'boolean',
         ];

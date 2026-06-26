@@ -2,8 +2,8 @@
 
 namespace Database\Factories;
 
+use App\Enums\TaskPriority;
 use App\Models\Organization;
-use App\Models\Task;
 use App\Models\TaskTemplate;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -18,7 +18,7 @@ class TaskTemplateFactory extends Factory
             'organization_id' => Organization::factory(),
             'name' => fake()->unique()->words(3, true),
             'description' => fake()->sentence(),
-            'priority' => Task::PRIORITY_NORMAL,
+            'priority' => TaskPriority::Normal,
             'is_active' => true,
         ];
     }

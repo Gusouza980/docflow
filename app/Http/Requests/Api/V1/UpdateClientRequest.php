@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests\Api\V1;
 
-use App\Models\Client;
+use App\Enums\ClientPriority;
 use App\Models\OrganizationMember;
 use App\Support\OrganizationContext;
 use Illuminate\Foundation\Http\FormRequest;
@@ -33,7 +33,7 @@ class UpdateClientRequest extends FormRequest
         return [
             'display_name' => ['sometimes', 'required', 'string', 'max:255'],
             'document_number' => ['sometimes', 'nullable', 'string', 'max:32', Rule::unique('clients', 'document_number')->where('organization_id', $organizationId)->ignore($client)],
-            'priority' => ['sometimes', 'string', Rule::in([Client::PRIORITY_LOW, Client::PRIORITY_NORMAL, Client::PRIORITY_HIGH])],
+            'priority' => ['sometimes', Rule::enum(ClientPriority::class)],
             'risk_level' => ['sometimes', 'string', Rule::in([Client::RISK_LOW, Client::RISK_MEDIUM, Client::RISK_HIGH])],
             'potential_revenue_cents' => ['sometimes', 'nullable', 'integer', 'min:0'],
             'origin' => ['sometimes', 'nullable', 'string', 'max:255'],

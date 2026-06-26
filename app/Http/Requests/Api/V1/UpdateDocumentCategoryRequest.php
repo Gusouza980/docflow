@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests\Api\V1;
 
-use App\Models\DocumentCategory;
+use App\Enums\DocumentSensitivity;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -22,11 +22,7 @@ class UpdateDocumentCategoryRequest extends FormRequest
             'name' => ['sometimes', 'required', 'string', 'max:255'],
             'description' => ['sometimes', 'nullable', 'string'],
             'validity_days' => ['sometimes', 'nullable', 'integer', 'min:1', 'max:3650'],
-            'sensitivity' => ['sometimes', 'string', Rule::in([
-                DocumentCategory::SENSITIVITY_NORMAL,
-                DocumentCategory::SENSITIVITY_SENSITIVE,
-                DocumentCategory::SENSITIVITY_CONFIDENTIAL,
-            ])],
+            'sensitivity' => ['sometimes', Rule::enum(DocumentSensitivity::class)],
             'is_active' => ['sometimes', 'boolean'],
         ];
     }

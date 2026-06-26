@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\ClientPriority;
 use App\Models\Client;
 use App\Models\ClientTag;
 use App\Models\Organization;
@@ -24,6 +25,7 @@ class WebClientManagementTest extends TestCase
             'organization_id' => $organization->id,
             'primary_responsible_member_id' => $member->id,
             'display_name' => 'Visible Client',
+            'priority' => ClientPriority::High,
         ]);
         Client::factory()->create([
             'organization_id' => $otherOrganization->id,
@@ -37,7 +39,8 @@ class WebClientManagementTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Clients/Index', false)
                 ->has('clients.data', 1)
-                ->where('clients.data.0.display_name', 'Visible Client'));
+                ->where('clients.data.0.display_name', 'Visible Client')
+                ->where('clients.data.0.priority_label', 'Alta'));
     }
 
     public function test_admin_can_create_client_from_web(): void
@@ -51,7 +54,7 @@ class WebClientManagementTest extends TestCase
                 'display_name' => 'Maria Silva',
                 'document_number' => '123.456.789-01',
                 'status' => Client::STATUS_ACTIVE,
-                'priority' => Client::PRIORITY_NORMAL,
+                'priority' => ClientPriority::Normal->value,
                 'risk_level' => Client::RISK_LOW,
                 'access_policy' => Client::ACCESS_ALL_MEMBERS,
                 'responsible_member_ids' => [$member->id],

@@ -1,6 +1,6 @@
 <script setup>
 import { Head, router, useForm, usePage } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import AppLayout from '../../Layouts/AppLayout.vue';
 import Alert from '../../Components/Feedback/Alert.vue';
 import DataTable from '../../Components/Data/DataTable.vue';
@@ -11,7 +11,7 @@ import Badge from '../../Components/UI/Badge.vue';
 import StatusPill from '../../Components/UI/StatusPill.vue';
 import TextInput from '../../Components/Forms/TextInput.vue';
 import SelectInput from '../../Components/Forms/SelectInput.vue';
-import TextareaInput from '../../Components/Forms/TextareaInput.vue';
+import DisplayDate from '../../Components/UI/DisplayDate.vue';
 
 const props = defineProps({
     events: { type: Object, required: true },
@@ -25,14 +25,8 @@ const createModalOpen = ref(false);
 const notesModalOpen = ref(false);
 const selectedEvent = ref(null);
 const withEmpty = (items, label = 'Todos') => [{ value: '', label }, ...items];
-const typeOptions = [
-    { value: '', label: 'Todos' },
-    { value: 'internal', label: 'Interno' },
-    { value: 'meeting', label: 'Reunião' },
-    { value: 'deadline', label: 'Prazo' },
-    { value: 'hearing', label: 'Audiência' },
-];
-const strictTypeOptions = typeOptions.filter((option) => option.value);
+const typeOptions = computed(() => withEmpty(props.options.types ?? []));
+const strictTypeOptions = computed(() => props.options.types ?? []);
 const columns = [
     { key: 'title', label: 'Evento' },
     { key: 'status', label: 'Status' },
@@ -104,8 +98,8 @@ function submitNotes() {
                 </template>
                 <template #cell-title="{ row }"><div class="min-w-64"><p class="font-semibold text-slate-950">{{ row.title }}</p><p class="mt-1 text-xs text-slate-500">{{ row.client?.name ?? 'Sem cliente' }} · {{ row.location || 'Sem local' }}</p></div></template>
                 <template #cell-status="{ row }"><StatusPill :status="row.status" /></template>
-                <template #cell-type="{ row }"><Badge tone="secondary">{{ row.type }}</Badge></template>
-                <template #cell-starts_at="{ row }">{{ row.starts_at }}</template>
+                <template #cell-type="{ row }"><Badge tone="secondary">{{ row.type_label }}</Badge></template>
+                <template #cell-starts_at="{ row }"><DisplayDate :value="row.starts_at" mode="datetime" fallback="Sem data" /></template>
                 <template #cell-participants="{ row }">{{ row.participants.length }}</template>
                 <template #cell-actions="{ row }"><div class="flex justify-end"><Button size="sm" variant="secondary" @click="openNotes(row)">Ata</Button></div></template>
             </DataTable>

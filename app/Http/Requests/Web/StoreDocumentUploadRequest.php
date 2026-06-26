@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests\Web;
 
+use App\Enums\DocumentSensitivity;
+use App\Enums\DocumentVisibility;
 use App\Models\Document;
 use App\Models\DocumentVersion;
 use Illuminate\Foundation\Http\FormRequest;
@@ -27,8 +29,8 @@ class StoreDocumentUploadRequest extends FormRequest
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'status' => ['nullable', 'string', Rule::in([Document::STATUS_RECEIVED, Document::STATUS_APPROVED, Document::STATUS_REJECTED])],
-            'visibility' => ['nullable', 'string', Rule::in([Document::VISIBILITY_INTERNAL, Document::VISIBILITY_CLIENT, Document::VISIBILITY_RESTRICTED, Document::VISIBILITY_CONFIDENTIAL])],
-            'sensitivity' => ['nullable', 'string', Rule::in([Document::SENSITIVITY_NORMAL, Document::SENSITIVITY_SENSITIVE, Document::SENSITIVITY_CONFIDENTIAL])],
+            'visibility' => ['nullable', Rule::enum(DocumentVisibility::class)],
+            'sensitivity' => ['nullable', Rule::enum(DocumentSensitivity::class)],
             'expires_at' => ['nullable', 'date'],
             'source' => ['nullable', 'string', Rule::in([DocumentVersion::SOURCE_INTERNAL, DocumentVersion::SOURCE_PORTAL, DocumentVersion::SOURCE_EMAIL, DocumentVersion::SOURCE_WHATSAPP, DocumentVersion::SOURCE_IMPORT])],
             'file' => ['required', 'file', 'max:10240', 'mimes:pdf,jpg,jpeg,png,doc,docx,xls,xlsx', 'mimetypes:application/pdf,image/jpeg,image/png,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],

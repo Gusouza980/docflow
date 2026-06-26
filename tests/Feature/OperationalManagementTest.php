@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Enums\CalendarEventType;
+use App\Enums\TaskPriority;
 use App\Models\CalendarEvent;
 use App\Models\Client;
 use App\Models\Deadline;
@@ -9,7 +11,6 @@ use App\Models\InternalReminder;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\Task;
-use App\Models\TaskChecklistItem;
 use App\Models\User;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Laravel\Sanctum\Sanctum;
@@ -30,7 +31,7 @@ class OperationalManagementTest extends TestCase
                 'client_id' => $client->id,
                 'assigned_to_member_id' => $member->id,
                 'title' => 'Preparar contrato',
-                'priority' => Task::PRIORITY_HIGH,
+                'priority' => TaskPriority::High,
                 'due_at' => now()->addDays(3)->toDateString(),
             ])
             ->assertCreated()
@@ -179,7 +180,7 @@ class OperationalManagementTest extends TestCase
             ->postJson('/api/v1/calendar-events', [
                 'client_id' => $client->id,
                 'title' => 'Reuniao de alinhamento',
-                'type' => CalendarEvent::TYPE_MEETING,
+                'type' => CalendarEventType::Meeting,
                 'starts_at' => now()->addDay()->toISOString(),
                 'ends_at' => now()->addDay()->addHour()->toISOString(),
                 'participants' => [

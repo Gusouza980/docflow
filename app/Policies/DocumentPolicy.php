@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\DocumentVisibility;
 use App\Models\Client;
 use App\Models\Document;
 use App\Models\OrganizationMember;
@@ -22,7 +23,7 @@ class DocumentPolicy
             return false;
         }
 
-        if ($document->visibility === Document::VISIBILITY_CONFIDENTIAL) {
+        if ($document->visibility === DocumentVisibility::Confidential) {
             return $membership->isAdmin() || $membership->isManager();
         }
 

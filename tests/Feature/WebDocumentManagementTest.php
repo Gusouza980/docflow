@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Enums\DocumentSensitivity;
+use App\Enums\DocumentVisibility;
 use App\Models\Client;
 use App\Models\Document;
 use App\Models\DocumentCategory;
@@ -32,6 +34,11 @@ class WebDocumentManagementTest extends TestCase
         ]);
         Document::factory()->create(['title' => 'Contrato oculto']);
 
+        $document->update([
+            'visibility' => DocumentVisibility::Restricted,
+            'sensitivity' => DocumentSensitivity::Sensitive,
+        ]);
+
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
             ->get('/documents')
@@ -40,7 +47,10 @@ class WebDocumentManagementTest extends TestCase
                 ->component('Documents/Index', false)
                 ->has('documents.data', 1)
                 ->where('documents.data.0.id', $document->id)
-                ->where('documents.data.0.title', 'Contrato visivel'));
+                ->where('documents.data.0.title', 'Contrato visivel')
+                ->where('documents.data.0.visibility', 'restricted')
+                ->where('documents.data.0.visibility_label', 'Restrito')
+                ->where('documents.data.0.sensitivity_label', 'Sensível'));
     }
 
     public function test_admin_can_create_category_upload_document_and_add_version_from_web(): void
@@ -54,7 +64,7 @@ class WebDocumentManagementTest extends TestCase
             ->post('/document-categories', [
                 'name' => 'Contrato social',
                 'validity_days' => 365,
-                'sensitivity' => DocumentCategory::SENSITIVITY_SENSITIVE,
+                'sensitivity' => DocumentSensitivity::Sensitive->value,
                 'is_active' => true,
             ])
             ->assertRedirect('/documents');
@@ -67,8 +77,8 @@ class WebDocumentManagementTest extends TestCase
                 'client_id' => $client->id,
                 'document_category_id' => $category->id,
                 'title' => 'Contrato assinado',
-                'visibility' => Document::VISIBILITY_CONFIDENTIAL,
-                'sensitivity' => Document::SENSITIVITY_SENSITIVE,
+                'visibility' => DocumentVisibility::Confidential->value,
+                'sensitivity' => DocumentSensitivity::Sensitive->value,
                 'file' => UploadedFile::fake()->create('contrato.pdf', 100, 'application/pdf'),
             ])
             ->assertRedirect();

@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Web;
 
 use App\Actions\Organizations\RecordAuditLog;
+use App\Enums\CalendarEventType;
+use App\Enums\TaskPriority;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Web\StoreCalendarEventNotesRequest;
 use App\Http\Requests\Web\StoreCalendarEventRequest;
@@ -153,7 +155,7 @@ class CalendarEventController extends Controller
                     'created_by_user_id' => $request->user()->id,
                     'title' => $task['title'],
                     'description' => "Criada a partir da reunião: {$event->title}",
-                    'priority' => $task['priority'] ?? Task::PRIORITY_NORMAL,
+                    'priority' => $task['priority'] ?? TaskPriority::Normal,
                     'due_at' => $task['due_at'],
                 ]);
             }
@@ -190,7 +192,8 @@ class CalendarEventController extends Controller
             'id' => $event->id,
             'title' => $event->title,
             'description' => $event->description,
-            'type' => $event->type,
+            'type' => $event->type->value,
+            'type_label' => $event->type->label(),
             'status' => $event->status,
             'starts_at' => $event->starts_at?->toISOString(),
             'ends_at' => $event->ends_at?->toISOString(),
@@ -211,6 +214,7 @@ class CalendarEventController extends Controller
         return [
             'clients' => Client::query()->whereBelongsTo($membership->organization)->orderBy('display_name')->get(['id', 'display_name'])->map(fn (Client $client): array => ['value' => $client->id, 'label' => $client->display_name])->values(),
             'members' => OrganizationMember::query()->with('user')->whereBelongsTo($membership->organization)->where('status', OrganizationMember::STATUS_ACTIVE)->get()->map(fn (OrganizationMember $member): array => ['value' => $member->id, 'label' => $member->user?->name ?? "Membro #{$member->id}"])->values(),
+            'types' => CalendarEventType::options(),
         ];
     }
 

@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import AppLayout from '../../Layouts/AppLayout.vue';
 import Alert from '../../Components/Feedback/Alert.vue';
@@ -12,6 +12,7 @@ import StatusPill from '../../Components/UI/StatusPill.vue';
 import TextInput from '../../Components/Forms/TextInput.vue';
 import SelectInput from '../../Components/Forms/SelectInput.vue';
 import TextareaInput from '../../Components/Forms/TextareaInput.vue';
+import DisplayDate from '../../Components/UI/DisplayDate.vue';
 
 const props = defineProps({
     documents: { type: Object, required: true },
@@ -28,6 +29,9 @@ const editingCategory = ref(null);
 
 const withEmpty = (items, label = 'Todos') => [{ value: '', label }, ...items];
 
+const visibilityOptions = computed(() => withEmpty(props.options.visibility ?? [], 'Todas'));
+const strictVisibilityOptions = computed(() => props.options.visibility ?? []);
+const sensitivityOptions = computed(() => props.options.sensitivity ?? []);
 const statusOptions = [
     { value: '', label: 'Todos' },
     { value: 'received', label: 'Recebido' },
@@ -35,19 +39,6 @@ const statusOptions = [
     { value: 'rejected', label: 'Recusado' },
     { value: 'expired', label: 'Expirado' },
     { value: 'replaced', label: 'Substituído' },
-];
-const visibilityOptions = [
-    { value: '', label: 'Todas' },
-    { value: 'internal', label: 'Interno' },
-    { value: 'client', label: 'Cliente' },
-    { value: 'restricted', label: 'Restrito' },
-    { value: 'confidential', label: 'Confidencial' },
-];
-const strictVisibilityOptions = visibilityOptions.filter((option) => option.value);
-const sensitivityOptions = [
-    { value: 'normal', label: 'Normal' },
-    { value: 'sensitive', label: 'Sensível' },
-    { value: 'confidential', label: 'Confidencial' },
 ];
 const sourceOptions = [
     { value: 'internal', label: 'Interno' },
@@ -199,13 +190,14 @@ function submitCategory() {
                             <span>{{ row.latest_version?.original_name ?? 'Sem arquivo' }}</span>
                         </div>
                         <div class="mt-2 flex flex-wrap gap-1">
-                            <Badge tone="secondary">{{ row.visibility }}</Badge>
-                            <Badge v-if="row.sensitivity !== 'normal'" tone="warning">{{ row.sensitivity }}</Badge>
+                            <Badge tone="secondary">{{ row.visibility_label }}</Badge>
+                            <Badge v-if="row.sensitivity !== 'normal'" tone="warning">{{ row.sensitivity_label }}</Badge>
                         </div>
                     </div>
                 </template>
                 <template #cell-status="{ row }"><StatusPill :status="row.status" /></template>
                 <template #cell-client="{ row }">{{ row.client?.name ?? 'Sem cliente' }}</template>
+                <template #cell-expires_at="{ row }"><DisplayDate :value="row.expires_at" fallback="Sem vencimento" /></template>
                 <template #cell-actions="{ row }">
                     <div class="flex justify-end gap-2">
                         <a :href="row.download_href" class="inline-flex h-8 items-center justify-center rounded-lg border border-slate-300 bg-white px-3 text-[13px] font-semibold text-slate-800 hover:bg-slate-50">Baixar</a>
@@ -228,7 +220,7 @@ function submitCategory() {
                         <p class="mt-1 text-xs text-slate-500">{{ row.description || 'Sem descrição' }}</p>
                     </div>
                 </template>
-                <template #cell-sensitivity="{ row }"><Badge :tone="row.sensitivity === 'normal' ? 'neutral' : 'warning'">{{ row.sensitivity }}</Badge></template>
+                <template #cell-sensitivity="{ row }"><Badge :tone="row.sensitivity === 'normal' ? 'neutral' : 'warning'">{{ row.sensitivity_label }}</Badge></template>
                 <template #cell-validity_days="{ row }">{{ row.validity_days ? `${row.validity_days} dias` : 'Sem validade padrão' }}</template>
                 <template #cell-actions="{ row }">
                     <div class="flex justify-end gap-2">

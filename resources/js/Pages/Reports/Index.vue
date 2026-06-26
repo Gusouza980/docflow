@@ -10,6 +10,7 @@ import Card from '../../Components/UI/Card.vue';
 import StatusPill from '../../Components/UI/StatusPill.vue';
 import TextInput from '../../Components/Forms/TextInput.vue';
 import SelectInput from '../../Components/Forms/SelectInput.vue';
+import DisplayDate from '../../Components/UI/DisplayDate.vue';
 
 const props = defineProps({
     overview: { type: Object, required: true },
@@ -107,6 +108,7 @@ function releaseReport(report) {
                     <template #toolbar><div class="border-b border-slate-200 px-4 py-3"><h2 class="text-sm font-semibold text-slate-950">Documentos pendentes e vencidos</h2></div></template>
                     <template #cell-title="{ row }"><div class="min-w-64"><p class="font-semibold text-slate-950">{{ row.title }}</p><p class="mt-1 text-xs text-slate-500">{{ row.client }} · {{ row.category || 'Sem categoria' }}</p></div></template>
                     <template #cell-status="{ row }"><StatusPill :status="row.status" /></template>
+                    <template #cell-due_at="{ row }"><DisplayDate :value="row.due_at" fallback="Sem prazo" /></template>
                 </DataTable>
             </div>
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Web;
 
+use App\Enums\TaskPriority;
 use App\Models\Deadline;
 use App\Models\OrganizationMember;
 use Illuminate\Foundation\Http\FormRequest;
@@ -27,10 +28,17 @@ class UpdateDeadlineRequest extends FormRequest
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'type' => ['nullable', 'string', 'max:64'],
-            'urgency' => ['required', 'string', Rule::in([Deadline::URGENCY_LOW, Deadline::URGENCY_NORMAL, Deadline::URGENCY_HIGH, Deadline::URGENCY_CRITICAL])],
-            'status' => ['required', 'string', Rule::in([Deadline::STATUS_PENDING, Deadline::STATUS_REVIEW_REQUESTED, Deadline::STATUS_REVIEW_APPROVED, Deadline::STATUS_ADJUSTMENT_REQUESTED, Deadline::STATUS_COMPLETED, Deadline::STATUS_CANCELLED])],
+            'urgency' => ['required', Rule::enum(TaskPriority::class)],
+            'status' => ['required', 'string', Rule::in([
+                Deadline::STATUS_PENDING,
+                Deadline::STATUS_REVIEW_REQUESTED,
+                Deadline::STATUS_REVIEW_APPROVED,
+                Deadline::STATUS_ADJUSTMENT_REQUESTED,
+                Deadline::STATUS_COMPLETED,
+                Deadline::STATUS_CANCELLED,
+            ])],
             'due_at' => ['required', 'date'],
-            'requires_review' => ['nullable', 'boolean'],
+            'requires_review' => ['boolean'],
         ];
     }
 }

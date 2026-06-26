@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Actions\Organizations\RecordAuditLog;
+use App\Enums\CalendarEventType;
+use App\Enums\TaskPriority;
 use App\Http\Controllers\Controller;
 use App\Models\CalendarEvent;
 use App\Models\Client;
@@ -110,7 +112,7 @@ class CalendarEventController extends Controller
             'tasks.*.title' => ['required_with:tasks', 'string', 'max:255'],
             'tasks.*.assigned_to_member_id' => ['required_with:tasks', 'integer', Rule::exists('organization_members', 'id')->where('organization_id', $event->organization_id)->where('status', OrganizationMember::STATUS_ACTIVE)],
             'tasks.*.due_at' => ['required_with:tasks', 'date'],
-            'tasks.*.priority' => ['nullable', Rule::in([Task::PRIORITY_LOW, Task::PRIORITY_NORMAL, Task::PRIORITY_HIGH, Task::PRIORITY_CRITICAL])],
+            'tasks.*.priority' => ['nullable', Rule::enum(TaskPriority::class)],
         ]);
 
         DB::transaction(function () use ($event, $data, $request): void {
@@ -128,7 +130,7 @@ class CalendarEventController extends Controller
                     'created_by_user_id' => $request->user()->id,
                     'title' => $task['title'],
                     'description' => "Criada a partir da reuniao: {$event->title}",
-                    'priority' => $task['priority'] ?? Task::PRIORITY_NORMAL,
+                    'priority' => $task['priority'] ?? TaskPriority::Normal,
                     'due_at' => $task['due_at'],
                 ]);
             }
@@ -147,7 +149,7 @@ class CalendarEventController extends Controller
             'client_id' => ['sometimes', 'nullable', 'integer', Rule::exists('clients', 'id')->where('organization_id', $organizationContext->id())],
             'title' => [$required, 'string', 'max:255'],
             'description' => ['sometimes', 'nullable', 'string'],
-            'type' => ['sometimes', 'string', Rule::in([CalendarEvent::TYPE_INTERNAL, CalendarEvent::TYPE_MEETING, CalendarEvent::TYPE_DEADLINE, CalendarEvent::TYPE_HEARING])],
+            'type' => ['sometimes', Rule::enum(CalendarEventType::class)],
             'status' => ['sometimes', 'string', Rule::in([CalendarEvent::STATUS_SCHEDULED, CalendarEvent::STATUS_CONFIRMED, CalendarEvent::STATUS_CANCELLED, CalendarEvent::STATUS_DONE])],
             'starts_at' => [$required, 'date'],
             'ends_at' => ['sometimes', 'nullable', 'date', 'after_or_equal:starts_at'],

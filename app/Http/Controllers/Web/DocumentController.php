@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Web;
 
 use App\Actions\Organizations\RecordAuditLog;
+use App\Enums\DocumentSensitivity;
+use App\Enums\DocumentVisibility;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Web\StoreDocumentUploadRequest;
 use App\Http\Requests\Web\StoreDocumentVersionRequest;
@@ -180,7 +182,7 @@ class DocumentController extends Controller
             ->when($request->string('date_filter')->toString() === 'expiring_soon', fn (Builder $query) => $query->whereBetween('expires_at', [now()->toDateString(), now()->addDays(30)->toDateString()]))
             ->when($request->string('search')->toString(), fn (Builder $query, string $search) => $query->where('title', 'like', "%{$search}%"))
             ->when(! $membership->isAdmin() && ! $membership->isManager(), function (Builder $query) use ($membership): void {
-                $query->where('visibility', '!=', Document::VISIBILITY_CONFIDENTIAL)
+                $query->where('visibility', '!=', DocumentVisibility::Confidential)
                     ->where(function (Builder $query) use ($membership): void {
                         $query->whereNull('client_id')
                             ->orWhereHas('client', function (Builder $query) use ($membership): void {
@@ -202,8 +204,10 @@ class DocumentController extends Controller
             'title' => $document->title,
             'description' => $document->description,
             'status' => $document->status,
-            'visibility' => $document->visibility,
-            'sensitivity' => $document->sensitivity,
+            'visibility' => $document->visibility->value,
+            'visibility_label' => $document->visibility->label(),
+            'sensitivity' => $document->sensitivity->value,
+            'sensitivity_label' => $document->sensitivity->label(),
             'expires_at' => $document->expires_at?->toDateString(),
             'client' => $document->client ? ['id' => $document->client->id, 'name' => $document->client->display_name] : null,
             'category' => $document->category ? ['id' => $document->category->id, 'name' => $document->category->name] : null,
@@ -253,7 +257,8 @@ class DocumentController extends Controller
             'name' => $category->name,
             'description' => $category->description,
             'validity_days' => $category->validity_days,
-            'sensitivity' => $category->sensitivity,
+            'sensitivity' => $category->sensitivity->value,
+            'sensitivity_label' => $category->sensitivity->label(),
             'is_active' => $category->is_active,
             'documents_count' => $category->documents_count ?? 0,
             'request_items_count' => $category->request_items_count ?? 0,
@@ -279,6 +284,8 @@ class DocumentController extends Controller
                 ->get(['id', 'name'])
                 ->map(fn (DocumentCategory $category): array => ['value' => $category->id, 'label' => $category->name])
                 ->values(),
+            'visibility' => DocumentVisibility::options(),
+            'sensitivity' => DocumentSensitivity::options(),
         ];
     }
 

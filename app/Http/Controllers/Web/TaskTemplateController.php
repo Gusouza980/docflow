@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Web;
 
 use App\Actions\Organizations\RecordAuditLog;
+use App\Enums\TaskPriority;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Web\CreateTasksFromTemplateRequest;
 use App\Http\Requests\Web\StoreTaskTemplateRequest;
@@ -61,7 +62,7 @@ class TaskTemplateController extends Controller
                 'organization_id' => $membership->organization_id,
                 'name' => $data['name'],
                 'description' => $data['description'] ?? null,
-                'priority' => $data['priority'] ?? Task::PRIORITY_NORMAL,
+                'priority' => $data['priority'] ?? TaskPriority::Normal,
                 'is_active' => $data['is_active'] ?? true,
             ]);
 
@@ -95,7 +96,7 @@ class TaskTemplateController extends Controller
             $template->update([
                 'name' => $data['name'],
                 'description' => $data['description'] ?? null,
-                'priority' => $data['priority'] ?? Task::PRIORITY_NORMAL,
+                'priority' => $data['priority'] ?? TaskPriority::Normal,
                 'is_active' => $data['is_active'] ?? false,
             ]);
 
@@ -154,13 +155,15 @@ class TaskTemplateController extends Controller
             'id' => $template->id,
             'name' => $template->name,
             'description' => $template->description,
-            'priority' => $template->priority,
+            'priority' => $template->priority->value,
+            'priority_label' => $template->priority->label(),
             'is_active' => $template->is_active,
             'items' => $template->items->map(fn (TaskTemplateItem $item): array => [
                 'id' => $item->id,
                 'title' => $item->title,
                 'description' => $item->description,
-                'priority' => $item->priority,
+                'priority' => $item->priority->value,
+                'priority_label' => $item->priority->label(),
                 'due_in_days' => $item->due_in_days,
             ])->values(),
         ];
@@ -182,6 +185,7 @@ class TaskTemplateController extends Controller
                 ->get()
                 ->map(fn (OrganizationMember $member): array => ['value' => $member->id, 'label' => $member->user?->name ?? "Membro #{$member->id}"])
                 ->values(),
+            'priorities' => TaskPriority::options(),
         ];
     }
 }

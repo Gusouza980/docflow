@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Web;
 
 use App\Actions\Organizations\RecordAuditLog;
+use App\Enums\TaskPriority;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Web\StoreTaskRequest;
 use App\Http\Requests\Web\UpdateTaskRequest;
@@ -171,7 +172,7 @@ class TaskController extends Controller
             ->when($request->string('status')->toString(), fn (Builder $query, string $status) => $query->where('status', $status))
             ->when($request->string('priority')->toString(), fn (Builder $query, string $priority) => $query->where('priority', $priority))
             ->when($request->string('flag')->toString() === 'overdue', fn (Builder $query) => $query->whereDate('due_at', '<', now()->toDateString())->whereNotIn('status', [Task::STATUS_COMPLETED, Task::STATUS_CANCELLED]))
-            ->when($request->string('flag')->toString() === 'critical', fn (Builder $query) => $query->where('priority', Task::PRIORITY_CRITICAL))
+            ->when($request->string('flag')->toString() === 'critical', fn (Builder $query) => $query->where('priority', TaskPriority::Critical))
             ->when(! $membership->isAdmin() && ! $membership->isManager(), function (Builder $query) use ($membership): void {
                 $query->where(function (Builder $query) use ($membership): void {
                     $query->whereNull('client_id')
@@ -194,7 +195,8 @@ class TaskController extends Controller
             'title' => $task->title,
             'description' => $task->description,
             'status' => $task->status,
-            'priority' => $task->priority,
+            'priority' => $task->priority->value,
+            'priority_label' => $task->priority->label(),
             'due_at' => $task->due_at?->toDateString(),
             'is_overdue' => $task->isOverdue(),
             'client' => $task->client ? ['id' => $task->client->id, 'name' => $task->client->display_name] : null,
@@ -234,6 +236,7 @@ class TaskController extends Controller
                 ->get()
                 ->map(fn (OrganizationMember $member): array => ['value' => $member->id, 'label' => $member->user?->name ?? "Membro #{$member->id}"])
                 ->values(),
+            'priorities' => TaskPriority::options(),
         ];
     }
 

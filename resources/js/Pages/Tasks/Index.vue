@@ -1,6 +1,6 @@
 <script setup>
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import AppLayout from '../../Layouts/AppLayout.vue';
 import Alert from '../../Components/Feedback/Alert.vue';
 import DataTable from '../../Components/Data/DataTable.vue';
@@ -11,7 +11,7 @@ import Badge from '../../Components/UI/Badge.vue';
 import StatusPill from '../../Components/UI/StatusPill.vue';
 import TextInput from '../../Components/Forms/TextInput.vue';
 import SelectInput from '../../Components/Forms/SelectInput.vue';
-import TextareaInput from '../../Components/Forms/TextareaInput.vue';
+import DisplayDate from '../../Components/UI/DisplayDate.vue';
 
 const props = defineProps({
     tasks: { type: Object, required: true },
@@ -23,6 +23,8 @@ const props = defineProps({
 const page = usePage();
 const createModalOpen = ref(false);
 const withEmpty = (items, label = 'Todos') => [{ value: '', label }, ...items];
+const priorityOptions = computed(() => withEmpty(props.options.priorities ?? [], 'Todas'));
+const strictPriorityOptions = computed(() => props.options.priorities ?? []);
 const statusOptions = [
     { value: '', label: 'Todos' },
     { value: 'pending', label: 'Pendente' },
@@ -31,14 +33,6 @@ const statusOptions = [
     { value: 'completed', label: 'Concluída' },
     { value: 'cancelled', label: 'Cancelada' },
 ];
-const priorityOptions = [
-    { value: '', label: 'Todas' },
-    { value: 'low', label: 'Baixa' },
-    { value: 'normal', label: 'Normal' },
-    { value: 'high', label: 'Alta' },
-    { value: 'critical', label: 'Crítica' },
-];
-const strictPriorityOptions = priorityOptions.filter((option) => option.value);
 const flagOptions = [
     { value: '', label: 'Todas' },
     { value: 'overdue', label: 'Atrasadas' },
@@ -129,9 +123,9 @@ function submitCreate() {
                     </div>
                 </template>
                 <template #cell-status="{ row }"><StatusPill :status="row.status" /></template>
-                <template #cell-priority="{ row }"><Badge :tone="row.priority === 'critical' ? 'danger' : 'secondary'">{{ row.priority }}</Badge></template>
+                <template #cell-priority="{ row }"><Badge :tone="row.priority === 'critical' ? 'danger' : 'secondary'">{{ row.priority_label }}</Badge></template>
                 <template #cell-assignee="{ row }">{{ row.assignee?.name ?? 'Sem responsável' }}</template>
-                <template #cell-due_at="{ row }"><span :class="row.is_overdue ? 'font-semibold text-red-700' : ''">{{ row.due_at }}</span></template>
+                <template #cell-due_at="{ row }"><span :class="row.is_overdue ? 'font-semibold text-red-700' : ''"><DisplayDate :value="row.due_at" fallback="Sem prazo" /></span></template>
                 <template #cell-actions="{ row }">
                     <div class="flex justify-end">
                         <Link :href="row.href" class="inline-flex h-8 items-center justify-center rounded-lg border border-slate-300 bg-white px-3 text-[13px] font-semibold text-slate-800 hover:bg-slate-50">Abrir</Link>

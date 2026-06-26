@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Web;
 
+use App\Enums\ClientPriority;
 use App\Models\Client;
 use App\Models\OrganizationMember;
 use Illuminate\Foundation\Http\FormRequest;
@@ -27,7 +28,7 @@ class StoreClientRequest extends FormRequest
             'display_name' => ['required', 'string', 'max:255'],
             'document_number' => ['nullable', 'string', 'max:32', Rule::unique('clients', 'document_number')->where('organization_id', $organizationId)],
             'status' => ['nullable', 'string', Rule::in([Client::STATUS_ACTIVE, Client::STATUS_INACTIVE, Client::STATUS_NEGOTIATION, Client::STATUS_DELINQUENT, Client::STATUS_CLOSED])],
-            'priority' => ['nullable', 'string', Rule::in([Client::PRIORITY_LOW, Client::PRIORITY_NORMAL, Client::PRIORITY_HIGH])],
+            'priority' => ['nullable', Rule::enum(ClientPriority::class)],
             'risk_level' => ['nullable', 'string', Rule::in([Client::RISK_LOW, Client::RISK_MEDIUM, Client::RISK_HIGH])],
             'potential_revenue_cents' => ['nullable', 'integer', 'min:0'],
             'origin' => ['nullable', 'string', 'max:255'],

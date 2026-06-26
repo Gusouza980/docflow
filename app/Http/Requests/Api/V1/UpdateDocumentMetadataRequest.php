@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests\Api\V1;
 
+use App\Enums\DocumentSensitivity;
+use App\Enums\DocumentVisibility;
 use App\Models\Document;
 use App\Support\OrganizationContext;
 use Illuminate\Foundation\Http\FormRequest;
@@ -33,17 +35,8 @@ class UpdateDocumentMetadataRequest extends FormRequest
                 Document::STATUS_EXPIRED,
                 Document::STATUS_REPLACED,
             ])],
-            'visibility' => ['sometimes', 'string', Rule::in([
-                Document::VISIBILITY_INTERNAL,
-                Document::VISIBILITY_CLIENT,
-                Document::VISIBILITY_RESTRICTED,
-                Document::VISIBILITY_CONFIDENTIAL,
-            ])],
-            'sensitivity' => ['sometimes', 'string', Rule::in([
-                Document::SENSITIVITY_NORMAL,
-                Document::SENSITIVITY_SENSITIVE,
-                Document::SENSITIVITY_CONFIDENTIAL,
-            ])],
+            'visibility' => ['sometimes', Rule::enum(DocumentVisibility::class)],
+            'sensitivity' => ['sometimes', Rule::enum(DocumentSensitivity::class)],
             'expires_at' => ['sometimes', 'nullable', 'date'],
             'rejection_reason' => ['sometimes', 'nullable', 'string'],
         ];

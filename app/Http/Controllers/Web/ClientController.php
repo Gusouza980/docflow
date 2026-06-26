@@ -3,15 +3,27 @@
 namespace App\Http\Controllers\Web;
 
 use App\Actions\Organizations\RecordAuditLog;
+use App\Enums\ClientPriority;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Web\StoreClientRequest;
 use App\Http\Requests\Web\UpdateClientRequest;
 use App\Http\Requests\Web\UpdateClientStatusRequest;
 use App\Models\AuditLog;
 use App\Models\Client;
+use App\Models\ClientPortalAccess;
 use App\Models\ClientTag;
+use App\Models\CommunicationConsent;
+use App\Models\Document;
+use App\Models\DocumentRequest;
+use App\Models\MessageTemplate;
 use App\Models\OrganizationMember;
+use App\Models\Ticket;
+use App\Support\BuildsClientPortalDashboard;
+use App\Support\BuildsTicketHubPayload;
+use App\Support\DisplayFormat;
 use App\Support\WebOrganizationContext;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -23,6 +35,11 @@ use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 class ClientController extends Controller
 {
+    public function __construct(
+        private BuildsClientPortalDashboard $portalDashboard,
+        private BuildsTicketHubPayload $ticketPayload,
+    ) {}
+
     public function index(Request $request, WebOrganizationContext $webOrganizationContext): Response|RedirectResponse
     {
         $membership = $webOrganizationContext->membership($request);
@@ -102,20 +119,125 @@ class ClientController extends Controller
         $client->load(['primaryResponsible.user', 'individualProfile', 'companyProfile', 'contacts', 'tags', 'responsibles.user', 'accessMembers.user']);
 
         $events = AuditLog::query()
+            ->with('user')
             ->whereMorphedTo('auditable', $client)
             ->latest()
-            ->limit(12)
+            ->limit(30)
             ->get()
             ->map(fn (AuditLog $event): array => [
                 'id' => $event->id,
                 'action' => $event->action,
                 'created_at' => $event->created_at?->toISOString(),
+                'user_name' => $event->user?->name,
             ]);
+
+        $tab = $request->string('tab')->toString() ?: 'overview';
+        $ticketFilter = $request->string('ticket_filter')->toString() ?: 'open';
 
         return Inertia::render('Clients/Show', [
             'client' => $this->clientDetail($client, $request),
             'timeline' => $events,
-            'options' => $this->options($membership),
+            'tab' => $tab,
+            'selectedTicketId' => $request->integer('ticket') ?: null,
+            'filters' => [
+                'ticket_filter' => $ticketFilter,
+            ],
+            'hub' => [
+                'metrics' => [
+                    'documents' => $client->documents()->count(),
+                    'document_requests' => $client->documentRequests()->count(),
+                    'open_tickets' => $client->tickets()->whereNotIn('status', [Ticket::STATUS_RESOLVED, Ticket::STATUS_CLOSED])->count(),
+                    'messages' => $client->messages()->count(),
+                    'portal_accesses' => $client->portalAccesses()->where('status', ClientPortalAccess::STATUS_ACTIVE)->count(),
+                ],
+                'communications' => [
+                    'messages' => $this->portalDashboard->messagesForClient($client),
+                    'has_portal_consent' => CommunicationConsent::query()
+                        ->whereBelongsTo($client)
+                        ->where('channel', 'portal')
+                        ->where('purpose', 'general')
+                        ->where('status', CommunicationConsent::STATUS_GRANTED)
+                        ->exists(),
+                    'consents' => CommunicationConsent::query()
+                        ->whereBelongsTo($client)
+                        ->latest()
+                        ->limit(10)
+                        ->get()
+                        ->map(fn (CommunicationConsent $consent): array => [
+                            'id' => $consent->id,
+                            'channel' => $consent->channel,
+                            'purpose' => $consent->purpose,
+                            'status' => $consent->status,
+                        ]),
+                ],
+                'portal_accesses' => $client->portalAccesses()
+                    ->latest()
+                    ->limit(20)
+                    ->get()
+                    ->map(fn (ClientPortalAccess $access): array => [
+                        'id' => $access->id,
+                        'name' => $access->name,
+                        'email' => $access->email,
+                        'status' => $access->status,
+                        'expires_at' => DisplayFormat::date($access->expires_at),
+                        'last_used_at' => DisplayFormat::dateTime($access->last_used_at),
+                        'has_password' => $access->hasCompletedOnboarding(),
+                    ]),
+                'documents' => $client->documents()
+                    ->with('category')
+                    ->latest()
+                    ->limit(15)
+                    ->get()
+                    ->map(fn (Document $document): array => [
+                        'id' => $document->id,
+                        'title' => $document->title,
+                        'status' => $document->status,
+                        'category' => $document->category?->name,
+                        'expires_at' => DisplayFormat::date($document->expires_at),
+                        'href' => route('documents.show', $document, absolute: false),
+                    ]),
+                'document_requests' => $client->documentRequests()
+                    ->latest()
+                    ->limit(15)
+                    ->get()
+                    ->map(fn (DocumentRequest $documentRequest): array => [
+                        'id' => $documentRequest->id,
+                        'title' => $documentRequest->title,
+                        'status' => $documentRequest->status,
+                        'due_at' => DisplayFormat::date($documentRequest->due_at),
+                        'href' => route('document-requests.show', $documentRequest, absolute: false),
+                    ]),
+                'tickets' => $this->ticketQuery($client, $request, $membership, $ticketFilter)
+                    ->withCount('messages')
+                    ->with(['assignedTo.user', 'openedBy'])
+                    ->latest()
+                    ->limit(30)
+                    ->get()
+                    ->map(fn (Ticket $ticket): array => $this->ticketPayload->listItem($ticket)),
+            ],
+            'options' => [
+                ...$this->options($membership),
+                'ticket_statuses' => BuildsTicketHubPayload::statusOptions(),
+                'ticket_priorities' => BuildsTicketHubPayload::priorityOptions(),
+                'ticket_filters' => BuildsTicketHubPayload::filterOptions(),
+                'message_templates' => MessageTemplate::query()
+                    ->whereBelongsTo($membership->organization)
+                    ->where('is_active', true)
+                    ->orderBy('name')
+                    ->get()
+                    ->map(fn (MessageTemplate $template): array => [
+                        'value' => $template->id,
+                        'label' => $template->name,
+                        'channel' => $template->channel,
+                        'body' => $template->body,
+                    ]),
+                'message_channels' => [
+                    ['value' => 'portal', 'label' => 'Portal'],
+                    ['value' => 'email', 'label' => 'E-mail'],
+                    ['value' => 'whatsapp', 'label' => 'WhatsApp'],
+                    ['value' => 'phone', 'label' => 'Telefone'],
+                ],
+            ],
             'can' => [
                 'update' => $request->user()->can('update', $client),
             ],
@@ -163,7 +285,19 @@ class ClientController extends Controller
         return redirect()->route('clients.show', $client)->with('status', 'Status atualizado.');
     }
 
-    private function clientQuery(Request $request, OrganizationMember $membership): \Illuminate\Database\Eloquent\Builder
+    private function ticketQuery(Client $client, Request $request, OrganizationMember $membership, string $filter): HasMany
+    {
+        return $client->tickets()
+            ->when($filter === 'open', fn ($query) => $query->whereNotIn('status', [Ticket::STATUS_RESOLVED, Ticket::STATUS_CLOSED]))
+            ->when($filter === 'waiting_client', fn ($query) => $query->where('status', Ticket::STATUS_WAITING_CLIENT))
+            ->when($filter === 'mine', fn ($query) => $query->where('assigned_to_member_id', $membership->id))
+            ->when($filter === 'overdue', fn ($query) => $query
+                ->whereDate('due_at', '<', now()->toDateString())
+                ->whereNotIn('status', [Ticket::STATUS_RESOLVED, Ticket::STATUS_CLOSED]))
+            ->when($filter === 'closed', fn ($query) => $query->whereIn('status', [Ticket::STATUS_RESOLVED, Ticket::STATUS_CLOSED]));
+    }
+
+    private function clientQuery(Request $request, OrganizationMember $membership): Builder
     {
         return Client::query()
             ->whereBelongsTo($membership->organization)
@@ -220,7 +354,8 @@ class ClientController extends Controller
             'display_name' => $client->display_name,
             'document_number' => $canViewSensitive ? $client->document_number : $this->maskedDocument($client->document_number),
             'status' => $client->status,
-            'priority' => $client->priority,
+            'priority' => $client->priority->value,
+            'priority_label' => $client->priority->label(),
             'risk_level' => $client->risk_level,
             'primary_responsible' => $client->primaryResponsible ? [
                 'id' => $client->primaryResponsible->id,
@@ -294,6 +429,7 @@ class ClientController extends Controller
                     'name' => $tag->name,
                     'color' => $tag->color,
                 ]),
+            'priorities' => ClientPriority::options(),
         ];
     }
 

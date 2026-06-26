@@ -2,8 +2,8 @@
 
 namespace Database\Factories;
 
+use App\Enums\TaskPriority;
 use App\Models\Organization;
-use App\Models\OrganizationMember;
 use App\Models\Task;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -17,13 +17,12 @@ class TaskFactory extends Factory
     {
         return [
             'organization_id' => Organization::factory(),
-            'assigned_to_member_id' => OrganizationMember::factory(),
             'created_by_user_id' => User::factory(),
-            'title' => fake()->sentence(3),
+            'title' => fake()->sentence(4),
             'description' => fake()->sentence(),
             'status' => Task::STATUS_PENDING,
-            'priority' => Task::PRIORITY_NORMAL,
-            'due_at' => now()->addWeek()->toDateString(),
+            'priority' => TaskPriority::Normal,
+            'due_at' => fake()->dateTimeBetween('+1 day', '+1 month'),
         ];
     }
 }

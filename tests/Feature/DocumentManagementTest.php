@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Enums\DocumentSensitivity;
+use App\Enums\DocumentVisibility;
 use App\Models\Client;
 use App\Models\Document;
 use App\Models\DocumentCategory;
@@ -29,7 +31,7 @@ class DocumentManagementTest extends TestCase
             ->postJson('/api/v1/document-categories', [
                 'name' => 'Contrato Social',
                 'validity_days' => 365,
-                'sensitivity' => DocumentCategory::SENSITIVITY_SENSITIVE,
+                'sensitivity' => DocumentSensitivity::Sensitive,
             ])
             ->assertCreated()
             ->assertJsonPath('data.name', 'Contrato Social')
@@ -54,7 +56,7 @@ class DocumentManagementTest extends TestCase
                 'client_id' => $client->id,
                 'document_category_id' => $category->id,
                 'title' => 'Contrato assinado',
-                'visibility' => Document::VISIBILITY_CONFIDENTIAL,
+                'visibility' => DocumentVisibility::Confidential,
                 'file' => UploadedFile::fake()->create('contrato.pdf', 100, 'application/pdf'),
             ])
             ->assertCreated()
@@ -125,7 +127,7 @@ class DocumentManagementTest extends TestCase
             ->postJson('/api/v1/documents', [
                 'client_id' => $client->id,
                 'title' => 'Sigiloso',
-                'visibility' => Document::VISIBILITY_RESTRICTED,
+                'visibility' => DocumentVisibility::Restricted,
                 'file' => UploadedFile::fake()->create('sigiloso.pdf', 100, 'application/pdf'),
             ])
             ->json('data.id');

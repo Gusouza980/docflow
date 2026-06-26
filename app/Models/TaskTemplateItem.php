@@ -2,13 +2,15 @@
 
 namespace App\Models;
 
+use App\Enums\TaskPriority;
+use Database\Factories\TaskTemplateItemFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TaskTemplateItem extends Model
 {
-    /** @use HasFactory<\Database\Factories\TaskTemplateItemFactory> */
+    /** @use HasFactory<TaskTemplateItemFactory> */
     use HasFactory;
 
     protected $fillable = [
@@ -23,12 +25,13 @@ class TaskTemplateItem extends Model
 
     protected $attributes = [
         'due_in_days' => 0,
-        'priority' => Task::PRIORITY_NORMAL,
+        'priority' => TaskPriority::Normal,
     ];
 
     protected function casts(): array
     {
         return [
+            'priority' => TaskPriority::class,
             'due_in_days' => 'integer',
             'checklist_items' => 'array',
         ];

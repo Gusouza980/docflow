@@ -1,6 +1,6 @@
 <script setup>
 import { Head, router, useForm, usePage } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import AppLayout from '../../Layouts/AppLayout.vue';
 import Alert from '../../Components/Feedback/Alert.vue';
 import DataTable from '../../Components/Data/DataTable.vue';
@@ -11,7 +11,7 @@ import Badge from '../../Components/UI/Badge.vue';
 import StatusPill from '../../Components/UI/StatusPill.vue';
 import TextInput from '../../Components/Forms/TextInput.vue';
 import SelectInput from '../../Components/Forms/SelectInput.vue';
-import TextareaInput from '../../Components/Forms/TextareaInput.vue';
+import DisplayDate from '../../Components/UI/DisplayDate.vue';
 
 const props = defineProps({
     deadlines: { type: Object, required: true },
@@ -34,12 +34,7 @@ const statusOptions = [
     { value: 'completed', label: 'Concluído' },
     { value: 'cancelled', label: 'Cancelado' },
 ];
-const urgencyOptions = [
-    { value: 'low', label: 'Baixa' },
-    { value: 'normal', label: 'Normal' },
-    { value: 'high', label: 'Alta' },
-    { value: 'critical', label: 'Crítica' },
-];
+const urgencyOptions = computed(() => props.options.urgencies ?? []);
 const columns = [
     { key: 'title', label: 'Prazo' },
     { key: 'status', label: 'Status' },
@@ -134,8 +129,9 @@ function submitComplete() {
                 </template>
                 <template #cell-title="{ row }"><div class="min-w-64"><p class="font-semibold text-slate-950">{{ row.title }}</p><p class="mt-1 text-xs text-slate-500">{{ row.client?.name ?? 'Sem cliente' }} · {{ row.type }}</p></div></template>
                 <template #cell-status="{ row }"><StatusPill :status="row.status" /></template>
-                <template #cell-urgency="{ row }"><Badge :tone="row.urgency === 'critical' ? 'danger' : 'secondary'">{{ row.urgency }}</Badge></template>
+                <template #cell-urgency="{ row }"><Badge :tone="row.urgency === 'critical' ? 'danger' : 'secondary'">{{ row.urgency_label }}</Badge></template>
                 <template #cell-assignee="{ row }">{{ row.assignee?.name ?? 'Sem responsável' }}</template>
+                <template #cell-due_at="{ row }"><DisplayDate :value="row.due_at" fallback="Sem data" /></template>
                 <template #cell-actions="{ row }"><div class="flex justify-end gap-2"><Button size="sm" variant="secondary" @click="requestReview(row)">Revisar</Button><Button v-if="row.status === 'review_requested'" size="sm" variant="secondary" @click="approveReview(row)">Aprovar</Button><Button size="sm" @click="complete(row)">Concluir</Button></div></template>
             </DataTable>
             <Pagination :current-page="deadlines.meta.current_page" :total-pages="deadlines.meta.last_page" :per-page="deadlines.meta.per_page" />

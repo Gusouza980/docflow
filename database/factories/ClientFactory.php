@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\ClientPriority;
 use App\Models\Client;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
@@ -26,7 +27,7 @@ class ClientFactory extends Factory
             'display_name' => fake()->name(),
             'document_number' => fake()->unique()->numerify('###########'),
             'status' => Client::STATUS_ACTIVE,
-            'priority' => Client::PRIORITY_NORMAL,
+            'priority' => ClientPriority::Normal,
             'risk_level' => Client::RISK_LOW,
             'potential_revenue_cents' => fake()->numberBetween(50000, 500000),
             'origin' => 'referral',

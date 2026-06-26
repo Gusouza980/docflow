@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Actions\Organizations\RecordAuditLog;
+use App\Enums\TaskPriority;
 use App\Http\Controllers\Controller;
 use App\Models\Client;
 use App\Models\OrganizationMember;
@@ -36,13 +37,13 @@ class TaskTemplateController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            'priority' => ['nullable', 'string', Rule::in([Task::PRIORITY_LOW, Task::PRIORITY_NORMAL, Task::PRIORITY_HIGH, Task::PRIORITY_CRITICAL])],
+            'priority' => ['nullable', Rule::enum(TaskPriority::class)],
             'is_active' => ['nullable', 'boolean'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.title' => ['required', 'string', 'max:255'],
             'items.*.description' => ['nullable', 'string'],
             'items.*.due_in_days' => ['nullable', 'integer', 'min:0', 'max:3650'],
-            'items.*.priority' => ['nullable', 'string', Rule::in([Task::PRIORITY_LOW, Task::PRIORITY_NORMAL, Task::PRIORITY_HIGH, Task::PRIORITY_CRITICAL])],
+            'items.*.priority' => ['nullable', Rule::enum(TaskPriority::class)],
             'items.*.checklist_items' => ['nullable', 'array'],
             'items.*.checklist_items.*.title' => ['required_with:items.*.checklist_items', 'string', 'max:255'],
             'items.*.checklist_items.*.is_required' => ['nullable', 'boolean'],
@@ -53,7 +54,7 @@ class TaskTemplateController extends Controller
                 'organization_id' => $organizationContext->id(),
                 'name' => $data['name'],
                 'description' => $data['description'] ?? null,
-                'priority' => $data['priority'] ?? Task::PRIORITY_NORMAL,
+                'priority' => $data['priority'] ?? TaskPriority::Normal,
                 'is_active' => $data['is_active'] ?? true,
             ]);
 

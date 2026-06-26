@@ -1,12 +1,13 @@
 <script setup>
 import { Head, useForm, usePage } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import AppLayout from '../../Layouts/AppLayout.vue';
 import Alert from '../../Components/Feedback/Alert.vue';
 import DataTable from '../../Components/Data/DataTable.vue';
 import Modal from '../../Components/Overlays/Modal.vue';
 import Button from '../../Components/UI/Button.vue';
 import Badge from '../../Components/UI/Badge.vue';
+import DisplayDate from '../../Components/UI/DisplayDate.vue';
 import TextInput from '../../Components/Forms/TextInput.vue';
 import SelectInput from '../../Components/Forms/SelectInput.vue';
 import TextareaInput from '../../Components/Forms/TextareaInput.vue';
@@ -23,12 +24,7 @@ const editModalOpen = ref(false);
 const applyModalOpen = ref(false);
 const selectedTemplate = ref(null);
 const withEmpty = (items, label) => [{ value: '', label }, ...items];
-const priorityOptions = [
-    { value: 'low', label: 'Baixa' },
-    { value: 'normal', label: 'Normal' },
-    { value: 'high', label: 'Alta' },
-    { value: 'critical', label: 'Crítica' },
-];
+const priorityOptions = computed(() => props.options.priorities ?? []);
 const columns = [
     { key: 'name', label: 'Modelo' },
     { key: 'priority', label: 'Prioridade' },
@@ -119,7 +115,7 @@ function submitApply() {
             <DataTable :columns="columns" :rows="templates" empty-title="Nenhum modelo encontrado">
                 <template #toolbar><div class="flex flex-col gap-3 border-b border-slate-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"><div><h2 class="text-sm font-semibold text-slate-950">Modelos de tarefas</h2><p class="mt-1 text-xs text-slate-500">Crie rotinas reutilizáveis com prazos relativos.</p></div><Button v-if="can.create" size="sm" @click="createModalOpen = true">Novo modelo</Button></div></template>
                 <template #cell-name="{ row }"><div><p class="font-semibold text-slate-950">{{ row.name }}</p><p class="mt-1 text-xs text-slate-500">{{ row.description || 'Sem descrição' }}</p></div></template>
-                <template #cell-priority="{ row }"><Badge :tone="row.priority === 'critical' ? 'danger' : 'secondary'">{{ row.priority }}</Badge></template>
+                <template #cell-priority="{ row }"><Badge :tone="row.priority === 'critical' ? 'danger' : 'secondary'">{{ row.priority_label }}</Badge></template>
                 <template #cell-items="{ row }">{{ row.items.length }} itens</template>
                 <template #cell-actions="{ row }">
                     <div class="flex justify-end gap-2">

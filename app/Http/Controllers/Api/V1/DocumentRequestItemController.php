@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Actions\Organizations\RecordAuditLog;
+use App\Enums\DocumentVisibility;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\RejectDocumentRequestItemRequest;
 use App\Http\Requests\Api\V1\UploadDocumentRequestItemFileRequest;
@@ -43,7 +44,7 @@ class DocumentRequestItemController extends Controller
                     'title' => $data['title'] ?? $item->title,
                     'description' => $item->instructions,
                     'status' => Document::STATUS_RECEIVED,
-                    'visibility' => Document::VISIBILITY_INTERNAL,
+                    'visibility' => DocumentVisibility::Internal,
                 ]);
             }
 

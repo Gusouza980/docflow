@@ -2,6 +2,8 @@
 
 namespace Database\Factories;
 
+use App\Enums\DocumentSensitivity;
+use App\Enums\DocumentVisibility;
 use App\Models\Document;
 use App\Models\Organization;
 use App\Models\User;
@@ -20,8 +22,8 @@ class DocumentFactory extends Factory
             'title' => fake()->sentence(3),
             'description' => fake()->sentence(),
             'status' => Document::STATUS_RECEIVED,
-            'visibility' => Document::VISIBILITY_INTERNAL,
-            'sensitivity' => Document::SENSITIVITY_NORMAL,
+            'visibility' => DocumentVisibility::Internal,
+            'sensitivity' => DocumentSensitivity::Normal,
             'expires_at' => fake()->optional()->dateTimeBetween('+1 month', '+1 year'),
         ];
     }

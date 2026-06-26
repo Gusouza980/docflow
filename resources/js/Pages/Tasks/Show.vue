@@ -1,6 +1,6 @@
 <script setup>
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import AppLayout from '../../Layouts/AppLayout.vue';
 import Alert from '../../Components/Feedback/Alert.vue';
 import Card from '../../Components/UI/Card.vue';
@@ -10,7 +10,7 @@ import StatusPill from '../../Components/UI/StatusPill.vue';
 import Modal from '../../Components/Overlays/Modal.vue';
 import TextInput from '../../Components/Forms/TextInput.vue';
 import SelectInput from '../../Components/Forms/SelectInput.vue';
-import TextareaInput from '../../Components/Forms/TextareaInput.vue';
+import DisplayDate from '../../Components/UI/DisplayDate.vue';
 
 const props = defineProps({
     task: { type: Object, required: true },
@@ -30,12 +30,7 @@ const statusOptions = [
     { value: 'cancelled', label: 'Cancelada' },
 ];
 const editStatusOptions = [...statusOptions, { value: 'completed', label: 'Concluída' }];
-const priorityOptions = [
-    { value: 'low', label: 'Baixa' },
-    { value: 'normal', label: 'Normal' },
-    { value: 'high', label: 'Alta' },
-    { value: 'critical', label: 'Crítica' },
-];
+const priorityOptions = computed(() => props.options.priorities ?? []);
 
 const editForm = useForm({
     client_id: props.task.client?.id ?? '',
@@ -85,7 +80,7 @@ function submitComplete() {
                 <div>
                     <div class="flex flex-wrap items-center gap-2">
                         <StatusPill :status="task.status" />
-                        <Badge :tone="task.priority === 'critical' ? 'danger' : 'secondary'">{{ task.priority }}</Badge>
+                        <Badge :tone="task.priority === 'critical' ? 'danger' : 'secondary'">{{ task.priority_label }}</Badge>
                         <Badge v-if="task.is_overdue" tone="danger">Atrasada</Badge>
                     </div>
                     <p class="mt-2 text-sm text-slate-500">{{ task.description || 'Sem descrição' }}</p>
@@ -101,7 +96,7 @@ function submitComplete() {
                     <dl class="grid gap-4 sm:grid-cols-2">
                         <div><dt class="text-xs font-semibold uppercase text-slate-500">Cliente</dt><dd class="mt-1 text-sm text-slate-900">{{ task.client?.name ?? 'Sem cliente' }}</dd></div>
                         <div><dt class="text-xs font-semibold uppercase text-slate-500">Responsável</dt><dd class="mt-1 text-sm text-slate-900">{{ task.assignee?.name ?? 'Sem responsável' }}</dd></div>
-                        <div><dt class="text-xs font-semibold uppercase text-slate-500">Prazo</dt><dd class="mt-1 text-sm text-slate-900">{{ task.due_at }}</dd></div>
+                        <div><dt class="text-xs font-semibold uppercase text-slate-500">Prazo</dt><dd class="mt-1 text-sm text-slate-900"><DisplayDate :value="task.due_at" fallback="Sem prazo" /></dd></div>
                         <div><dt class="text-xs font-semibold uppercase text-slate-500">Checklist</dt><dd class="mt-1 text-sm text-slate-900">{{ task.checklist_progress }}</dd></div>
                     </dl>
                     <form v-if="can.update" class="mt-5 flex flex-wrap items-end gap-3" @submit.prevent="submitStatus">

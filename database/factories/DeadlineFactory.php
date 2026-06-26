@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\TaskPriority;
 use App\Models\Deadline;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
@@ -22,7 +23,7 @@ class DeadlineFactory extends Factory
             'title' => fake()->sentence(3),
             'description' => fake()->sentence(),
             'type' => 'general',
-            'urgency' => Deadline::URGENCY_NORMAL,
+            'urgency' => TaskPriority::Normal,
             'status' => Deadline::STATUS_PENDING,
             'due_at' => now()->addWeek()->toDateString(),
             'requires_review' => false,

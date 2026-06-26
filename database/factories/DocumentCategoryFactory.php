@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\DocumentSensitivity;
 use App\Models\DocumentCategory;
 use App\Models\Organization;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -18,7 +19,7 @@ class DocumentCategoryFactory extends Factory
             'name' => fake()->unique()->words(3, true),
             'description' => fake()->sentence(),
             'validity_days' => fake()->optional()->numberBetween(30, 365),
-            'sensitivity' => DocumentCategory::SENSITIVITY_NORMAL,
+            'sensitivity' => DocumentSensitivity::Normal,
             'is_active' => true,
         ];
     }

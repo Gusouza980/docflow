@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\TaskPriority;
+use Database\Factories\DeadlineFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,20 +11,20 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Deadline extends Model
 {
-    /** @use HasFactory<\Database\Factories\DeadlineFactory> */
+    /** @use HasFactory<DeadlineFactory> */
     use HasFactory, SoftDeletes;
 
     public const STATUS_PENDING = 'pending';
-    public const STATUS_REVIEW_REQUESTED = 'review_requested';
-    public const STATUS_REVIEW_APPROVED = 'review_approved';
-    public const STATUS_ADJUSTMENT_REQUESTED = 'adjustment_requested';
-    public const STATUS_COMPLETED = 'completed';
-    public const STATUS_CANCELLED = 'cancelled';
 
-    public const URGENCY_LOW = 'low';
-    public const URGENCY_NORMAL = 'normal';
-    public const URGENCY_HIGH = 'high';
-    public const URGENCY_CRITICAL = 'critical';
+    public const STATUS_REVIEW_REQUESTED = 'review_requested';
+
+    public const STATUS_REVIEW_APPROVED = 'review_approved';
+
+    public const STATUS_ADJUSTMENT_REQUESTED = 'adjustment_requested';
+
+    public const STATUS_COMPLETED = 'completed';
+
+    public const STATUS_CANCELLED = 'cancelled';
 
     protected $fillable = [
         'organization_id',
@@ -45,7 +47,7 @@ class Deadline extends Model
 
     protected $attributes = [
         'type' => 'general',
-        'urgency' => self::URGENCY_NORMAL,
+        'urgency' => TaskPriority::Normal,
         'status' => self::STATUS_PENDING,
         'requires_review' => false,
     ];
@@ -53,6 +55,7 @@ class Deadline extends Model
     protected function casts(): array
     {
         return [
+            'urgency' => TaskPriority::class,
             'due_at' => 'date',
             'requires_review' => 'boolean',
             'review_requested_at' => 'datetime',

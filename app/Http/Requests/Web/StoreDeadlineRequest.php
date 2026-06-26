@@ -2,7 +2,7 @@
 
 namespace App\Http\Requests\Web;
 
-use App\Models\Deadline;
+use App\Enums\TaskPriority;
 use App\Models\OrganizationMember;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -27,7 +27,7 @@ class StoreDeadlineRequest extends FormRequest
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'type' => ['nullable', 'string', 'max:64'],
-            'urgency' => ['nullable', 'string', Rule::in([Deadline::URGENCY_LOW, Deadline::URGENCY_NORMAL, Deadline::URGENCY_HIGH, Deadline::URGENCY_CRITICAL])],
+            'urgency' => ['nullable', Rule::enum(TaskPriority::class)],
             'due_at' => ['required', 'date'],
             'requires_review' => ['nullable', 'boolean'],
         ];

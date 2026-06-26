@@ -2,6 +2,11 @@
 
 namespace Database\Seeders;
 
+use App\Enums\CalendarEventType;
+use App\Enums\ClientPriority;
+use App\Enums\DocumentSensitivity;
+use App\Enums\DocumentVisibility;
+use App\Enums\TaskPriority;
 use App\Models\CalendarEvent;
 use App\Models\CalendarEventParticipant;
 use App\Models\Client;
@@ -165,11 +170,11 @@ class DemoWorkspaceSeeder extends Seeder
     private function documentCategories(Organization $organization): array
     {
         $categories = [
-            'Contrato Social' => ['Documento societário principal.', 3650, DocumentCategory::SENSITIVITY_CONFIDENTIAL],
-            'Procuração' => ['Autorização para representação do cliente.', 365, DocumentCategory::SENSITIVITY_SENSITIVE],
-            'Comprovante de Endereço' => ['Comprovante residencial ou comercial atualizado.', 180, DocumentCategory::SENSITIVITY_NORMAL],
-            'Documento Fiscal' => ['Notas, guias e comprovantes fiscais.', 1825, DocumentCategory::SENSITIVITY_SENSITIVE],
-            'Documento Pessoal' => ['RG, CNH, CPF ou documentos pessoais equivalentes.', 3650, DocumentCategory::SENSITIVITY_CONFIDENTIAL],
+            'Contrato Social' => ['Documento societário principal.', 3650, DocumentSensitivity::Confidential],
+            'Procuração' => ['Autorização para representação do cliente.', 365, DocumentSensitivity::Sensitive],
+            'Comprovante de Endereço' => ['Comprovante residencial ou comercial atualizado.', 180, DocumentSensitivity::Normal],
+            'Documento Fiscal' => ['Notas, guias e comprovantes fiscais.', 1825, DocumentSensitivity::Sensitive],
+            'Documento Pessoal' => ['RG, CNH, CPF ou documentos pessoais equivalentes.', 3650, DocumentSensitivity::Confidential],
         ];
 
         return collect($categories)
@@ -198,19 +203,19 @@ class DemoWorkspaceSeeder extends Seeder
         $templates = [
             'Onboarding de cliente' => [
                 'description' => 'Fluxo padrão para ativação de um novo cliente.',
-                'priority' => Task::PRIORITY_HIGH,
+                'priority' => TaskPriority::High,
                 'items' => [
-                    ['Coletar documentação inicial', 1, Task::PRIORITY_HIGH, ['Conferir identidade', 'Validar comprovante de endereço']],
-                    ['Cadastrar dados financeiros', 3, Task::PRIORITY_NORMAL, ['Definir dia de vencimento', 'Registrar contato financeiro']],
-                    ['Revisar contrato de prestação', 5, Task::PRIORITY_HIGH, ['Enviar minuta', 'Registrar aceite']],
+                    ['Coletar documentação inicial', 1, TaskPriority::High, ['Conferir identidade', 'Validar comprovante de endereço']],
+                    ['Cadastrar dados financeiros', 3, TaskPriority::Normal, ['Definir dia de vencimento', 'Registrar contato financeiro']],
+                    ['Revisar contrato de prestação', 5, TaskPriority::High, ['Enviar minuta', 'Registrar aceite']],
                 ],
             ],
             'Fechamento mensal' => [
                 'description' => 'Rotina operacional e financeira recorrente.',
-                'priority' => Task::PRIORITY_NORMAL,
+                'priority' => TaskPriority::Normal,
                 'items' => [
-                    ['Solicitar documentos fiscais', 2, Task::PRIORITY_NORMAL, ['Notas emitidas', 'Extratos bancários']],
-                    ['Conferir pendências financeiras', 4, Task::PRIORITY_HIGH, ['Mensalidade', 'Reembolsos']],
+                    ['Solicitar documentos fiscais', 2, TaskPriority::Normal, ['Notas emitidas', 'Extratos bancários']],
+                    ['Conferir pendências financeiras', 4, TaskPriority::High, ['Mensalidade', 'Reembolsos']],
                 ],
             ],
         ];
@@ -262,7 +267,7 @@ class DemoWorkspaceSeeder extends Seeder
                 'type' => Client::TYPE_INDIVIDUAL,
                 'display_name' => 'Ana Paula Martins',
                 'status' => Client::STATUS_ACTIVE,
-                'priority' => Client::PRIORITY_HIGH,
+                'priority' => ClientPriority::High,
                 'risk_level' => Client::RISK_LOW,
                 'potential_revenue_cents' => 450000,
                 'origin' => 'indicação',
@@ -317,7 +322,7 @@ class DemoWorkspaceSeeder extends Seeder
                 'type' => Client::TYPE_COMPANY,
                 'display_name' => 'Nova Clínica Integrada LTDA',
                 'status' => Client::STATUS_ACTIVE,
-                'priority' => Client::PRIORITY_NORMAL,
+                'priority' => ClientPriority::Normal,
                 'risk_level' => Client::RISK_MEDIUM,
                 'potential_revenue_cents' => 1250000,
                 'origin' => 'site',
@@ -377,24 +382,24 @@ class DemoWorkspaceSeeder extends Seeder
                 'client' => $individualClient,
                 'category' => $categories['Documento Pessoal'],
                 'title' => 'CNH - Ana Paula Martins',
-                'sensitivity' => Document::SENSITIVITY_CONFIDENTIAL,
-                'visibility' => Document::VISIBILITY_RESTRICTED,
+                'sensitivity' => DocumentSensitivity::Confidential,
+                'visibility' => DocumentVisibility::Restricted,
                 'expires_at' => now()->addYears(4)->toDateString(),
             ],
             [
                 'client' => $companyClient,
                 'category' => $categories['Contrato Social'],
                 'title' => 'Contrato Social - Nova Clínica',
-                'sensitivity' => Document::SENSITIVITY_CONFIDENTIAL,
-                'visibility' => Document::VISIBILITY_INTERNAL,
+                'sensitivity' => DocumentSensitivity::Confidential,
+                'visibility' => DocumentVisibility::Internal,
                 'expires_at' => null,
             ],
             [
                 'client' => $companyClient,
                 'category' => $categories['Documento Fiscal'],
                 'title' => 'Guia DAS - Abril',
-                'sensitivity' => Document::SENSITIVITY_SENSITIVE,
-                'visibility' => Document::VISIBILITY_CLIENT,
+                'sensitivity' => DocumentSensitivity::Sensitive,
+                'visibility' => DocumentVisibility::Client,
                 'expires_at' => now()->addYears(5)->toDateString(),
             ],
         ];
@@ -532,7 +537,7 @@ class DemoWorkspaceSeeder extends Seeder
                 'member' => $members[OrganizationMember::ROLE_PROFESSIONAL],
                 'template' => $templates['Onboarding de cliente'],
                 'title' => 'Revisar documentação pessoal da Ana',
-                'priority' => Task::PRIORITY_HIGH,
+                'priority' => TaskPriority::High,
                 'due_at' => now()->addDays(2)->toDateString(),
                 'checklist' => ['Conferir CNH', 'Validar comprovante', 'Registrar observações'],
             ],
@@ -541,7 +546,7 @@ class DemoWorkspaceSeeder extends Seeder
                 'member' => $members[OrganizationMember::ROLE_ASSISTANT],
                 'template' => $templates['Fechamento mensal'],
                 'title' => 'Solicitar notas fiscais da Nova Clínica',
-                'priority' => Task::PRIORITY_NORMAL,
+                'priority' => TaskPriority::Normal,
                 'due_at' => now()->addDays(4)->toDateString(),
                 'checklist' => ['Enviar solicitação', 'Conferir anexos recebidos'],
             ],
@@ -615,7 +620,7 @@ class DemoWorkspaceSeeder extends Seeder
                 'member' => $members[OrganizationMember::ROLE_PROFESSIONAL],
                 'title' => 'Entrega da declaração anual',
                 'type' => 'tax',
-                'urgency' => Deadline::URGENCY_HIGH,
+                'urgency' => TaskPriority::High,
                 'due_at' => now()->addDays(12)->toDateString(),
                 'requires_review' => true,
             ],
@@ -624,7 +629,7 @@ class DemoWorkspaceSeeder extends Seeder
                 'member' => $members[OrganizationMember::ROLE_MANAGER],
                 'title' => 'Renovação da procuração fiscal',
                 'type' => 'legal',
-                'urgency' => Deadline::URGENCY_NORMAL,
+                'urgency' => TaskPriority::Normal,
                 'due_at' => now()->addDays(20)->toDateString(),
                 'requires_review' => false,
             ],
@@ -670,7 +675,7 @@ class DemoWorkspaceSeeder extends Seeder
             [
                 'client' => $individualClient,
                 'title' => 'Reunião de alinhamento tributário',
-                'type' => CalendarEvent::TYPE_MEETING,
+                'type' => CalendarEventType::Meeting,
                 'starts_at' => now()->addDays(3)->setTime(10, 0),
                 'ends_at' => now()->addDays(3)->setTime(11, 0),
                 'participants' => [
@@ -681,7 +686,7 @@ class DemoWorkspaceSeeder extends Seeder
             [
                 'client' => $companyClient,
                 'title' => 'Audiência administrativa',
-                'type' => CalendarEvent::TYPE_HEARING,
+                'type' => CalendarEventType::Hearing,
                 'starts_at' => now()->addDays(8)->setTime(14, 0),
                 'ends_at' => now()->addDays(8)->setTime(15, 30),
                 'participants' => [

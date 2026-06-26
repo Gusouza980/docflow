@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Models\OrganizationMember;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -15,7 +16,7 @@ class ClientResource extends JsonResource
     public function toArray(Request $request): array
     {
         $membership = $request->attributes->get('organization_member');
-        $canViewSensitive = $membership?->role !== \App\Models\OrganizationMember::ROLE_READONLY;
+        $canViewSensitive = $membership?->role !== OrganizationMember::ROLE_READONLY;
 
         return [
             'id' => $this->id,
@@ -24,7 +25,8 @@ class ClientResource extends JsonResource
             'display_name' => $this->display_name,
             'document_number' => $canViewSensitive ? $this->document_number : $this->maskedDocument(),
             'status' => $this->status,
-            'priority' => $this->priority,
+            'priority' => $this->priority->value,
+            'priority_label' => $this->priority->label(),
             'risk_level' => $this->risk_level,
             'potential_revenue_cents' => $canViewSensitive ? $this->potential_revenue_cents : null,
             'origin' => $this->origin,

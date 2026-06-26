@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\CalendarEventType;
 use App\Models\CalendarEvent;
 use App\Models\Organization;
 use App\Models\User;
@@ -19,7 +20,7 @@ class CalendarEventFactory extends Factory
             'created_by_user_id' => User::factory(),
             'title' => fake()->sentence(3),
             'description' => fake()->sentence(),
-            'type' => CalendarEvent::TYPE_INTERNAL,
+            'type' => CalendarEventType::Internal,
             'status' => CalendarEvent::STATUS_SCHEDULED,
             'starts_at' => now()->addDay(),
             'ends_at' => now()->addDay()->addHour(),

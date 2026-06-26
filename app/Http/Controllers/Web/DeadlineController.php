@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Web;
 
 use App\Actions\Organizations\RecordAuditLog;
+use App\Enums\TaskPriority;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Web\StoreDeadlineRequest;
 use App\Http\Requests\Web\UpdateDeadlineRequest;
@@ -170,7 +171,8 @@ class DeadlineController extends Controller
             'title' => $deadline->title,
             'description' => $deadline->description,
             'type' => $deadline->type,
-            'urgency' => $deadline->urgency,
+            'urgency' => $deadline->urgency->value,
+            'urgency_label' => $deadline->urgency->label(),
             'status' => $deadline->status,
             'due_at' => $deadline->due_at?->toDateString(),
             'requires_review' => $deadline->requires_review,
@@ -185,6 +187,7 @@ class DeadlineController extends Controller
         return [
             'clients' => Client::query()->whereBelongsTo($membership->organization)->orderBy('display_name')->get(['id', 'display_name'])->map(fn (Client $client): array => ['value' => $client->id, 'label' => $client->display_name])->values(),
             'members' => OrganizationMember::query()->with('user')->whereBelongsTo($membership->organization)->where('status', OrganizationMember::STATUS_ACTIVE)->get()->map(fn (OrganizationMember $member): array => ['value' => $member->id, 'label' => $member->user?->name ?? "Membro #{$member->id}"])->values(),
+            'urgencies' => TaskPriority::options(),
         ];
     }
 

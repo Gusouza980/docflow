@@ -12,6 +12,7 @@ import Card from '../../Components/UI/Card.vue';
 import StatusPill from '../../Components/UI/StatusPill.vue';
 import TextInput from '../../Components/Forms/TextInput.vue';
 import SelectInput from '../../Components/Forms/SelectInput.vue';
+import DisplayDate from '../../Components/UI/DisplayDate.vue';
 import TextareaInput from '../../Components/Forms/TextareaInput.vue';
 
 const props = defineProps({
@@ -178,7 +179,7 @@ function submitCancel() {
                 <template #cell-description="{ row }"><div class="min-w-64"><p class="font-semibold text-slate-950">{{ row.description }}</p><p class="mt-1 text-xs text-slate-500">{{ row.client.name }} · {{ row.category?.name ?? 'Sem categoria' }}</p></div></template>
                 <template #cell-status="{ row }"><StatusPill :status="row.status" /></template>
                 <template #cell-amount="{ row }"><span>{{ money(row.balance_cents) }}</span><span class="block text-xs text-slate-500">de {{ money(row.amount_cents) }}</span></template>
-                <template #cell-due_at="{ row }"><span :class="row.is_overdue ? 'font-semibold text-red-700' : ''">{{ row.due_at }}</span></template>
+                <template #cell-due_at="{ row }"><span :class="row.is_overdue ? 'font-semibold text-red-700' : ''"><DisplayDate :value="row.due_at" fallback="Sem prazo" /></span></template>
                 <template #cell-actions="{ row }"><div class="flex justify-end gap-2"><Button v-if="!['paid', 'cancelled'].includes(row.status)" size="sm" variant="secondary" @click="openPayment('receivable', row)">Baixar</Button><Button v-if="!['paid', 'cancelled'].includes(row.status)" size="sm" variant="danger" @click="openCancel(row)">Cancelar</Button></div></template>
             </DataTable>
             <Pagination :current-page="receivables.meta.current_page" :total-pages="receivables.meta.last_page" :per-page="receivables.meta.per_page" />
@@ -188,6 +189,7 @@ function submitCancel() {
                 <template #cell-description="{ row }"><div class="min-w-64"><p class="font-semibold text-slate-950">{{ row.description }}</p><p class="mt-1 text-xs text-slate-500">{{ row.vendor_name || 'Sem fornecedor' }} · {{ row.client?.name ?? 'Escritório' }}</p><Badge v-if="row.is_reimbursable" tone="warning">Reembolsável</Badge></div></template>
                 <template #cell-status="{ row }"><StatusPill :status="row.status" /></template>
                 <template #cell-amount="{ row }"><span>{{ money(row.balance_cents) }}</span><span class="block text-xs text-slate-500">de {{ money(row.amount_cents) }}</span></template>
+                <template #cell-due_at="{ row }"><span :class="row.is_overdue ? 'font-semibold text-red-700' : ''"><DisplayDate :value="row.due_at" fallback="Sem prazo" /></span></template>
                 <template #cell-actions="{ row }"><div class="flex justify-end"><Button v-if="row.status !== 'paid'" size="sm" variant="secondary" @click="openPayment('payable', row)">Pagar</Button></div></template>
             </DataTable>
         </div>

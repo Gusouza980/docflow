@@ -2,8 +2,8 @@
 
 namespace Database\Factories;
 
+use App\Enums\TaskPriority;
 use App\Models\Organization;
-use App\Models\Task;
 use App\Models\TaskTemplate;
 use App\Models\TaskTemplateItem;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -20,9 +20,9 @@ class TaskTemplateItemFactory extends Factory
             'task_template_id' => TaskTemplate::factory(),
             'title' => fake()->sentence(3),
             'description' => fake()->sentence(),
-            'due_in_days' => fake()->numberBetween(0, 10),
-            'priority' => Task::PRIORITY_NORMAL,
-            'checklist_items' => null,
+            'due_in_days' => fake()->numberBetween(0, 30),
+            'priority' => TaskPriority::Normal,
+            'checklist_items' => [],
         ];
     }
 }

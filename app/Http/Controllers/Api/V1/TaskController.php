@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Actions\Organizations\RecordAuditLog;
+use App\Enums\TaskPriority;
 use App\Http\Controllers\Controller;
 use App\Models\Client;
 use App\Models\InternalReminder;
@@ -11,8 +12,6 @@ use App\Models\Task;
 use App\Support\OrganizationContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Symfony\Component\HttpFoundation\Response;
@@ -31,7 +30,7 @@ class TaskController extends Controller
             ->when($request->string('status')->toString(), fn ($query, string $status) => $query->where('status', $status))
             ->when($request->string('priority')->toString(), fn ($query, string $priority) => $query->where('priority', $priority))
             ->when($request->boolean('overdue'), fn ($query) => $query->whereDate('due_at', '<', now()->toDateString())->whereNotIn('status', [Task::STATUS_COMPLETED, Task::STATUS_CANCELLED]))
-            ->when($request->boolean('critical'), fn ($query) => $query->where('priority', Task::PRIORITY_CRITICAL))
+            ->when($request->boolean('critical'), fn ($query) => $query->where('priority', TaskPriority::Critical))
             ->when(! $membership?->isAdmin() && ! $membership?->isManager(), function ($query) use ($membership): void {
                 $query->where(function ($query) use ($membership): void {
                     $query->whereNull('client_id')
@@ -147,7 +146,7 @@ class TaskController extends Controller
             'assigned_to_member_id' => [$required, 'integer', Rule::exists('organization_members', 'id')->where('organization_id', $organizationContext->id())->where('status', OrganizationMember::STATUS_ACTIVE)],
             'title' => [$required, 'string', 'max:255'],
             'description' => ['sometimes', 'nullable', 'string'],
-            'priority' => ['sometimes', 'string', Rule::in([Task::PRIORITY_LOW, Task::PRIORITY_NORMAL, Task::PRIORITY_HIGH, Task::PRIORITY_CRITICAL])],
+            'priority' => ['sometimes', Rule::enum(TaskPriority::class)],
             'due_at' => [$required, 'date'],
         ]);
     }
