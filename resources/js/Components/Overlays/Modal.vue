@@ -21,8 +21,13 @@ defineEmits(['close']);
                 <slot />
             </div>
             <div class="flex shrink-0 justify-end gap-3 border-t border-slate-200 p-4">
-                <Button variant="ghost" @click="$emit('close')">Voltar</Button>
-                <slot name="actions" />
+                <template v-if="$slots.footer">
+                    <slot name="footer" />
+                </template>
+                <template v-else>
+                    <Button variant="ghost" @click="$emit('close')">Voltar</Button>
+                    <slot name="actions" />
+                </template>
             </div>
         </div>
     </div>
