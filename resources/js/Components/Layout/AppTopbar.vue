@@ -1,7 +1,7 @@
 <script setup>
 import { Link } from '@inertiajs/vue3';
 import Avatar from '../UI/Avatar.vue';
-import IconButton from '../UI/IconButton.vue';
+import NotificationBell from './NotificationBell.vue';
 import SearchInput from '../Forms/SearchInput.vue';
 import Breadcrumbs from '../Navigation/Breadcrumbs.vue';
 
@@ -24,7 +24,7 @@ defineProps({
             <Link href="/organizations" class="inline-flex h-10 items-center rounded-lg border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">
                 {{ organization }}
             </Link>
-            <IconButton label="Abrir notificações">!</IconButton>
+            <NotificationBell />
             <div class="flex items-center gap-2">
                 <Avatar :name="user.name" />
                 <div class="hidden text-sm sm:block">
