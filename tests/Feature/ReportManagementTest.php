@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Client;
+use App\Models\ClientPortalAccess;
 use App\Models\DocumentCategory;
 use App\Models\DocumentRequest;
 use App\Models\DocumentRequestItem;
@@ -11,7 +12,6 @@ use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\Payment;
 use App\Models\Receivable;
-use App\Models\SavedReportFilter;
 use App\Models\Task;
 use App\Models\User;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
@@ -141,8 +141,8 @@ class ReportManagementTest extends TestCase
     {
         [$user, $organization, $member] = $this->createMember(OrganizationMember::ROLE_ADMIN);
         $client = $this->createClient($organization, $member);
-        $token = \App\Models\ClientPortalAccess::makeToken();
-        \App\Models\ClientPortalAccess::create([
+        $token = ClientPortalAccess::makeToken();
+        ClientPortalAccess::create([
             'organization_id' => $organization->id,
             'client_id' => $client->id,
             'created_by_user_id' => $user->id,
@@ -150,6 +150,9 @@ class ReportManagementTest extends TestCase
             'email' => 'cliente@example.com',
             'token_hash' => $token['hash'],
             'expires_at' => now()->addMonth(),
+            'password' => bcrypt('password123'),
+            'password_set_at' => now(),
+            'onboarding_completed_at' => now(),
         ]);
         GeneratedReport::factory()->create([
             'organization_id' => $organization->id,
@@ -168,10 +171,15 @@ class ReportManagementTest extends TestCase
             'status' => GeneratedReport::STATUS_DRAFT,
         ]);
 
-        $this->get("/client-portal/{$token['plain']}")
+        $this->post('/portal/login', [
+            'email' => 'cliente@example.com',
+            'password' => 'password123',
+        ])->assertRedirect(route('client-portal.dashboard'));
+
+        $this->get('/client-portal/more')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
-                ->component('ClientPortal/Show', false)
+                ->component('ClientPortal/More', false)
                 ->has('reports', 1)
                 ->where('reports.0.title', 'Liberado'));
     }
