@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Web;
 
+use App\Actions\Notifications\NotifyPortalClient;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Web\StorePortalAccessRequest;
 use App\Http\Requests\Web\StorePortalMessageRequest;
@@ -13,6 +14,7 @@ use App\Models\CommunicationConsent;
 use App\Models\MessageTemplate;
 use App\Models\OrganizationMember;
 use App\Models\Ticket;
+use App\Support\DisplayFormat;
 use App\Support\WebOrganizationContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -24,6 +26,8 @@ use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 class PortalController extends Controller
 {
+    public function __construct(private NotifyPortalClient $notifyPortalClient) {}
+
     public function index(Request $request, WebOrganizationContext $webOrganizationContext): Response|RedirectResponse
     {
         $membership = $webOrganizationContext->membership($request);
@@ -114,7 +118,7 @@ class PortalController extends Controller
             'token_hash' => $token['hash'],
         ]);
 
-        return redirect()->route('portal.index')->with('status', 'Acesso do portal criado.')->with('portal_url', route('client-portal.show', ['token' => $token['plain']], absolute: true));
+        return redirect()->route('portal.index')->with('status', 'Acesso do portal criado.')->with('portal_url', route('client-portal.invite', ['token' => $token['plain']], absolute: true));
     }
 
     public function revokeAccess(ClientPortalAccess $access, Request $request, WebOrganizationContext $webOrganizationContext): RedirectResponse
@@ -143,7 +147,7 @@ class PortalController extends Controller
             return redirect()->route('portal.index')->with('error', 'Consentimento ativo é obrigatório para este canal.');
         }
 
-        DB::transaction(function () use ($request, $membership, $data, $client, $template): void {
+        $message = DB::transaction(function () use ($request, $membership, $data, $client, $template): ClientMessage {
             $message = ClientMessage::create([
                 'organization_id' => $membership->organization_id,
                 'client_id' => $client->id,
@@ -169,7 +173,18 @@ class PortalController extends Controller
 
                 $message->update(['ticket_id' => $ticket->id]);
             }
+
+            return $message;
         });
+
+        if ($data['channel'] === 'portal') {
+            $this->notifyPortalClient->execute(
+                $client,
+                'Nova mensagem do escritório',
+                str($message->body)->limit(200)->toString(),
+                route('client-portal.messages', absolute: true),
+            );
+        }
 
         return redirect()->route('portal.index')->with('status', 'Mensagem registrada.');
     }
@@ -224,8 +239,9 @@ class PortalController extends Controller
             'name' => $access->name,
             'email' => $access->email,
             'status' => $access->status,
-            'expires_at' => $access->expires_at?->toDateString(),
+            'expires_at' => DisplayFormat::date($access->expires_at),
             'last_used_at' => $access->last_used_at?->toISOString(),
+            'has_password' => $access->hasCompletedOnboarding(),
         ];
     }
 

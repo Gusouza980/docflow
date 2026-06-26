@@ -2,39 +2,28 @@
 
 namespace App\Models;
 
-use Database\Factories\TicketMessageFactory;
+use Database\Factories\TicketRatingFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class TicketMessage extends Model
+class TicketRating extends Model
 {
-    /** @use HasFactory<TicketMessageFactory> */
+    /** @use HasFactory<TicketRatingFactory> */
     use HasFactory;
-
-    public const SENDER_INTERNAL = 'internal';
-
-    public const SENDER_CLIENT = 'client';
 
     protected $fillable = [
         'organization_id',
         'ticket_id',
-        'user_id',
         'client_portal_access_id',
-        'sender_type',
-        'body',
-        'visible_to_client',
-    ];
-
-    protected $attributes = [
-        'visible_to_client' => true,
+        'rating',
+        'comment',
     ];
 
     protected function casts(): array
     {
         return [
-            'visible_to_client' => 'boolean',
+            'rating' => 'integer',
         ];
     }
 
@@ -48,18 +37,8 @@ class TicketMessage extends Model
         return $this->belongsTo(Ticket::class);
     }
 
-    public function user(): BelongsTo
-    {
-        return $this->belongsTo(User::class);
-    }
-
     public function portalAccess(): BelongsTo
     {
         return $this->belongsTo(ClientPortalAccess::class, 'client_portal_access_id');
-    }
-
-    public function attachments(): HasMany
-    {
-        return $this->hasMany(TicketMessageAttachment::class);
     }
 }

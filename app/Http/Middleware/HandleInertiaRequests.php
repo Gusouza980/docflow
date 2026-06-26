@@ -2,7 +2,9 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\InternalReminder;
 use App\Models\OrganizationMember;
+use App\Support\BuildsClientPortalDashboard;
 use App\Support\WebOrganizationContext;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -60,12 +62,51 @@ class HandleInertiaRequests extends Middleware
                     'can_manage_organization' => (bool) ($membership?->isAdmin() || $membership?->isManager()),
                     'can_write' => (bool) ($membership && $membership->role !== OrganizationMember::ROLE_READONLY),
                 ],
+                'notifications' => [
+                    'unread_count' => ($user && $membership)
+                        ? InternalReminder::query()
+                            ->where('organization_id', $membership->organization_id)
+                            ->where('user_id', $user->id)
+                            ->whereNull('read_at')
+                            ->count()
+                        : 0,
+                ],
             ],
             'flash' => [
                 'status' => fn () => $request->session()->get('status'),
                 'error' => fn () => $request->session()->get('error'),
                 'portal_url' => fn () => $request->session()->get('portal_url'),
             ],
+            'portalAuth' => [
+                'access' => auth('portal')->user() ? [
+                    'name' => auth('portal')->user()->name,
+                    'email' => auth('portal')->user()->email,
+                    'client' => auth('portal')->user()->client?->display_name,
+                ] : null,
+            ],
+            'portal' => function () {
+                $access = auth('portal')->user();
+
+                if (! $access) {
+                    return null;
+                }
+
+                $access->loadMissing(['organization', 'client']);
+                $dashboard = app(BuildsClientPortalDashboard::class);
+
+                return [
+                    'client' => [
+                        'id' => $access->client->id,
+                        'name' => $access->client->display_name,
+                        'organization' => [
+                            'id' => $access->organization->id,
+                            'name' => $access->organization->name,
+                        ],
+                        'contact' => ['name' => $access->name, 'email' => $access->email],
+                    ],
+                    'nav' => $dashboard->navigationCounts($access),
+                ];
+            },
         ];
     }
 }

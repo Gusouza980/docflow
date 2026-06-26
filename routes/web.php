@@ -4,10 +4,16 @@ use App\Http\Controllers\Web\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Web\Auth\InvitationAcceptanceController;
 use App\Http\Controllers\Web\Auth\NewPasswordController;
 use App\Http\Controllers\Web\Auth\PasswordResetLinkController;
+use App\Http\Controllers\Web\Auth\PortalAuthenticatedSessionController;
+use App\Http\Controllers\Web\Auth\PortalNewPasswordController;
+use App\Http\Controllers\Web\Auth\PortalPasswordResetLinkController;
 use App\Http\Controllers\Web\CalendarEventController;
 use App\Http\Controllers\Web\ClientContactController;
 use App\Http\Controllers\Web\ClientController;
+use App\Http\Controllers\Web\ClientHubController;
 use App\Http\Controllers\Web\ClientPortalController;
+use App\Http\Controllers\Web\ClientPortalInviteController;
+use App\Http\Controllers\Web\ClientPortalOnboardingController;
 use App\Http\Controllers\Web\ClientTagController;
 use App\Http\Controllers\Web\DashboardController;
 use App\Http\Controllers\Web\DeadlineController;
@@ -16,6 +22,7 @@ use App\Http\Controllers\Web\DocumentController;
 use App\Http\Controllers\Web\DocumentRequestController;
 use App\Http\Controllers\Web\DocumentRequestItemController;
 use App\Http\Controllers\Web\FinanceController;
+use App\Http\Controllers\Web\InternalNotificationController;
 use App\Http\Controllers\Web\OrganizationController;
 use App\Http\Controllers\Web\OrganizationInvitationController;
 use App\Http\Controllers\Web\OrganizationMemberController;
@@ -51,15 +58,59 @@ Route::middleware('guest')->group(function (): void {
 });
 
 Route::get('/invitations/{token}/accept', [InvitationAcceptanceController::class, 'show'])->name('web.invitations.accept.show');
-Route::get('/client-portal/{token}', [ClientPortalController::class, 'show'])->name('client-portal.show');
-Route::post('/client-portal/{token}/consent', [ClientPortalController::class, 'storeConsent'])->name('client-portal.consent.store');
-Route::post('/client-portal/{token}/messages', [ClientPortalController::class, 'storeMessage'])->name('client-portal.messages.store');
-Route::post('/client-portal/{token}/tickets', [ClientPortalController::class, 'storeTicket'])->name('client-portal.tickets.store');
+
+Route::middleware('portal.guest')->group(function (): void {
+    Route::get('/portal/login', [PortalAuthenticatedSessionController::class, 'create'])->name('portal.login');
+    Route::post('/portal/login', [PortalAuthenticatedSessionController::class, 'store'])->middleware('throttle:login');
+    Route::get('/portal/forgot-password', [PortalPasswordResetLinkController::class, 'create'])->name('portal.password.request');
+    Route::post('/portal/forgot-password', [PortalPasswordResetLinkController::class, 'store'])->middleware('throttle:login')->name('portal.password.email');
+    Route::get('/portal/reset-password/{token}', [PortalNewPasswordController::class, 'create'])->name('portal.password.reset');
+    Route::post('/portal/reset-password', [PortalNewPasswordController::class, 'store'])->middleware('throttle:login')->name('portal.password.store');
+    Route::get('/client-portal/onboarding', [ClientPortalOnboardingController::class, 'create'])->name('client-portal.onboarding');
+    Route::post('/client-portal/onboarding', [ClientPortalOnboardingController::class, 'store']);
+});
+
+Route::get('/client-portal/invite/{token}', [ClientPortalInviteController::class, 'show'])->name('client-portal.invite');
+
+Route::middleware('portal.auth')->prefix('client-portal')->group(function (): void {
+    Route::get('/', [ClientPortalController::class, 'dashboard'])->name('client-portal.dashboard');
+    Route::get('/messages', [ClientPortalController::class, 'messages'])->name('client-portal.messages');
+    Route::get('/messages/poll', [ClientPortalController::class, 'pollMessages'])->name('client-portal.messages.poll');
+    Route::post('/consent', [ClientPortalController::class, 'storeConsent'])->name('client-portal.consent.store');
+    Route::post('/messages', [ClientPortalController::class, 'storeMessage'])->name('client-portal.messages.store');
+    Route::post('/messages/{message}/ticket', [ClientPortalController::class, 'storeTicketFromMessage'])->name('client-portal.messages.ticket.store');
+    Route::get('/documents', [ClientPortalController::class, 'documents'])->name('client-portal.documents.index');
+    Route::get('/documents/{documentRequest}', [ClientPortalController::class, 'showDocumentRequest'])->name('client-portal.documents.show');
+    Route::post('/document-items/{item}/upload', [ClientPortalController::class, 'uploadDocumentItem'])->name('client-portal.documents.items.upload');
+    Route::get('/tickets', [ClientPortalController::class, 'tickets'])->name('client-portal.tickets.index');
+    Route::post('/tickets', [ClientPortalController::class, 'storeTicket'])->name('client-portal.tickets.store');
+    Route::get('/tickets/{ticket}', [ClientPortalController::class, 'showTicket'])->name('client-portal.tickets.show');
+    Route::get('/tickets/{ticket}/messages/poll', [ClientPortalController::class, 'ticketMessages'])->name('client-portal.tickets.messages.poll');
+    Route::post('/tickets/{ticket}/messages', [ClientPortalController::class, 'storeTicketMessage'])->name('client-portal.tickets.messages.store');
+    Route::get('/tickets/attachments/{attachment}/download', [ClientPortalController::class, 'downloadTicketAttachment'])->name('client-portal.tickets.attachments.download');
+    Route::post('/tickets/{ticket}/rating', [ClientPortalController::class, 'storeTicketRating'])->name('client-portal.tickets.rating.store');
+    Route::get('/finance', [ClientPortalController::class, 'finance'])->name('client-portal.finance');
+    Route::get('/meetings', [ClientPortalController::class, 'meetings'])->name('client-portal.meetings');
+    Route::patch('/meetings/{event}/confirm', [ClientPortalController::class, 'confirmMeeting'])->name('client-portal.meetings.confirm');
+    Route::get('/profile', [ClientPortalController::class, 'profile'])->name('client-portal.profile');
+    Route::patch('/profile', [ClientPortalController::class, 'updateProfile'])->name('client-portal.profile.update');
+    Route::get('/reports/{report}/download', [ClientPortalController::class, 'downloadReport'])->name('client-portal.reports.download');
+    Route::get('/more', [ClientPortalController::class, 'more'])->name('client-portal.more');
+    Route::post('/logout', [PortalAuthenticatedSessionController::class, 'destroy'])->name('portal.logout');
+});
+
+Route::get('/client-portal/{token}', [ClientPortalInviteController::class, 'legacy'])
+    ->where('token', '[A-Za-z0-9]{48}')
+    ->name('client-portal.show');
 
 Route::middleware('auth')->group(function (): void {
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
+    Route::get('/notifications', [InternalNotificationController::class, 'index'])->name('notifications.index');
+    Route::get('/notifications/unread-count', [InternalNotificationController::class, 'unreadCount'])->name('notifications.unread-count');
+    Route::patch('/notifications/{reminder}/read', [InternalNotificationController::class, 'markRead'])->name('notifications.read');
+    Route::post('/notifications/read-all', [InternalNotificationController::class, 'markAllRead'])->name('notifications.read-all');
 
     Route::get('/organizations', [OrganizationController::class, 'index'])->name('organizations.index');
     Route::post('/organizations', [OrganizationController::class, 'store'])->name('organizations.store');
@@ -82,6 +133,16 @@ Route::middleware('auth')->group(function (): void {
     Route::post('/client-tags', [ClientTagController::class, 'store'])->name('client-tags.store');
     Route::post('/clients/{client}/tags/{tag}', [ClientTagController::class, 'attach'])->name('clients.tags.attach');
     Route::delete('/clients/{client}/tags/{tag}', [ClientTagController::class, 'detach'])->name('clients.tags.detach');
+    Route::get('/clients/{client}/messages/poll', [ClientHubController::class, 'messages'])->name('clients.messages.poll');
+    Route::post('/clients/{client}/messages', [ClientHubController::class, 'storeMessage'])->name('clients.messages.store');
+    Route::post('/clients/{client}/messages/{message}/ticket', [ClientHubController::class, 'storeTicketFromMessage'])->name('clients.messages.ticket.store');
+    Route::get('/clients/{client}/tickets/{ticket}', [ClientHubController::class, 'showTicket'])->name('clients.tickets.show');
+    Route::post('/clients/{client}/tickets', [ClientHubController::class, 'storeTicket'])->name('clients.tickets.store');
+    Route::patch('/clients/{client}/tickets/{ticket}', [ClientHubController::class, 'updateTicket'])->name('clients.tickets.update');
+    Route::post('/clients/{client}/tickets/{ticket}/messages', [ClientHubController::class, 'storeTicketMessage'])->name('clients.tickets.messages.store');
+    Route::get('/clients/{client}/tickets/attachments/{attachment}/download', [ClientHubController::class, 'downloadTicketAttachment'])->name('clients.tickets.attachments.download');
+    Route::post('/clients/{client}/portal-accesses', [ClientHubController::class, 'storePortalAccess'])->name('clients.portal-accesses.store');
+    Route::patch('/clients/{client}/portal-accesses/{access}/revoke', [ClientHubController::class, 'revokePortalAccess'])->name('clients.portal-accesses.revoke');
 
     Route::get('/documents', [DocumentController::class, 'index'])->name('documents.index');
     Route::post('/documents', [DocumentController::class, 'store'])->name('documents.store');

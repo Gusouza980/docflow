@@ -2,14 +2,16 @@
 
 namespace App\Models;
 
+use Database\Factories\TicketFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Ticket extends Model
 {
-    /** @use HasFactory<\Database\Factories\TicketFactory> */
+    /** @use HasFactory<TicketFactory> */
     use HasFactory;
 
     public const STATUS_NEW = 'new';
@@ -92,5 +94,15 @@ class Ticket extends Model
     public function messages(): HasMany
     {
         return $this->hasMany(TicketMessage::class);
+    }
+
+    public function rating(): HasOne
+    {
+        return $this->hasOne(TicketRating::class);
+    }
+
+    public function isFinalized(): bool
+    {
+        return in_array($this->status, [self::STATUS_RESOLVED, self::STATUS_CLOSED], true);
     }
 }
