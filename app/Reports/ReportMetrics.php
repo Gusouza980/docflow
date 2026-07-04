@@ -179,6 +179,10 @@ class ReportMetrics
      */
     public function period(array $filters): array
     {
+        if (($filters['period'] ?? null) === 'week') {
+            return [now()->subDays(6)->startOfDay(), now()->endOfDay()];
+        }
+
         $start = isset($filters['start_date']) ? Carbon::parse($filters['start_date'])->startOfDay() : now()->startOfMonth();
         $end = isset($filters['end_date']) ? Carbon::parse($filters['end_date'])->endOfDay() : now()->endOfMonth();
 
@@ -232,22 +236,134 @@ class ReportMetrics
     }
 
     /**
-     * @return array<int, array<string, string>>
+     * @return array<int, array<string, mixed>>
      */
-    private function alerts(OrganizationMember $membership): array
+    public function alerts(OrganizationMember $membership): array
     {
         $alerts = [];
+        $clientQuery = $this->clientQuery($membership);
+        $documentQuery = DocumentRequestItem::query()->whereBelongsTo($membership->organization);
 
-        $overdueTasks = Task::query()->whereBelongsTo($membership->organization)->whereDate('due_at', '<', now()->toDateString())->whereNotIn('status', [Task::STATUS_COMPLETED, Task::STATUS_CANCELLED])->count();
+        $overdueTasks = Task::query()
+            ->whereBelongsTo($membership->organization)
+            ->whereDate('due_at', '<', now()->toDateString())
+            ->whereNotIn('status', [Task::STATUS_COMPLETED, Task::STATUS_CANCELLED])
+            ->count();
+
         if ($overdueTasks > 0) {
-            $alerts[] = ['type' => 'tasks', 'label' => "{$overdueTasks} tarefas atrasadas", 'href' => '/tasks'];
+            $alerts[] = $this->alert(
+                type: 'tasks_overdue',
+                severity: 'danger',
+                label: "{$overdueTasks} tarefa(s) atrasada(s)",
+                count: $overdueTasks,
+                href: route('tasks.index', ['flag' => 'overdue'], absolute: false),
+            );
         }
 
-        $overdueDocuments = DocumentRequestItem::query()->whereBelongsTo($membership->organization)->whereDate('due_at', '<', now()->toDateString())->whereNotIn('status', [DocumentRequestItem::STATUS_APPROVED, DocumentRequestItem::STATUS_CANCELLED])->count();
+        $overdueDocuments = (clone $documentQuery)
+            ->whereDate('due_at', '<', now()->toDateString())
+            ->whereNotIn('status', [DocumentRequestItem::STATUS_APPROVED, DocumentRequestItem::STATUS_CANCELLED])
+            ->count();
+
         if ($overdueDocuments > 0) {
-            $alerts[] = ['type' => 'documents', 'label' => "{$overdueDocuments} documentos vencidos", 'href' => '/document-requests'];
+            $alerts[] = $this->alert(
+                type: 'documents_overdue',
+                severity: 'danger',
+                label: "{$overdueDocuments} documento(s) vencido(s)",
+                count: $overdueDocuments,
+                href: route('document-requests.index', ['overdue' => 1], absolute: false),
+            );
+        }
+
+        $dueSoonDocuments = (clone $documentQuery)
+            ->whereBetween('due_at', [now()->toDateString(), now()->addDays(7)->toDateString()])
+            ->whereNotIn('status', [DocumentRequestItem::STATUS_APPROVED, DocumentRequestItem::STATUS_CANCELLED])
+            ->count();
+
+        if ($dueSoonDocuments > 0) {
+            $alerts[] = $this->alert(
+                type: 'documents_due_soon',
+                severity: 'warning',
+                label: "{$dueSoonDocuments} documento(s) vence(m) em 7 dias",
+                count: $dueSoonDocuments,
+                href: route('document-requests.index', absolute: false),
+            );
+        }
+
+        $delinquentClients = (clone $clientQuery)->where('status', Client::STATUS_DELINQUENT)->count();
+
+        if ($delinquentClients > 0) {
+            $alerts[] = $this->alert(
+                type: 'clients_delinquent',
+                severity: 'danger',
+                label: "{$delinquentClients} cliente(s) inadimplente(s)",
+                count: $delinquentClients,
+                href: route('clients.index', ['status' => Client::STATUS_DELINQUENT], absolute: false),
+            );
+        }
+
+        $highRiskClients = (clone $clientQuery)->where('risk_level', Client::RISK_HIGH)->count();
+
+        if ($highRiskClients > 0) {
+            $alerts[] = $this->alert(
+                type: 'clients_high_risk',
+                severity: 'warning',
+                label: "{$highRiskClients} cliente(s) com alto risco",
+                count: $highRiskClients,
+                href: route('clients.index', ['risk_level' => Client::RISK_HIGH], absolute: false),
+            );
+        }
+
+        if ($this->canAccessFinance($membership)) {
+            $receivableQuery = Receivable::query()->whereBelongsTo($membership->organization);
+
+            $overdueReceivables = (clone $receivableQuery)
+                ->whereDate('due_at', '<', now()->toDateString())
+                ->whereIn('status', [Receivable::STATUS_OPEN, Receivable::STATUS_PARTIAL])
+                ->count();
+
+            if ($overdueReceivables > 0) {
+                $alerts[] = $this->alert(
+                    type: 'receivables_overdue',
+                    severity: 'danger',
+                    label: "{$overdueReceivables} cobrança(s) vencida(s)",
+                    count: $overdueReceivables,
+                    href: route('finance.index', ['status' => Receivable::STATUS_OPEN], absolute: false),
+                );
+            }
+
+            $dueSoonReceivables = (clone $receivableQuery)
+                ->whereBetween('due_at', [now()->toDateString(), now()->addDays(7)->toDateString()])
+                ->whereIn('status', [Receivable::STATUS_OPEN, Receivable::STATUS_PARTIAL])
+                ->count();
+
+            if ($dueSoonReceivables > 0) {
+                $alerts[] = $this->alert(
+                    type: 'receivables_due_soon',
+                    severity: 'warning',
+                    label: "{$dueSoonReceivables} cobrança(s) vence(m) em 7 dias",
+                    count: $dueSoonReceivables,
+                    href: route('finance.index', ['status' => Receivable::STATUS_OPEN], absolute: false),
+                );
+            }
         }
 
         return $alerts;
+    }
+
+    /**
+     * @param  array<string, mixed>|null  $filter
+     * @return array<string, mixed>
+     */
+    private function alert(string $type, string $severity, string $label, int $count, string $href, ?array $filter = null): array
+    {
+        return array_filter([
+            'type' => $type,
+            'severity' => $severity,
+            'label' => $label,
+            'count' => $count,
+            'href' => $href,
+            'filter' => $filter,
+        ], fn (mixed $value): bool => $value !== null);
     }
 }

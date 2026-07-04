@@ -41,6 +41,7 @@ class OrganizationController extends Controller
                 'phone' => $organization->phone,
                 'timezone' => $organization->timezone,
                 'status' => $organization->status,
+                'payment_instructions' => $organization->payment_instructions,
                 'members_count' => $organization->members_count,
                 'pending_invitations_count' => $organization->pending_invitations_count,
                 'active' => $activeMembership?->organization_id === $organization->id,
@@ -72,13 +73,13 @@ class OrganizationController extends Controller
         Organization $organization,
         RecordAuditLog $auditLog,
     ): RedirectResponse {
-        $before = $organization->only(['name', 'document', 'email', 'phone', 'timezone']);
+        $before = $organization->only(['name', 'document', 'email', 'phone', 'timezone', 'payment_instructions']);
 
         $organization->update($request->validated());
 
         $auditLog->execute('web.organization.updated', $request->user(), $organization, $organization, [
             'before' => $before,
-            'after' => $organization->only(['name', 'document', 'email', 'phone', 'timezone']),
+            'after' => $organization->only(['name', 'document', 'email', 'phone', 'timezone', 'payment_instructions']),
         ], $request);
 
         return redirect()->route('organizations.index')->with('status', 'Dados da organização atualizados.');

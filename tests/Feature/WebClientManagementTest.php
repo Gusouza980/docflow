@@ -159,8 +159,8 @@ class WebClientManagementTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Dashboard/Index', false)
-                ->where('metrics.active', 2)
-                ->where('metrics.high_risk', 1));
+                ->where('metrics.active_clients', 2)
+                ->where('metrics.high_risk_clients', 1));
     }
 
     /**

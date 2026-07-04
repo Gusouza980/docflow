@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Web\AnnouncementController;
+use App\Http\Controllers\Web\AuditController;
 use App\Http\Controllers\Web\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Web\Auth\InvitationAcceptanceController;
 use App\Http\Controllers\Web\Auth\NewPasswordController;
@@ -14,6 +16,7 @@ use App\Http\Controllers\Web\ClientHubController;
 use App\Http\Controllers\Web\ClientPortalController;
 use App\Http\Controllers\Web\ClientPortalInviteController;
 use App\Http\Controllers\Web\ClientPortalOnboardingController;
+use App\Http\Controllers\Web\ClientProfileUpdateController;
 use App\Http\Controllers\Web\ClientTagController;
 use App\Http\Controllers\Web\DashboardController;
 use App\Http\Controllers\Web\DeadlineController;
@@ -23,9 +26,11 @@ use App\Http\Controllers\Web\DocumentRequestController;
 use App\Http\Controllers\Web\DocumentRequestItemController;
 use App\Http\Controllers\Web\FinanceController;
 use App\Http\Controllers\Web\InternalNotificationController;
+use App\Http\Controllers\Web\MessageTemplateController;
 use App\Http\Controllers\Web\OrganizationController;
 use App\Http\Controllers\Web\OrganizationInvitationController;
 use App\Http\Controllers\Web\OrganizationMemberController;
+use App\Http\Controllers\Web\PortalClientNotificationController;
 use App\Http\Controllers\Web\PortalController;
 use App\Http\Controllers\Web\ReportController;
 use App\Http\Controllers\Web\TaskChecklistItemController;
@@ -96,6 +101,10 @@ Route::middleware('portal.auth')->prefix('client-portal')->group(function (): vo
     Route::patch('/profile', [ClientPortalController::class, 'updateProfile'])->name('client-portal.profile.update');
     Route::get('/reports/{report}/download', [ClientPortalController::class, 'downloadReport'])->name('client-portal.reports.download');
     Route::get('/more', [ClientPortalController::class, 'more'])->name('client-portal.more');
+    Route::get('/notifications', [PortalClientNotificationController::class, 'index'])->name('client-portal.notifications.index');
+    Route::get('/notifications/unread-count', [PortalClientNotificationController::class, 'unreadCount'])->name('client-portal.notifications.unread-count');
+    Route::patch('/notifications/{portalClientAlert}/read', [PortalClientNotificationController::class, 'markRead'])->name('client-portal.notifications.read');
+    Route::post('/notifications/read-all', [PortalClientNotificationController::class, 'markAllRead'])->name('client-portal.notifications.read-all');
     Route::post('/logout', [PortalAuthenticatedSessionController::class, 'destroy'])->name('portal.logout');
 });
 
@@ -195,6 +204,10 @@ Route::middleware('auth')->group(function (): void {
     Route::post('/finance/receivables', [FinanceController::class, 'storeReceivable'])->name('finance.receivables.store');
     Route::post('/finance/receivables/{receivable}/payments', [FinanceController::class, 'payReceivable'])->name('finance.receivables.payments.store');
     Route::patch('/finance/receivables/{receivable}/cancel', [FinanceController::class, 'cancelReceivable'])->name('finance.receivables.cancel');
+    Route::patch('/finance/receivables/{receivable}/renegotiate', [FinanceController::class, 'renegotiateReceivable'])->name('finance.receivables.renegotiate');
+    Route::post('/finance/receivables/{receivable}/reminders', [FinanceController::class, 'storeReceivableReminder'])->name('finance.receivables.reminders.store');
+    Route::post('/finance/recurrences', [FinanceController::class, 'storeRecurrence'])->name('finance.recurrences.store');
+    Route::post('/finance/recurrences/{recurrence}/generate', [FinanceController::class, 'generateRecurrence'])->name('finance.recurrences.generate');
     Route::post('/finance/payables', [FinanceController::class, 'storePayable'])->name('finance.payables.store');
     Route::post('/finance/payables/{payable}/payments', [FinanceController::class, 'payPayable'])->name('finance.payables.payments.store');
 
@@ -203,12 +216,28 @@ Route::middleware('auth')->group(function (): void {
     Route::patch('/portal/accesses/{access}/revoke', [PortalController::class, 'revokeAccess'])->name('portal.accesses.revoke');
     Route::post('/portal/messages', [PortalController::class, 'storeMessage'])->name('portal.messages.store');
     Route::post('/portal/tickets', [PortalController::class, 'storeTicket'])->name('portal.tickets.store');
+    Route::patch('/portal/profile-updates/{profileUpdate}/approve', [ClientProfileUpdateController::class, 'approve'])->name('portal.profile-updates.approve');
+    Route::patch('/portal/profile-updates/{profileUpdate}/reject', [ClientProfileUpdateController::class, 'reject'])->name('portal.profile-updates.reject');
+
+    Route::get('/message-templates', [MessageTemplateController::class, 'index'])->name('message-templates.index');
+    Route::post('/message-templates', [MessageTemplateController::class, 'store'])->name('message-templates.store');
+    Route::patch('/message-templates/{template}', [MessageTemplateController::class, 'update'])->name('message-templates.update');
+    Route::delete('/message-templates/{template}', [MessageTemplateController::class, 'destroy'])->name('message-templates.destroy');
+
+    Route::get('/announcements', [AnnouncementController::class, 'index'])->name('announcements.index');
+    Route::post('/announcements', [AnnouncementController::class, 'store'])->name('announcements.store');
+    Route::patch('/announcements/{announcement}', [AnnouncementController::class, 'update'])->name('announcements.update');
+    Route::delete('/announcements/{announcement}', [AnnouncementController::class, 'destroy'])->name('announcements.destroy');
 
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+    Route::post('/reports/export', [ReportController::class, 'export'])->name('reports.export');
     Route::post('/reports/filters', [ReportController::class, 'storeFilter'])->name('reports.filters.store');
     Route::post('/reports/schedules', [ReportController::class, 'storeSchedule'])->name('reports.schedules.store');
+    Route::post('/reports/schedules/{schedule}/run', [ReportController::class, 'runSchedule'])->name('reports.schedules.run');
     Route::post('/reports/monthly', [ReportController::class, 'generateMonthly'])->name('reports.monthly.store');
     Route::patch('/reports/{report}/release', [ReportController::class, 'release'])->name('reports.release');
+
+    Route::get('/audit', [AuditController::class, 'index'])->name('audit.index');
 
     Route::post('/invitations/{token}/accept', [InvitationAcceptanceController::class, 'store'])->name('web.invitations.accept');
 });

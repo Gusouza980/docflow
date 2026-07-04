@@ -13,6 +13,7 @@ use App\Models\CommunicationConsent;
 use App\Models\DocumentRequest;
 use App\Models\DocumentRequestItem;
 use App\Models\GeneratedReport;
+use App\Models\PortalClientAlert;
 use App\Models\Receivable;
 use App\Models\Ticket;
 use App\Models\TicketMessage;
@@ -96,7 +97,16 @@ class BuildsClientPortalDashboard
             'unreadMessages' => $this->unreadMessagesCount($access),
             'unreadTicketReplies' => $this->unreadTicketRepliesCount($access),
             'pendingMeetings' => $this->pendingMeetingsCount($access),
+            'unreadAlerts' => $this->unreadAlertsCount($access),
         ];
+    }
+
+    public function unreadAlertsCount(ClientPortalAccess $access): int
+    {
+        return PortalClientAlert::query()
+            ->where('client_portal_access_id', $access->id)
+            ->whereNull('read_at')
+            ->count();
     }
 
     /**
@@ -142,24 +152,53 @@ class BuildsClientPortalDashboard
     }
 
     /**
+     * @return array<string, mixed>
+     */
+    public function financePageForAccess(ClientPortalAccess $access): array
+    {
+        $receivables = $access->client->receivables()
+            ->whereIn('status', [Receivable::STATUS_OPEN, Receivable::STATUS_PARTIAL, Receivable::STATUS_PAID])
+            ->orderByRaw('CASE WHEN due_at IS NULL THEN 1 ELSE 0 END')
+            ->orderBy('due_at')
+            ->get();
+
+        $openReceivables = $receivables->filter(
+            fn (Receivable $receivable): bool => in_array($receivable->status, [Receivable::STATUS_OPEN, Receivable::STATUS_PARTIAL], true)
+        );
+
+        return [
+            'summary' => [
+                'open_balance_cents' => $openReceivables->sum(fn (Receivable $receivable): int => $receivable->balanceCents()),
+                'overdue_count' => $openReceivables->filter(fn (Receivable $receivable): bool => $receivable->isOverdue())->count(),
+                'open_count' => $openReceivables->count(),
+            ],
+            'payment_instructions' => $access->organization->payment_instructions,
+            'receivables' => $receivables
+                ->map(fn (Receivable $receivable): array => [
+                    'id' => $receivable->id,
+                    'description' => $receivable->description,
+                    'status' => $receivable->status,
+                    'amount_cents' => $receivable->amount_cents,
+                    'paid_amount_cents' => $receivable->paid_amount_cents,
+                    'balance_cents' => $receivable->balanceCents(),
+                    'due_at' => DisplayFormat::date($receivable->due_at),
+                    'due_at_raw' => $receivable->due_at?->toDateString(),
+                    'is_overdue' => $receivable->isOverdue(),
+                    'payment_reference' => $receivable->payment_reference,
+                    'payment_url' => $receivable->payment_url,
+                    'notes' => $receivable->notes,
+                ])
+                ->values()
+                ->all(),
+        ];
+    }
+
+    /**
      * @return list<array<string, mixed>>
      */
     public function receivablesForAccess(ClientPortalAccess $access): array
     {
-        return $access->client->receivables()
-            ->whereIn('status', ['open', 'partial', 'paid'])
-            ->latest()
-            ->get()
-            ->map(fn (Receivable $receivable): array => [
-                'id' => $receivable->id,
-                'description' => $receivable->description,
-                'status' => $receivable->status,
-                'amount_cents' => $receivable->amount_cents,
-                'balance_cents' => $receivable->balanceCents(),
-                'due_at' => DisplayFormat::date($receivable->due_at),
-            ])
-            ->values()
-            ->all();
+        return $this->financePageForAccess($access)['receivables'];
     }
 
     /**

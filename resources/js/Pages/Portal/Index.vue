@@ -1,5 +1,5 @@
 <script setup>
-import { Head, useForm, usePage } from '@inertiajs/vue3';
+import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import AppLayout from '../../Layouts/AppLayout.vue';
 import Alert from '../../Components/Feedback/Alert.vue';
@@ -17,6 +17,7 @@ const props = defineProps({
     accesses: { type: Array, default: () => [] },
     messages: { type: Array, default: () => [] },
     tickets: { type: Array, default: () => [] },
+    profileUpdates: { type: Array, default: () => [] },
     options: { type: Object, required: true },
     can: { type: Object, default: () => ({}) },
 });
@@ -33,6 +34,11 @@ const selectedTemplate = computed(() => props.options.templates.find((template) 
 const accessColumns = [{ key: 'client', label: 'Cliente' }, { key: 'contact', label: 'Contato' }, { key: 'status', label: 'Status' }, { key: 'actions', label: '' }];
 const messageColumns = [{ key: 'subject', label: 'Mensagem' }, { key: 'channel', label: 'Canal' }, { key: 'status', label: 'Status' }];
 const ticketColumns = [{ key: 'title', label: 'Chamado' }, { key: 'status', label: 'Status' }, { key: 'priority', label: 'Prioridade' }];
+const profileColumns = [{ key: 'client', label: 'Cliente' }, { key: 'changes', label: 'Alterações' }, { key: 'created_at', label: 'Solicitado em' }, { key: 'actions', label: '' }];
+
+const rejectModalOpen = ref(false);
+const selectedProfileUpdate = ref(null);
+const rejectForm = useForm({ review_notes: '' });
 
 const accessForm = useForm({ client_id: '', name: '', email: '', expires_at: '' });
 const messageForm = useForm({ client_id: '', message_template_id: '', channel: 'email', subject: '', body: '', create_ticket: false });
@@ -65,6 +71,29 @@ async function copyPortalUrl() {
         copiedPortalUrl.value = false;
     }, 2000);
 }
+
+function approveProfileUpdate(update) {
+    useForm({}).patch(`/portal/profile-updates/${update.id}/approve`, { preserveScroll: true });
+}
+
+function openRejectProfileUpdate(update) {
+    selectedProfileUpdate.value = update;
+    rejectForm.reset();
+    rejectModalOpen.value = true;
+}
+
+function submitRejectProfileUpdate() {
+    rejectForm.patch(`/portal/profile-updates/${selectedProfileUpdate.value.id}/reject`, {
+        preserveScroll: true,
+        onSuccess: () => {
+            rejectModalOpen.value = false;
+        },
+    });
+}
+
+function formatChanges(changes) {
+    return Object.entries(changes ?? {}).map(([field, value]) => `${field}: ${value}`).join(' · ');
+}
 </script>
 
 <template>
@@ -87,11 +116,17 @@ async function copyPortalUrl() {
                 </div>
             </div>
 
-            <div class="grid gap-4 md:grid-cols-4">
+            <div class="grid gap-4 md:grid-cols-5">
                 <Card title="Acessos ativos"><p class="text-2xl font-semibold text-slate-950">{{ metrics.active_accesses }}</p></Card>
                 <Card title="Mensagens"><p class="text-2xl font-semibold text-slate-950">{{ metrics.messages }}</p></Card>
                 <Card title="Chamados abertos"><p class="text-2xl font-semibold text-slate-950">{{ metrics.open_tickets }}</p></Card>
                 <Card title="Consentimentos"><p class="text-2xl font-semibold text-slate-950">{{ metrics.consents }}</p></Card>
+                <Card title="Perfil pendente"><p class="text-2xl font-semibold text-slate-950">{{ metrics.pending_profile_updates ?? 0 }}</p></Card>
+            </div>
+
+            <div v-if="can.manage" class="flex flex-wrap gap-2">
+                <Link href="/message-templates"><Button variant="secondary" size="sm">Modelos de mensagem</Button></Link>
+                <Link href="/announcements"><Button variant="secondary" size="sm">Comunicados</Button></Link>
             </div>
 
             <div v-if="can.manage" class="flex flex-wrap justify-end gap-2">
@@ -99,6 +134,23 @@ async function copyPortalUrl() {
                 <Button variant="secondary" @click="ticketModalOpen = true">Novo chamado</Button>
                 <Button @click="messageModalOpen = true">Enviar mensagem</Button>
             </div>
+
+            <DataTable v-if="profileUpdates.length" :columns="profileColumns" :rows="profileUpdates" empty-title="Nenhuma revisão pendente">
+                <template #toolbar><div class="border-b border-slate-200 px-4 py-3"><h2 class="text-sm font-semibold text-slate-950">Alterações cadastrais pendentes</h2></div></template>
+                <template #cell-client="{ row }">
+                    <div>
+                        <p class="font-semibold text-slate-950">{{ row.client.name }}</p>
+                        <p class="text-xs text-slate-500">{{ row.contact.name }} · {{ row.contact.email }}</p>
+                    </div>
+                </template>
+                <template #cell-changes="{ row }"><p class="text-sm text-slate-600">{{ formatChanges(row.changes) }}</p></template>
+                <template #cell-actions="{ row }">
+                    <div v-if="can.manage" class="flex justify-end gap-2">
+                        <Button size="sm" @click="approveProfileUpdate(row)">Aprovar</Button>
+                        <Button size="sm" variant="danger" @click="openRejectProfileUpdate(row)">Rejeitar</Button>
+                    </div>
+                </template>
+            </DataTable>
 
             <DataTable :columns="accessColumns" :rows="accesses" empty-title="Nenhum acesso criado">
                 <template #toolbar><div class="border-b border-slate-200 px-4 py-3"><h2 class="text-sm font-semibold text-slate-950">Acessos do portal</h2></div></template>
@@ -152,6 +204,16 @@ async function copyPortalUrl() {
                 <div class="grid gap-4 sm:grid-cols-3"><SelectInput id="ticket-assignee" v-model="ticketForm.assigned_to_member_id" label="Responsável" :options="withEmpty(options.members, 'Sem responsável')" :error="ticketForm.errors.assigned_to_member_id" /><SelectInput id="ticket-priority" v-model="ticketForm.priority" label="Prioridade" :options="[{ value: 'low', label: 'Baixa' }, { value: 'normal', label: 'Normal' }, { value: 'high', label: 'Alta' }]" /><TextInput id="ticket-due" v-model="ticketForm.due_at" type="date" label="Prazo" /></div>
             </form>
             <template #actions><Button type="submit" form="ticket-form" :loading="ticketForm.processing">Salvar</Button></template>
+        </Modal>
+
+        <Modal v-if="rejectModalOpen" open title="Rejeitar alteração cadastral" @close="rejectModalOpen = false">
+            <form id="reject-profile-form" class="grid gap-4" @submit.prevent="submitRejectProfileUpdate">
+                <TextareaInput id="reject-notes" v-model="rejectForm.review_notes" label="Motivo (opcional)" :error="rejectForm.errors.review_notes" />
+            </form>
+            <template #footer>
+                <Button variant="secondary" @click="rejectModalOpen = false">Cancelar</Button>
+                <Button type="submit" form="reject-profile-form" variant="danger" :loading="rejectForm.processing">Rejeitar</Button>
+            </template>
         </Modal>
     </AppLayout>
 </template>

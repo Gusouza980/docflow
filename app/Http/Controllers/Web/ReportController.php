@@ -2,7 +2,11 @@
 
 namespace App\Http\Controllers\Web;
 
+use App\Actions\Organizations\RecordAuditLog;
+use App\Actions\Reports\ExportReportSpreadsheet;
+use App\Actions\Reports\RunReportSchedule;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Web\ExportReportRequest;
 use App\Http\Requests\Web\GenerateMonthlyClientReportRequest;
 use App\Http\Requests\Web\StoreReportFilterRequest;
 use App\Http\Requests\Web\StoreReportScheduleRequest;
@@ -20,6 +24,8 @@ use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
+use Symfony\Component\HttpFoundation\StreamedResponse;
+use Throwable;
 
 class ReportController extends Controller
 {
@@ -71,6 +77,84 @@ class ReportController extends Controller
         ]);
     }
 
+    public function export(
+        ExportReportRequest $request,
+        WebOrganizationContext $webOrganizationContext,
+        ExportReportSpreadsheet $exportReportSpreadsheet,
+        RecordAuditLog $auditLog,
+    ): StreamedResponse|RedirectResponse {
+        $membership = $this->membership($request, $webOrganizationContext);
+        $membership->loadMissing('organization');
+
+        $type = $request->validated('report_type');
+
+        abort_unless($exportReportSpreadsheet->canExport($membership, $type), HttpResponse::HTTP_FORBIDDEN);
+
+        $filters = $request->validated('filters') ?? [];
+        $data = $exportReportSpreadsheet->data($membership, $type, $filters);
+
+        $auditLog->execute(
+            'web.report.exported',
+            $request->user(),
+            $membership->organization,
+            metadata: ['type' => $type],
+            request: $request,
+        );
+
+        return $exportReportSpreadsheet->streamDownload($type, $data, $membership, $filters);
+    }
+
+    public function runSchedule(
+        ReportSchedule $schedule,
+        Request $request,
+        WebOrganizationContext $webOrganizationContext,
+        RunReportSchedule $runReportSchedule,
+        RecordAuditLog $auditLog,
+    ): RedirectResponse {
+        $membership = $this->membership($request, $webOrganizationContext);
+        abort_unless($membership->isAdmin() || $membership->isManager(), HttpResponse::HTTP_FORBIDDEN);
+        abort_if($schedule->organization_id !== $membership->organization_id, HttpResponse::HTTP_NOT_FOUND);
+
+        try {
+            $report = $runReportSchedule->execute($schedule, manual: true);
+
+            $auditLog->execute(
+                'web.report.schedule.executed',
+                $request->user(),
+                $membership->organization,
+                auditable: $schedule,
+                metadata: [
+                    'schedule_id' => $schedule->id,
+                    'report_id' => $report?->id,
+                    'created' => $report?->wasRecentlyCreated ?? false,
+                ],
+                request: $request,
+            );
+
+            $message = $report?->wasRecentlyCreated
+                ? 'Relatório gerado pelo agendamento.'
+                : 'Agendamento executado. Relatório já existia para o período.';
+
+            return redirect()->route('reports.index')->with('status', $message);
+        } catch (Throwable $exception) {
+            $runReportSchedule->markScheduleFailure($schedule, $exception->getMessage());
+
+            $auditLog->execute(
+                'web.report.schedule.failed',
+                $request->user(),
+                $membership->organization,
+                auditable: $schedule,
+                metadata: [
+                    'schedule_id' => $schedule->id,
+                    'error' => $exception->getMessage(),
+                ],
+                request: $request,
+            );
+
+            return redirect()->route('reports.index')->with('error', 'Falha ao executar agendamento.');
+        }
+    }
+
     public function storeFilter(StoreReportFilterRequest $request, WebOrganizationContext $webOrganizationContext): RedirectResponse
     {
         $membership = $this->membership($request, $webOrganizationContext);
@@ -118,6 +202,8 @@ class ReportController extends Controller
             'title' => $request->validated('title') ?: "Relatório mensal - {$client->display_name}",
             'status' => GeneratedReport::STATUS_REVIEWED,
             'filters' => $request->validated(),
+            'period_start' => $request->validated('start_date'),
+            'period_end' => $request->validated('end_date'),
             'payload' => $payload,
             'reviewed_at' => now(),
         ]);
@@ -187,6 +273,9 @@ class ReportController extends Controller
             'frequency' => $schedule->frequency,
             'is_active' => $schedule->is_active,
             'next_run_at' => $schedule->next_run_at?->toDateString(),
+            'last_run_at' => $schedule->last_run_at?->toISOString(),
+            'last_error' => $schedule->last_error,
+            'consecutive_failures' => $schedule->consecutive_failures,
             'client' => $schedule->client ? ['id' => $schedule->client->id, 'name' => $schedule->client->display_name] : null,
         ];
     }

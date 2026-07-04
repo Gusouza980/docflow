@@ -142,7 +142,8 @@ class ClientPortalController extends Controller
         $access = $this->touchPortalAccess();
 
         return Inertia::render('ClientPortal/Finance', [
-            'receivables' => $this->dashboard->receivablesForAccess($access),
+            ...$this->dashboard->financePageForAccess($access),
+            'highlightReceivableId' => request()->integer('receivable') ?: null,
         ]);
     }
 
@@ -202,12 +203,20 @@ class ClientPortalController extends Controller
                 ->where('status', ClientProfileUpdateRequest::STATUS_PENDING)
                 ->delete();
 
-            ClientProfileUpdateRequest::create([
+            $profileUpdate = ClientProfileUpdateRequest::create([
                 'organization_id' => $access->organization_id,
                 'client_id' => $access->client_id,
                 'client_portal_access_id' => $access->id,
                 'changes' => $reviewChanges,
             ]);
+
+            $this->notifyTeam->execute(
+                $access->organization,
+                $profileUpdate,
+                InternalReminder::TYPE_PORTAL_PROFILE_UPDATE,
+                $access->client,
+                includeManagers: true,
+            );
         }
 
         $message = $reviewChanges !== []

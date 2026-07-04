@@ -105,6 +105,9 @@ class HandleInertiaRequests extends Middleware
                         'contact' => ['name' => $access->name, 'email' => $access->email],
                     ],
                     'nav' => $dashboard->navigationCounts($access),
+                    'notifications' => [
+                        'unread_count' => $dashboard->unreadAlertsCount($access),
+                    ],
                 ];
             },
         ];

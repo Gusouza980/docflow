@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Actions\Organizations\RecordAuditLog;
+use App\Actions\Reports\ExportReportSpreadsheet;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\ExportReportRequest;
 use App\Http\Requests\Api\V1\GenerateMonthlyClientReportRequest;
@@ -89,53 +90,27 @@ class ReportController extends Controller
         return new GeneratedReportResource($report->refresh()->load('client'));
     }
 
-    public function export(ExportReportRequest $request, OrganizationContext $organizationContext, ReportMetrics $metrics, RecordAuditLog $auditLog): StreamedResponse
-    {
+    public function export(
+        ExportReportRequest $request,
+        OrganizationContext $organizationContext,
+        ExportReportSpreadsheet $exportReportSpreadsheet,
+        RecordAuditLog $auditLog,
+    ): StreamedResponse {
+        $membership = $organizationContext->membership();
         $type = $request->validated('report_type');
-        abort_if($type === 'finance' && ! $metrics->canAccessFinance($organizationContext->membership()), Response::HTTP_FORBIDDEN);
+        abort_unless($exportReportSpreadsheet->canExport($membership, $type), Response::HTTP_FORBIDDEN);
 
-        $data = match ($type) {
-            'productivity' => $metrics->productivity($organizationContext->membership(), $request->validated('filters') ?? []),
-            'documents' => $metrics->documents($organizationContext->membership(), $request->validated('filters') ?? []),
-            'finance' => $metrics->finance($organizationContext->membership(), $request->validated('filters') ?? []),
-            default => $metrics->overview($organizationContext->membership(), $request->validated('filters') ?? []),
-        };
+        $filters = $request->validated('filters') ?? [];
+        $data = $exportReportSpreadsheet->data($membership, $type, $filters);
 
         $auditLog->execute('report.exported', $request->user(), $organizationContext->organization(), metadata: ['type' => $type], request: $request);
 
-        return response()->streamDownload(function () use ($type, $data): void {
-            $handle = fopen('php://output', 'w');
-            fputcsv($handle, ['report_type', 'metric', 'value']);
-            foreach ($this->flatten($data) as $metric => $value) {
-                fputcsv($handle, [$type, $metric, is_scalar($value) ? $value : json_encode($value)]);
-            }
-            fclose($handle);
-        }, "docflow-{$type}-report.csv", ['Content-Type' => 'text/csv']);
+        return $exportReportSpreadsheet->streamDownload($type, $data, $membership, $filters);
     }
 
     private function authorizeClient(Client $client, OrganizationContext $organizationContext): void
     {
         abort_if($client->organization_id !== $organizationContext->id(), Response::HTTP_NOT_FOUND);
         Gate::authorize('view', $client);
-    }
-
-    /**
-     * @param  array<string, mixed>  $data
-     * @return array<string, mixed>
-     */
-    private function flatten(array $data, string $prefix = ''): array
-    {
-        $rows = [];
-
-        foreach ($data as $key => $value) {
-            $path = $prefix === '' ? (string) $key : "{$prefix}.{$key}";
-            if (is_array($value) && array_is_list($value) === false) {
-                $rows += $this->flatten($value, $path);
-            } else {
-                $rows[$path] = $value;
-            }
-        }
-
-        return $rows;
     }
 }

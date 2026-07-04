@@ -2,22 +2,31 @@
 
 namespace App\Http\Controllers\Web;
 
+use App\Actions\Finance\GenerateReceivableRecurrences;
+use App\Actions\Finance\NotifyOverdueReceivableToClient;
+use App\Actions\Finance\RenegotiateReceivable;
 use App\Actions\Organizations\RecordAuditLog;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Web\RenegotiateReceivableRequest;
 use App\Http\Requests\Web\StoreFinancialCategoryRequest;
 use App\Http\Requests\Web\StorePayablePaymentRequest;
 use App\Http\Requests\Web\StorePayableRequest;
 use App\Http\Requests\Web\StoreReceivablePaymentRequest;
+use App\Http\Requests\Web\StoreReceivableRecurrenceRequest;
+use App\Http\Requests\Web\StoreReceivableReminderRequest;
 use App\Http\Requests\Web\StoreReceivableRequest;
 use App\Models\Client;
 use App\Models\FinancialCategory;
 use App\Models\OrganizationMember;
 use App\Models\Payable;
 use App\Models\Receivable;
+use App\Models\ReceivableRecurrence;
+use App\Models\ReceivableReminder;
 use App\Support\WebOrganizationContext;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -40,6 +49,7 @@ class FinanceController extends Controller
 
         $receivables = (clone $receivablesQuery)
             ->with(['client', 'category'])
+            ->withCount('reminders')
             ->orderBy('due_at')
             ->paginate(12, ['*'], 'receivables_page')
             ->withQueryString();
@@ -75,6 +85,14 @@ class FinanceController extends Controller
                     'type' => $category->type,
                     'is_active' => $category->is_active,
                 ]),
+            'recurrences' => ReceivableRecurrence::query()
+                ->with('client')
+                ->whereBelongsTo($membership->organization)
+                ->orderByDesc('is_active')
+                ->orderBy('next_due_date')
+                ->get()
+                ->map(fn (ReceivableRecurrence $recurrence): array => $this->recurrenceSummary($recurrence))
+                ->values(),
             'filters' => [
                 'status' => $request->string('status')->toString(),
                 'client_id' => $request->string('client_id')->toString(),
@@ -113,7 +131,7 @@ class FinanceController extends Controller
     {
         $membership = $this->financeMembership($request, $webOrganizationContext);
         abort_if($receivable->organization_id !== $membership->organization_id, HttpResponse::HTTP_NOT_FOUND);
-        abort_if($receivable->status === Receivable::STATUS_CANCELLED || $receivable->status === Receivable::STATUS_PAID, HttpResponse::HTTP_UNPROCESSABLE_ENTITY);
+        abort_if(in_array($receivable->status, [Receivable::STATUS_CANCELLED, Receivable::STATUS_PAID, Receivable::STATUS_RENEGOTIATED], true), HttpResponse::HTTP_UNPROCESSABLE_ENTITY);
 
         $data = $request->validated();
         abort_if($data['amount_cents'] > $receivable->balanceCents(), HttpResponse::HTTP_UNPROCESSABLE_ENTITY);
@@ -142,7 +160,7 @@ class FinanceController extends Controller
     {
         $membership = $this->financeMembership($request, $webOrganizationContext);
         abort_if($receivable->organization_id !== $membership->organization_id, HttpResponse::HTTP_NOT_FOUND);
-        abort_if($receivable->status === Receivable::STATUS_PAID, HttpResponse::HTTP_UNPROCESSABLE_ENTITY);
+        abort_if($receivable->status === Receivable::STATUS_PAID || $receivable->status === Receivable::STATUS_RENEGOTIATED, HttpResponse::HTTP_UNPROCESSABLE_ENTITY);
 
         $data = $request->validate(['cancellation_reason' => ['required', 'string', 'max:255']]);
         $receivable->update([
@@ -154,6 +172,112 @@ class FinanceController extends Controller
         $auditLog->execute('web.finance.receivable.cancelled', $request->user(), $receivable->organization, $receivable, request: $request);
 
         return redirect()->route('finance.index')->with('status', 'Cobrança cancelada.');
+    }
+
+    public function storeRecurrence(
+        StoreReceivableRecurrenceRequest $request,
+        WebOrganizationContext $webOrganizationContext,
+        RecordAuditLog $auditLog,
+    ): RedirectResponse {
+        $membership = $this->financeMembership($request, $webOrganizationContext);
+        $data = $request->validated();
+        $startDate = Carbon::parse($data['start_date']);
+
+        $recurrence = ReceivableRecurrence::create([
+            ...$data,
+            'organization_id' => $membership->organization_id,
+            'created_by_user_id' => $request->user()->id,
+            'next_due_date' => $data['next_due_date'] ?? $this->initialDueDate($startDate, (int) $data['billing_day'])->toDateString(),
+        ]);
+
+        $auditLog->execute('web.finance.recurrence.created', $request->user(), $membership->organization, $recurrence, request: $request);
+
+        return redirect()->route('finance.index')->with('status', 'Recorrência criada.');
+    }
+
+    public function generateRecurrence(
+        ReceivableRecurrence $recurrence,
+        Request $request,
+        WebOrganizationContext $webOrganizationContext,
+        GenerateReceivableRecurrences $generateReceivableRecurrences,
+        RecordAuditLog $auditLog,
+    ): RedirectResponse {
+        $membership = $this->financeMembership($request, $webOrganizationContext);
+        abort_if($recurrence->organization_id !== $membership->organization_id, HttpResponse::HTTP_NOT_FOUND);
+
+        $generated = $generateReceivableRecurrences->execute($recurrence);
+
+        $auditLog->execute(
+            'web.finance.recurrence.generated',
+            $request->user(),
+            $membership->organization,
+            $recurrence,
+            ['generated_count' => count($generated)],
+            $request,
+        );
+
+        $message = count($generated) > 0
+            ? sprintf('%d cobrança(s) gerada(s) pela recorrência.', count($generated))
+            : 'Nenhuma cobrança pendente para gerar neste momento.';
+
+        return redirect()->route('finance.index')->with('status', $message);
+    }
+
+    public function renegotiateReceivable(
+        RenegotiateReceivableRequest $request,
+        Receivable $receivable,
+        WebOrganizationContext $webOrganizationContext,
+        RenegotiateReceivable $renegotiateReceivable,
+        RecordAuditLog $auditLog,
+    ): RedirectResponse {
+        $membership = $this->financeMembership($request, $webOrganizationContext);
+        abort_if($receivable->organization_id !== $membership->organization_id, HttpResponse::HTTP_NOT_FOUND);
+
+        $data = $request->validated();
+        $replacement = $renegotiateReceivable->execute(
+            $receivable,
+            $request->user(),
+            $data['renegotiation_reason'],
+            collect($data)->except('renegotiation_reason')->all(),
+        );
+
+        $auditLog->execute('web.finance.receivable.renegotiated', $request->user(), $membership->organization, $receivable, [
+            'replacement_id' => $replacement->id,
+        ], $request);
+
+        return redirect()->route('finance.index')->with('status', 'Cobrança renegociada. Nova cobrança criada.');
+    }
+
+    public function storeReceivableReminder(
+        StoreReceivableReminderRequest $request,
+        Receivable $receivable,
+        WebOrganizationContext $webOrganizationContext,
+        RecordAuditLog $auditLog,
+        NotifyOverdueReceivableToClient $notifyOverdueReceivableToClient,
+    ): RedirectResponse {
+        $membership = $this->financeMembership($request, $webOrganizationContext);
+        abort_if($receivable->organization_id !== $membership->organization_id, HttpResponse::HTTP_NOT_FOUND);
+        abort_unless($receivable->isOverdue(), HttpResponse::HTTP_UNPROCESSABLE_ENTITY);
+
+        $reminder = ReceivableReminder::create([
+            ...$request->safe()->only(['channel', 'notes']),
+            'organization_id' => $membership->organization_id,
+            'receivable_id' => $receivable->id,
+            'sent_by_user_id' => $request->user()->id,
+            'sent_at' => now(),
+        ]);
+
+        if ($request->boolean('notify_client')) {
+            $notifyOverdueReceivableToClient->execute($receivable, ignoreCooldown: true);
+        }
+
+        $auditLog->execute('web.finance.receivable.reminder_sent', $request->user(), $membership->organization, $receivable, [
+            'reminder_id' => $reminder->id,
+            'channel' => $reminder->channel,
+            'notify_client' => $request->boolean('notify_client'),
+        ], $request);
+
+        return redirect()->route('finance.index')->with('status', 'Lembrete de cobrança registrado.');
     }
 
     public function storePayable(StorePayableRequest $request, WebOrganizationContext $webOrganizationContext, RecordAuditLog $auditLog): RedirectResponse
@@ -226,6 +350,9 @@ class FinanceController extends Controller
             'status' => $receivable->status,
             'due_at' => $receivable->due_at?->toDateString(),
             'is_overdue' => $receivable->isOverdue(),
+            'can_renegotiate' => $receivable->canBeRenegotiated(),
+            'reminders_count' => $receivable->reminders_count ?? 0,
+            'renegotiated_to_id' => $receivable->renegotiated_to_receivable_id,
             'client' => ['id' => $receivable->client->id, 'name' => $receivable->client->display_name],
             'category' => $receivable->category ? ['id' => $receivable->category->id, 'name' => $receivable->category->name] : null,
         ];
@@ -246,6 +373,34 @@ class FinanceController extends Controller
             'client' => $payable->client ? ['id' => $payable->client->id, 'name' => $payable->client->display_name] : null,
             'category' => $payable->category ? ['id' => $payable->category->id, 'name' => $payable->category->name] : null,
         ];
+    }
+
+    private function recurrenceSummary(ReceivableRecurrence $recurrence): array
+    {
+        return [
+            'id' => $recurrence->id,
+            'description' => $recurrence->description,
+            'amount_cents' => $recurrence->amount_cents,
+            'billing_day' => $recurrence->billing_day,
+            'frequency' => $recurrence->frequency,
+            'next_due_date' => $recurrence->next_due_date?->toDateString(),
+            'start_date' => $recurrence->start_date?->toDateString(),
+            'end_date' => $recurrence->end_date?->toDateString(),
+            'is_active' => $recurrence->is_active,
+            'is_due' => $recurrence->isDueForGeneration(),
+            'client' => ['id' => $recurrence->client->id, 'name' => $recurrence->client->display_name],
+        ];
+    }
+
+    private function initialDueDate(Carbon $startDate, int $billingDay): Carbon
+    {
+        $dueDate = $startDate->copy()->day(min($billingDay, $startDate->daysInMonth));
+
+        if ($dueDate->lt($startDate)) {
+            $dueDate = $dueDate->addMonthNoOverflow()->day(min($billingDay, $dueDate->daysInMonth));
+        }
+
+        return $dueDate;
     }
 
     private function options(OrganizationMember $membership): array

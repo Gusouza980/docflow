@@ -2,6 +2,7 @@
 import { Link, useForm, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import Alert from '../Components/Feedback/Alert.vue';
+import PortalNotificationBell from '../Components/ClientPortal/PortalNotificationBell.vue';
 import Button from '../Components/UI/Button.vue';
 
 defineProps({
@@ -37,7 +38,10 @@ function logout() {
                     <h1 class="truncate text-lg font-semibold text-slate-950 sm:text-xl">{{ title }}</h1>
                     <p class="truncate text-sm text-slate-500">{{ portal?.client?.contact?.name }}</p>
                 </div>
-                <Button variant="secondary" size="sm" class="hidden sm:inline-flex" :loading="logoutForm.processing" @click="logout">Sair</Button>
+                <div class="flex items-center gap-2">
+                    <PortalNotificationBell />
+                    <Button variant="secondary" size="sm" class="hidden sm:inline-flex" :loading="logoutForm.processing" @click="logout">Sair</Button>
+                </div>
             </div>
         </header>
 

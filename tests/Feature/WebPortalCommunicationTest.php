@@ -13,6 +13,7 @@ use App\Models\CommunicationConsent;
 use App\Models\DocumentRequest;
 use App\Models\DocumentRequestItem;
 use App\Models\GeneratedReport;
+use App\Models\InternalReminder;
 use App\Models\MessageTemplate;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
@@ -686,6 +687,11 @@ class WebPortalCommunicationTest extends TestCase
         $this->assertDatabaseHas('client_profile_update_requests', [
             'client_portal_access_id' => $access->id,
             'status' => ClientProfileUpdateRequest::STATUS_PENDING,
+        ]);
+
+        $this->assertDatabaseHas('internal_reminders', [
+            'user_id' => $user->id,
+            'type' => InternalReminder::TYPE_PORTAL_PROFILE_UPDATE,
         ]);
     }
 

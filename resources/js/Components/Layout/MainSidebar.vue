@@ -18,7 +18,10 @@ const items = [
     { key: 'calendar', label: 'Agenda', icon: '◇', href: '/calendar' },
     { key: 'finance', label: 'Financeiro', icon: '$', href: '/finance' },
     { key: 'portal', label: 'Portal', icon: '@', href: '/portal' },
+    { key: 'message-templates', label: 'Msg. modelos', icon: '✉', href: '/message-templates' },
+    { key: 'announcements', label: 'Comunicados', icon: '!', href: '/announcements' },
     { key: 'reports', label: 'Relatórios', icon: '%', href: '/reports' },
+    { key: 'audit', label: 'Auditoria', icon: '◉', href: '/audit' },
 ];
 </script>
 

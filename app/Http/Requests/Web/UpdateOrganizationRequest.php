@@ -32,6 +32,7 @@ class UpdateOrganizationRequest extends FormRequest
             'email' => ['nullable', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:32'],
             'timezone' => ['nullable', 'timezone'],
+            'payment_instructions' => ['nullable', 'string', 'max:5000'],
         ];
     }
 }

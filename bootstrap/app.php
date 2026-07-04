@@ -5,6 +5,7 @@ use App\Http\Middleware\EnsurePortalAuthenticated;
 use App\Http\Middleware\ForceJsonResponse;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\RedirectIfPortalAuthenticated;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -39,4 +40,21 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
+    })
+    ->withSchedule(function (Schedule $schedule): void {
+        $schedule->command('finance:generate-recurring-receivables')
+            ->dailyAt('06:00')
+            ->withoutOverlapping();
+
+        $schedule->command('reports:run-schedules')
+            ->dailyAt('07:00')
+            ->withoutOverlapping();
+
+        $schedule->command('finance:notify-overdue-receivables')
+            ->dailyAt('08:00')
+            ->withoutOverlapping();
+
+        $schedule->command('finance:mark-delinquent-clients')
+            ->weeklyOn(1, '08:30')
+            ->withoutOverlapping();
     })->create();

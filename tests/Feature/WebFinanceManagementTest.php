@@ -8,6 +8,8 @@ use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\Payable;
 use App\Models\Receivable;
+use App\Models\ReceivableRecurrence;
+use App\Models\ReceivableReminder;
 use App\Models\User;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -136,6 +138,110 @@ class WebFinanceManagementTest extends TestCase
             ->withSession(['active_organization_id' => $organization->id])
             ->get('/finance')
             ->assertForbidden();
+    }
+
+    public function test_recurrence_generates_receivable_idempotently(): void
+    {
+        [$user, $organization, $member] = $this->createMember(OrganizationMember::ROLE_FINANCE);
+        $client = $this->createClient($organization, $member);
+
+        $recurrence = ReceivableRecurrence::factory()->create([
+            'organization_id' => $organization->id,
+            'client_id' => $client->id,
+            'created_by_user_id' => $user->id,
+            'next_due_date' => now()->subDay()->toDateString(),
+        ]);
+
+        $this->actingAs($user)
+            ->withSession(['active_organization_id' => $organization->id])
+            ->post("/finance/recurrences/{$recurrence->id}/generate")
+            ->assertRedirect('/finance');
+
+        $this->assertDatabaseCount('receivables', 1);
+
+        $this->actingAs($user)
+            ->withSession(['active_organization_id' => $organization->id])
+            ->post("/finance/recurrences/{$recurrence->id}/generate")
+            ->assertRedirect('/finance');
+
+        $this->assertDatabaseCount('receivables', 1);
+    }
+
+    public function test_finance_member_can_renegotiate_open_receivable(): void
+    {
+        [$user, $organization, $member] = $this->createMember(OrganizationMember::ROLE_FINANCE);
+        $client = $this->createClient($organization, $member);
+
+        $receivable = Receivable::factory()->create([
+            'organization_id' => $organization->id,
+            'client_id' => $client->id,
+            'created_by_user_id' => $user->id,
+            'amount_cents' => 100000,
+            'status' => Receivable::STATUS_OPEN,
+        ]);
+
+        $this->actingAs($user)
+            ->withSession(['active_organization_id' => $organization->id])
+            ->patch("/finance/receivables/{$receivable->id}/renegotiate", [
+                'renegotiation_reason' => 'Cliente solicitou parcelamento',
+                'amount_cents' => 80000,
+                'due_at' => now()->addDays(15)->toDateString(),
+            ])
+            ->assertRedirect('/finance');
+
+        $receivable->refresh();
+        $this->assertSame(Receivable::STATUS_RENEGOTIATED, $receivable->status);
+        $this->assertNotNull($receivable->renegotiated_to_receivable_id);
+
+        $replacement = Receivable::query()->findOrFail($receivable->renegotiated_to_receivable_id);
+        $this->assertSame(80000, $replacement->amount_cents);
+        $this->assertSame(Receivable::STATUS_OPEN, $replacement->status);
+    }
+
+    public function test_finance_member_can_record_overdue_receivable_reminder(): void
+    {
+        [$user, $organization, $member] = $this->createMember(OrganizationMember::ROLE_FINANCE);
+        $client = $this->createClient($organization, $member);
+
+        $receivable = Receivable::factory()->create([
+            'organization_id' => $organization->id,
+            'client_id' => $client->id,
+            'created_by_user_id' => $user->id,
+            'due_at' => now()->subDays(3)->toDateString(),
+            'status' => Receivable::STATUS_OPEN,
+        ]);
+
+        $this->actingAs($user)
+            ->withSession(['active_organization_id' => $organization->id])
+            ->post("/finance/receivables/{$receivable->id}/reminders", [
+                'channel' => ReceivableReminder::CHANNEL_EMAIL,
+                'notes' => 'Cliente informado por e-mail.',
+            ])
+            ->assertRedirect('/finance');
+
+        $this->assertDatabaseHas('receivable_reminders', [
+            'receivable_id' => $receivable->id,
+            'channel' => ReceivableReminder::CHANNEL_EMAIL,
+        ]);
+    }
+
+    public function test_generate_recurring_receivables_command_is_idempotent(): void
+    {
+        [$user, $organization, $member] = $this->createMember(OrganizationMember::ROLE_FINANCE);
+        $client = $this->createClient($organization, $member);
+
+        ReceivableRecurrence::factory()->create([
+            'organization_id' => $organization->id,
+            'client_id' => $client->id,
+            'created_by_user_id' => $user->id,
+            'next_due_date' => now()->toDateString(),
+        ]);
+
+        $this->artisan('finance:generate-recurring-receivables')->assertSuccessful();
+        $this->assertDatabaseCount('receivables', 1);
+
+        $this->artisan('finance:generate-recurring-receivables')->assertSuccessful();
+        $this->assertDatabaseCount('receivables', 1);
     }
 
     private function createMember(string $role, ?Organization $organization = null): array

@@ -8,6 +8,7 @@ import Button from '../../Components/UI/Button.vue';
 import Modal from '../../Components/Overlays/Modal.vue';
 import StatusPill from '../../Components/UI/StatusPill.vue';
 import TextInput from '../../Components/Forms/TextInput.vue';
+import TextareaInput from '../../Components/Forms/TextareaInput.vue';
 
 const props = defineProps({
     organizations: { type: Array, default: () => [] },
@@ -40,6 +41,7 @@ const editForm = useForm({
     email: '',
     phone: '',
     timezone: 'America/Sao_Paulo',
+    payment_instructions: '',
 });
 
 const selectedOrganization = computed(() => props.organizations.find((organization) => organization.id === editingOrganizationId.value));
@@ -56,6 +58,7 @@ watch(selectedOrganization, (organization) => {
         email: organization.email ?? '',
         phone: organization.phone ?? '',
         timezone: organization.timezone ?? 'America/Sao_Paulo',
+        payment_instructions: organization.payment_instructions ?? '',
     });
     editForm.reset();
 });
@@ -179,6 +182,7 @@ function updateOrganization() {
                 <TextInput id="edit-email" v-model="editForm.email" type="email" label="E-mail" :error="editForm.errors.email" />
                 <TextInput id="edit-phone" v-model="editForm.phone" label="Telefone" :error="editForm.errors.phone" />
                 <TextInput id="edit-timezone" v-model="editForm.timezone" label="Fuso horário" required :error="editForm.errors.timezone" />
+                <TextareaInput id="edit-payment-instructions" v-model="editForm.payment_instructions" label="Instruções de pagamento (portal)" :error="editForm.errors.payment_instructions" />
             </form>
             <template #actions>
                 <Button type="submit" form="edit-organization-form" :loading="editForm.processing" :disabled="editForm.processing">Salvar alterações</Button>

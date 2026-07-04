@@ -47,7 +47,9 @@ class PortalController extends Controller
                 'messages' => ClientMessage::whereBelongsTo($membership->organization)->count(),
                 'open_tickets' => Ticket::whereBelongsTo($membership->organization)->whereNotIn('status', [Ticket::STATUS_RESOLVED, Ticket::STATUS_CLOSED])->count(),
                 'consents' => CommunicationConsent::whereBelongsTo($membership->organization)->where('status', CommunicationConsent::STATUS_GRANTED)->count(),
+                'pending_profile_updates' => count(ClientProfileUpdateController::pendingSummaries($membership->organization_id)),
             ],
+            'profileUpdates' => ClientProfileUpdateController::pendingSummaries($membership->organization_id),
             'accesses' => ClientPortalAccess::query()
                 ->with('client')
                 ->whereBelongsTo($membership->organization)

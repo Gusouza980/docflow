@@ -2,13 +2,15 @@
 
 namespace App\Models;
 
+use Database\Factories\ReportScheduleFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ReportSchedule extends Model
 {
-    /** @use HasFactory<\Database\Factories\ReportScheduleFactory> */
+    /** @use HasFactory<ReportScheduleFactory> */
     use HasFactory;
 
     protected $fillable = [
@@ -22,11 +24,14 @@ class ReportSchedule extends Model
         'is_active',
         'next_run_at',
         'last_run_at',
+        'last_error',
+        'consecutive_failures',
     ];
 
     protected $attributes = [
         'frequency' => 'monthly',
         'is_active' => true,
+        'consecutive_failures' => 0,
     ];
 
     protected function casts(): array
@@ -52,5 +57,10 @@ class ReportSchedule extends Model
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);
+    }
+
+    public function generatedReports(): HasMany
+    {
+        return $this->hasMany(GeneratedReport::class);
     }
 }

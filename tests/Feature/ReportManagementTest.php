@@ -121,7 +121,7 @@ class ReportManagementTest extends TestCase
                 'report_type' => 'overview',
             ])
             ->assertOk()
-            ->assertHeader('content-type', 'text/csv; charset=UTF-8');
+            ->assertHeader('content-type', 'application/vnd.ms-excel; charset=UTF-8');
 
         $this->assertDatabaseHas('saved_report_filters', [
             'organization_id' => $organization->id,

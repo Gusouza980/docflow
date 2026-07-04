@@ -31,6 +31,10 @@ class InternalReminder extends Model
 
     public const TYPE_PORTAL_TICKET_OPENED = 'portal_ticket_opened';
 
+    public const TYPE_PORTAL_PROFILE_UPDATE = 'portal_profile_update';
+
+    public const TYPE_CLIENT_DELINQUENT = 'client_delinquent';
+
     protected $fillable = [
         'organization_id',
         'user_id',

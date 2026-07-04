@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Database\Factories\GeneratedReportFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class GeneratedReport extends Model
 {
-    /** @use HasFactory<\Database\Factories\GeneratedReportFactory> */
+    /** @use HasFactory<GeneratedReportFactory> */
     use HasFactory;
 
     public const STATUS_DRAFT = 'draft';
@@ -24,10 +25,13 @@ class GeneratedReport extends Model
         'organization_id',
         'client_id',
         'generated_by_user_id',
+        'report_schedule_id',
         'type',
         'title',
         'status',
         'filters',
+        'period_start',
+        'period_end',
         'payload',
         'reviewed_at',
         'released_at',
@@ -43,6 +47,8 @@ class GeneratedReport extends Model
         return [
             'filters' => 'array',
             'payload' => 'array',
+            'period_start' => 'date',
+            'period_end' => 'date',
             'reviewed_at' => 'datetime',
             'released_at' => 'datetime',
             'last_viewed_at' => 'datetime',
@@ -62,6 +68,11 @@ class GeneratedReport extends Model
     public function generatedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'generated_by_user_id');
+    }
+
+    public function schedule(): BelongsTo
+    {
+        return $this->belongsTo(ReportSchedule::class, 'report_schedule_id');
     }
 
     public function deliveries(): HasMany

@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Support\Mail\PortalMailMessage;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -27,10 +28,12 @@ class PortalClientAlertNotification extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
-        return (new MailMessage)
+        return PortalMailMessage::make()
             ->subject($this->subject)
             ->greeting('Olá, '.$notifiable->name.'!')
             ->line($this->message)
-            ->action('Acessar portal', $this->actionUrl);
+            ->action('Acessar portal do cliente', $this->actionUrl)
+            ->line('Se o botão não funcionar, copie e cole o endereço abaixo no navegador:')
+            ->line($this->actionUrl);
     }
 }

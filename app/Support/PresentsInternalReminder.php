@@ -3,7 +3,9 @@
 namespace App\Support;
 
 use App\Models\CalendarEvent;
+use App\Models\Client;
 use App\Models\ClientMessage;
+use App\Models\ClientProfileUpdateRequest;
 use App\Models\DocumentRequestItem;
 use App\Models\InternalReminder;
 use App\Models\Task;
@@ -51,6 +53,8 @@ class PresentsInternalReminder
             InternalReminder::TYPE_TICKET_LOW_RATING => $this->ticketLowRating($remindable),
             InternalReminder::TYPE_PORTAL_MESSAGE_INBOUND => $this->portalMessage($remindable),
             InternalReminder::TYPE_PORTAL_TICKET_OPENED => $this->portalTicketOpened($remindable),
+            InternalReminder::TYPE_PORTAL_PROFILE_UPDATE => $this->portalProfileUpdate($remindable),
+            InternalReminder::TYPE_CLIENT_DELINQUENT => $this->clientDelinquent($remindable),
             default => [
                 'title' => 'Notificação',
                 'body' => 'Há uma atualização que requer sua atenção.',
@@ -207,6 +211,41 @@ class PresentsInternalReminder
             'title' => 'Chamado aberto pelo portal',
             'body' => $remindable->title,
             'url' => route('clients.show', ['client' => $remindable->client_id, 'tab' => 'tickets', 'ticket' => $remindable->id]),
+        ];
+    }
+
+    /**
+     * @return array{title: string, body: string, url: string|null}
+     */
+    private function portalProfileUpdate(mixed $remindable): array
+    {
+        if (! $remindable instanceof ClientProfileUpdateRequest) {
+            return $this->missing('Alteração cadastral no portal');
+        }
+
+        $remindable->loadMissing(['client', 'portalAccess']);
+        $fields = implode(', ', array_keys($remindable->changes ?? []));
+
+        return [
+            'title' => 'Alteração cadastral pendente',
+            'body' => ($remindable->client?->display_name ?? 'Cliente').' solicitou revisão de: '.$fields,
+            'url' => route('portal.index'),
+        ];
+    }
+
+    /**
+     * @return array{title: string, body: string, url: string|null}
+     */
+    private function clientDelinquent(mixed $remindable): array
+    {
+        if (! $remindable instanceof Client) {
+            return $this->missing('Cliente inadimplente');
+        }
+
+        return [
+            'title' => 'Cliente inadimplente',
+            'body' => ($remindable->display_name ?? 'Cliente').' possui cobranças vencidas há mais de '.config('docflow.finance.delinquent_after_days', 30).' dias.',
+            'url' => route('clients.show', ['client' => $remindable->id, 'tab' => 'finance']),
         ];
     }
 

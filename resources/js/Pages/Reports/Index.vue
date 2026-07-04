@@ -35,7 +35,13 @@ const money = (cents) => new Intl.NumberFormat('pt-BR', { style: 'currency', cur
 const productivityColumns = [{ key: 'name', label: 'Colaborador' }, { key: 'open_tasks', label: 'Abertas' }, { key: 'completed_tasks', label: 'Concluídas' }, { key: 'overdue_tasks', label: 'Atrasadas' }];
 const documentColumns = [{ key: 'title', label: 'Documento' }, { key: 'status', label: 'Status' }, { key: 'due_at', label: 'Prazo' }];
 const reportColumns = [{ key: 'title', label: 'Relatório' }, { key: 'status', label: 'Status' }, { key: 'actions', label: '' }];
-const scheduleColumns = [{ key: 'name', label: 'Agendamento' }, { key: 'frequency', label: 'Frequência' }, { key: 'next_run_at', label: 'Próxima execução' }];
+const scheduleColumns = [
+    { key: 'name', label: 'Agendamento' },
+    { key: 'frequency', label: 'Frequência' },
+    { key: 'last_run_at', label: 'Última execução' },
+    { key: 'next_run_at', label: 'Próxima execução' },
+    { key: 'actions', label: '' },
+];
 
 const filterForm = useForm({
     start_date: props.filters.start_date ?? '',
@@ -46,6 +52,14 @@ const filterForm = useForm({
 const saveFilterForm = useForm({ name: '', report_type: 'overview', filters: filterForm.data(), is_shared: false });
 const scheduleForm = useForm({ name: '', report_type: 'overview', client_id: '', frequency: 'monthly', filters: filterForm.data(), is_active: true, next_run_at: '' });
 const monthlyForm = useForm({ client_id: '', title: '', start_date: props.filters.start_date ?? '', end_date: props.filters.end_date ?? '' });
+const runScheduleForm = useForm({});
+
+const exportTypes = [
+    { type: 'overview', label: 'Visão geral' },
+    { type: 'productivity', label: 'Produtividade' },
+    { type: 'documents', label: 'Documentos' },
+    { type: 'finance', label: 'Financeiro', requiresFinance: true },
+];
 
 function applyFilters() {
     router.get('/reports', filterForm.data(), { preserveState: true, preserveScroll: true });
@@ -68,6 +82,47 @@ function generateMonthly() {
 function releaseReport(report) {
     useForm({}).patch(`/reports/${report.id}/release`, { preserveScroll: true });
 }
+
+function runSchedule(schedule) {
+    runScheduleForm.post(`/reports/schedules/${schedule.id}/run`, { preserveScroll: true });
+}
+
+function exportSpreadsheet(reportType) {
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/reports/export';
+
+    const csrf = document.querySelector('meta[name="csrf-token"]')?.content;
+    if (csrf) {
+        const tokenInput = document.createElement('input');
+        tokenInput.type = 'hidden';
+        tokenInput.name = '_token';
+        tokenInput.value = csrf;
+        form.appendChild(tokenInput);
+    }
+
+    const typeInput = document.createElement('input');
+    typeInput.type = 'hidden';
+    typeInput.name = 'report_type';
+    typeInput.value = reportType;
+    form.appendChild(typeInput);
+
+    Object.entries(filterForm.data()).forEach(([key, value]) => {
+        if (value === '' || value === null) {
+            return;
+        }
+
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = `filters[${key}]`;
+        input.value = value;
+        form.appendChild(input);
+    });
+
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+}
 </script>
 
 <template>
@@ -75,6 +130,7 @@ function releaseReport(report) {
     <AppLayout title="Relatórios e indicadores" active-nav="reports" :breadcrumbs="[{ label: 'Relatórios' }]">
         <div class="grid gap-4">
             <Alert v-if="page.props.flash?.status" tone="success">{{ page.props.flash.status }}</Alert>
+            <Alert v-if="page.props.flash?.error" tone="danger">{{ page.props.flash.error }}</Alert>
             <div class="rounded-lg border border-slate-200 bg-white p-4">
                 <form class="grid gap-3 lg:grid-cols-[1fr_1fr_1fr_auto]" @submit.prevent="applyFilters">
                     <TextInput id="reports-start" v-model="filterForm.start_date" type="date" label="Início" />
@@ -87,6 +143,19 @@ function releaseReport(report) {
                         <Button type="button" @click="monthlyModalOpen = true">Relatório mensal</Button>
                     </div>
                 </form>
+                <div class="mt-4 flex flex-wrap gap-2 border-t border-slate-100 pt-4">
+                    <Button
+                        v-for="item in exportTypes"
+                        :key="item.type"
+                        v-show="!item.requiresFinance || can.finance"
+                        size="sm"
+                        variant="secondary"
+                        type="button"
+                        @click="exportSpreadsheet(item.type)"
+                    >
+                        Exportar planilha — {{ item.label }}
+                    </Button>
+                </div>
             </div>
 
             <div class="grid gap-4 md:grid-cols-4">
@@ -121,14 +190,27 @@ function releaseReport(report) {
 
             <div class="grid gap-4 xl:grid-cols-2">
                 <DataTable :columns="reportColumns" :rows="generatedReports" empty-title="Nenhum relatório gerado">
-                    <template #toolbar><div class="border-b border-slate-200 px-4 py-3"><h2 class="text-sm font-semibold text-slate-950">Relatórios mensais</h2></div></template>
+                    <template #toolbar><div class="border-b border-slate-200 px-4 py-3"><h2 class="text-sm font-semibold text-slate-950">Relatórios gerados</h2></div></template>
                     <template #cell-title="{ row }"><div class="min-w-64"><p class="font-semibold text-slate-950">{{ row.title }}</p><p class="mt-1 text-xs text-slate-500">{{ row.client?.name ?? 'Sem cliente' }}</p></div></template>
                     <template #cell-status="{ row }"><StatusPill :status="row.status" /></template>
-                    <template #cell-actions="{ row }"><div class="flex justify-end"><Button v-if="row.status !== 'released'" size="sm" variant="secondary" @click="releaseReport(row)">Liberar</Button></div></template>
+                    <template #cell-actions="{ row }"><div class="flex justify-end"><Button v-if="row.status !== 'released' && row.type === 'client_monthly'" size="sm" variant="secondary" @click="releaseReport(row)">Liberar</Button></div></template>
                 </DataTable>
                 <DataTable :columns="scheduleColumns" :rows="schedules" empty-title="Nenhum agendamento">
                     <template #toolbar><div class="border-b border-slate-200 px-4 py-3"><h2 class="text-sm font-semibold text-slate-950">Agendamentos planejados</h2></div></template>
-                    <template #cell-name="{ row }"><div><p class="font-semibold text-slate-950">{{ row.name }}</p><p class="mt-1 text-xs text-slate-500">{{ row.report_type }} · {{ row.client?.name ?? 'Organização' }}</p></div></template>
+                    <template #cell-name="{ row }">
+                        <div>
+                            <p class="font-semibold text-slate-950">{{ row.name }}</p>
+                            <p class="mt-1 text-xs text-slate-500">{{ row.report_type }} · {{ row.client?.name ?? 'Organização' }}</p>
+                            <p v-if="row.last_error" class="mt-1 text-xs font-medium text-red-700">{{ row.last_error }}</p>
+                        </div>
+                    </template>
+                    <template #cell-last_run_at="{ row }"><DisplayDate :value="row.last_run_at" fallback="Nunca" /></template>
+                    <template #cell-next_run_at="{ row }"><DisplayDate :value="row.next_run_at" fallback="Sem data" /></template>
+                    <template #cell-actions="{ row }">
+                        <div v-if="can.schedule" class="flex justify-end">
+                            <Button size="sm" variant="secondary" :loading="runScheduleForm.processing" @click="runSchedule(row)">Executar agora</Button>
+                        </div>
+                    </template>
                 </DataTable>
             </div>
         </div>
@@ -146,6 +228,7 @@ function releaseReport(report) {
             <form id="schedule-form" class="grid gap-4" @submit.prevent="saveSchedule">
                 <TextInput id="schedule-name" v-model="scheduleForm.name" label="Nome" required :error="scheduleForm.errors.name" />
                 <SelectInput id="schedule-type" v-model="scheduleForm.report_type" label="Relatório" :options="[{ value: 'overview', label: 'Visão geral' }, { value: 'productivity', label: 'Produtividade' }, { value: 'documents', label: 'Documentos' }, { value: 'finance', label: 'Financeiro' }, { value: 'client_monthly', label: 'Mensal cliente' }]" />
+                <SelectInput v-if="scheduleForm.report_type === 'client_monthly'" id="schedule-client" v-model="scheduleForm.client_id" label="Cliente" :options="withEmpty(options.clients)" required />
                 <div class="grid gap-4 sm:grid-cols-2"><SelectInput id="schedule-frequency" v-model="scheduleForm.frequency" label="Frequência" :options="[{ value: 'weekly', label: 'Semanal' }, { value: 'monthly', label: 'Mensal' }, { value: 'quarterly', label: 'Trimestral' }]" /><TextInput id="schedule-next" v-model="scheduleForm.next_run_at" type="date" label="Próxima execução" /></div>
             </form>
             <template #actions><Button type="submit" form="schedule-form" :loading="scheduleForm.processing">Salvar</Button></template>

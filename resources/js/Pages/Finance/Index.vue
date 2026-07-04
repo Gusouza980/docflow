@@ -19,6 +19,7 @@ const props = defineProps({
     metrics: { type: Object, required: true },
     receivables: { type: Object, required: true },
     payables: { type: Object, required: true },
+    recurrences: { type: Array, default: () => [] },
     categories: { type: Array, default: () => [] },
     filters: { type: Object, default: () => ({}) },
     options: { type: Object, required: true },
@@ -28,8 +29,11 @@ const page = usePage();
 const receivableModalOpen = ref(false);
 const payableModalOpen = ref(false);
 const categoryModalOpen = ref(false);
+const recurrenceModalOpen = ref(false);
 const paymentModalOpen = ref(false);
 const cancelModalOpen = ref(false);
+const renegotiateModalOpen = ref(false);
+const reminderModalOpen = ref(false);
 const paymentTarget = ref(null);
 const paymentType = ref('receivable');
 const withEmpty = (items, label = 'Todos') => [{ value: '', label }, ...items];
@@ -43,6 +47,20 @@ const statusOptions = [
     { value: 'partial', label: 'Parcial' },
     { value: 'paid', label: 'Paga' },
     { value: 'cancelled', label: 'Cancelada' },
+    { value: 'renegotiated', label: 'Renegociada' },
+];
+const reminderChannelOptions = [
+    { value: 'email', label: 'E-mail' },
+    { value: 'whatsapp', label: 'WhatsApp' },
+    { value: 'phone', label: 'Telefone' },
+    { value: 'internal', label: 'Registro interno' },
+];
+const recurrenceColumns = [
+    { key: 'description', label: 'Recorrência' },
+    { key: 'amount', label: 'Valor' },
+    { key: 'next_due_date', label: 'Próximo vencimento' },
+    { key: 'status', label: 'Status' },
+    { key: 'actions', label: '' },
 ];
 const categoryTypeOptions = [
     { value: 'income', label: 'Receita' },
@@ -102,6 +120,30 @@ const paymentForm = useForm({
     notes: '',
 });
 const cancelForm = useForm({ cancellation_reason: '' });
+const recurrenceForm = useForm({
+    client_id: '',
+    financial_category_id: '',
+    description: '',
+    amount_cents: '',
+    billing_day: 10,
+    start_date: new Date().toISOString().slice(0, 10),
+    end_date: '',
+    frequency: 'monthly',
+    is_active: true,
+    notes: '',
+});
+const renegotiateForm = useForm({
+    renegotiation_reason: '',
+    amount_cents: '',
+    due_at: '',
+    description: '',
+    notes: '',
+});
+const reminderForm = useForm({
+    channel: 'email',
+    notes: '',
+    notify_client: true,
+});
 
 function applyFilters() {
     router.get('/finance', filterForm.data(), { preserveState: true, preserveScroll: true });
@@ -145,6 +187,44 @@ function openCancel(receivable) {
 function submitCancel() {
     cancelForm.patch(`/finance/receivables/${paymentTarget.value.id}/cancel`, { preserveScroll: true, onSuccess: () => cancelModalOpen.value = false });
 }
+
+function submitRecurrence() {
+    recurrenceForm.post('/finance/recurrences', { preserveScroll: true, onSuccess: () => recurrenceModalOpen.value = false });
+}
+
+function generateRecurrence(recurrence) {
+    useForm({}).post(`/finance/recurrences/${recurrence.id}/generate`, { preserveScroll: true });
+}
+
+function openRenegotiate(receivable) {
+    paymentTarget.value = receivable;
+    renegotiateForm.reset();
+    renegotiateForm.amount_cents = receivable.balance_cents;
+    renegotiateForm.due_at = receivable.due_at;
+    renegotiateForm.description = receivable.description;
+    renegotiateModalOpen.value = true;
+}
+
+function submitRenegotiate() {
+    renegotiateForm.patch(`/finance/receivables/${paymentTarget.value.id}/renegotiate`, {
+        preserveScroll: true,
+        onSuccess: () => renegotiateModalOpen.value = false,
+    });
+}
+
+function openReminder(receivable) {
+    paymentTarget.value = receivable;
+    reminderForm.reset();
+    reminderForm.channel = 'email';
+    reminderModalOpen.value = true;
+}
+
+function submitReminder() {
+    reminderForm.post(`/finance/receivables/${paymentTarget.value.id}/reminders`, {
+        preserveScroll: true,
+        onSuccess: () => reminderModalOpen.value = false,
+    });
+}
 </script>
 
 <template>
@@ -169,18 +249,28 @@ function submitCancel() {
                 <div class="flex flex-wrap gap-2">
                     <Button variant="secondary" @click="applyFilters">Filtrar</Button>
                     <Button variant="secondary" @click="categoryModalOpen = true">Categoria</Button>
+                    <Button variant="secondary" @click="recurrenceModalOpen = true">Recorrência</Button>
                     <Button variant="secondary" @click="payableModalOpen = true">Conta a pagar</Button>
                     <Button @click="receivableModalOpen = true">Conta a receber</Button>
                 </div>
             </div>
 
+            <DataTable :columns="recurrenceColumns" :rows="recurrences" empty-title="Nenhuma recorrência cadastrada">
+                <template #toolbar><div class="border-b border-slate-200 px-4 py-3"><h2 class="text-sm font-semibold text-slate-950">Cobranças recorrentes</h2><p class="mt-1 text-xs text-slate-500">Geradas automaticamente todo dia às 06:00 ou manualmente abaixo.</p></div></template>
+                <template #cell-description="{ row }"><div class="min-w-64"><p class="font-semibold text-slate-950">{{ row.description }}</p><p class="mt-1 text-xs text-slate-500">{{ row.client.name }} · dia {{ row.billing_day }}</p></div></template>
+                <template #cell-amount="{ row }">{{ money(row.amount_cents) }}</template>
+                <template #cell-next_due_date="{ row }"><DisplayDate :value="row.next_due_date" fallback="—" /></template>
+                <template #cell-status="{ row }"><Badge :tone="row.is_active ? (row.is_due ? 'warning' : 'success') : 'secondary'">{{ row.is_active ? (row.is_due ? 'Pronta p/ gerar' : 'Ativa') : 'Inativa' }}</Badge></template>
+                <template #cell-actions="{ row }"><div class="flex justify-end"><Button v-if="row.is_active" size="sm" variant="secondary" @click="generateRecurrence(row)">Gerar agora</Button></div></template>
+            </DataTable>
+
             <DataTable :columns="receivableColumns" :rows="receivables.data" empty-title="Nenhuma cobrança encontrada">
                 <template #toolbar><div class="border-b border-slate-200 px-4 py-3"><h2 class="text-sm font-semibold text-slate-950">Contas a receber</h2></div></template>
-                <template #cell-description="{ row }"><div class="min-w-64"><p class="font-semibold text-slate-950">{{ row.description }}</p><p class="mt-1 text-xs text-slate-500">{{ row.client.name }} · {{ row.category?.name ?? 'Sem categoria' }}</p></div></template>
+                <template #cell-description="{ row }"><div class="min-w-64"><p class="font-semibold text-slate-950">{{ row.description }}</p><p class="mt-1 text-xs text-slate-500">{{ row.client.name }} · {{ row.category?.name ?? 'Sem categoria' }}</p><Badge v-if="row.reminders_count" tone="warning" class="mt-1">{{ row.reminders_count }} lembrete(s)</Badge></div></template>
                 <template #cell-status="{ row }"><StatusPill :status="row.status" /></template>
                 <template #cell-amount="{ row }"><span>{{ money(row.balance_cents) }}</span><span class="block text-xs text-slate-500">de {{ money(row.amount_cents) }}</span></template>
                 <template #cell-due_at="{ row }"><span :class="row.is_overdue ? 'font-semibold text-red-700' : ''"><DisplayDate :value="row.due_at" fallback="Sem prazo" /></span></template>
-                <template #cell-actions="{ row }"><div class="flex justify-end gap-2"><Button v-if="!['paid', 'cancelled'].includes(row.status)" size="sm" variant="secondary" @click="openPayment('receivable', row)">Baixar</Button><Button v-if="!['paid', 'cancelled'].includes(row.status)" size="sm" variant="danger" @click="openCancel(row)">Cancelar</Button></div></template>
+                <template #cell-actions="{ row }"><div class="flex flex-wrap justify-end gap-2"><Button v-if="row.can_renegotiate" size="sm" variant="secondary" @click="openRenegotiate(row)">Renegociar</Button><Button v-if="row.is_overdue" size="sm" variant="secondary" @click="openReminder(row)">Lembrete</Button><Button v-if="!['paid', 'cancelled', 'renegotiated'].includes(row.status)" size="sm" variant="secondary" @click="openPayment('receivable', row)">Baixar</Button><Button v-if="!['paid', 'cancelled', 'renegotiated'].includes(row.status)" size="sm" variant="danger" @click="openCancel(row)">Cancelar</Button></div></template>
             </DataTable>
             <Pagination :current-page="receivables.meta.current_page" :total-pages="receivables.meta.last_page" :per-page="receivables.meta.per_page" />
 
@@ -240,6 +330,56 @@ function submitCancel() {
                 <TextareaInput id="cancel-reason" v-model="cancelForm.cancellation_reason" label="Motivo" required :error="cancelForm.errors.cancellation_reason" />
             </form>
             <template #actions><Button type="submit" form="cancel-form" variant="danger" :loading="cancelForm.processing">Cancelar cobrança</Button></template>
+        </Modal>
+
+        <Modal v-if="recurrenceModalOpen" open title="Cobrança recorrente" @close="recurrenceModalOpen = false">
+            <form id="recurrence-form" class="grid gap-4" @submit.prevent="submitRecurrence">
+                <SelectInput id="recurrence-client" v-model="recurrenceForm.client_id" label="Cliente" :options="withEmpty(options.clients, 'Selecione')" :error="recurrenceForm.errors.client_id" />
+                <SelectInput id="recurrence-category" v-model="recurrenceForm.financial_category_id" label="Categoria" :options="withEmpty(incomeCategories, 'Sem categoria')" :error="recurrenceForm.errors.financial_category_id" />
+                <TextInput id="recurrence-description" v-model="recurrenceForm.description" label="Descrição" required :error="recurrenceForm.errors.description" />
+                <div class="grid gap-4 sm:grid-cols-3">
+                    <TextInput id="recurrence-amount" v-model="recurrenceForm.amount_cents" type="number" label="Valor em centavos" required :error="recurrenceForm.errors.amount_cents" />
+                    <TextInput id="recurrence-billing-day" v-model="recurrenceForm.billing_day" type="number" min="1" max="28" label="Dia de vencimento" required :error="recurrenceForm.errors.billing_day" />
+                    <TextInput id="recurrence-start" v-model="recurrenceForm.start_date" type="date" label="Início" required :error="recurrenceForm.errors.start_date" />
+                </div>
+                <TextInput id="recurrence-end" v-model="recurrenceForm.end_date" type="date" label="Término (opcional)" :error="recurrenceForm.errors.end_date" />
+                <TextareaInput id="recurrence-notes" v-model="recurrenceForm.notes" label="Observações" :error="recurrenceForm.errors.notes" />
+            </form>
+            <template #footer>
+                <Button variant="secondary" @click="recurrenceModalOpen = false">Cancelar</Button>
+                <Button type="submit" form="recurrence-form" :loading="recurrenceForm.processing">Salvar</Button>
+            </template>
+        </Modal>
+
+        <Modal v-if="renegotiateModalOpen" open title="Renegociar cobrança" @close="renegotiateModalOpen = false">
+            <form id="renegotiate-form" class="grid gap-4" @submit.prevent="submitRenegotiate">
+                <TextareaInput id="renegotiate-reason" v-model="renegotiateForm.renegotiation_reason" label="Motivo da renegociação" required :error="renegotiateForm.errors.renegotiation_reason" />
+                <TextInput id="renegotiate-description" v-model="renegotiateForm.description" label="Descrição da nova cobrança" :error="renegotiateForm.errors.description" />
+                <div class="grid gap-4 sm:grid-cols-2">
+                    <TextInput id="renegotiate-amount" v-model="renegotiateForm.amount_cents" type="number" label="Novo valor em centavos" required :error="renegotiateForm.errors.amount_cents" />
+                    <TextInput id="renegotiate-due" v-model="renegotiateForm.due_at" type="date" label="Novo vencimento" required :error="renegotiateForm.errors.due_at" />
+                </div>
+                <TextareaInput id="renegotiate-notes" v-model="renegotiateForm.notes" label="Observações" :error="renegotiateForm.errors.notes" />
+            </form>
+            <template #footer>
+                <Button variant="secondary" @click="renegotiateModalOpen = false">Cancelar</Button>
+                <Button type="submit" form="renegotiate-form" :loading="renegotiateForm.processing">Renegociar</Button>
+            </template>
+        </Modal>
+
+        <Modal v-if="reminderModalOpen" open title="Registrar lembrete de cobrança" @close="reminderModalOpen = false">
+            <form id="reminder-form" class="grid gap-4" @submit.prevent="submitReminder">
+                <SelectInput id="reminder-channel" v-model="reminderForm.channel" label="Canal" :options="reminderChannelOptions" :error="reminderForm.errors.channel" />
+                <TextareaInput id="reminder-notes" v-model="reminderForm.notes" label="Observações" :error="reminderForm.errors.notes" />
+                <label class="flex items-center gap-2 text-sm font-medium text-slate-700">
+                    <input v-model="reminderForm.notify_client" type="checkbox" class="rounded border-slate-300 text-blue-600 focus:ring-blue-300" />
+                    Notificar cliente no portal (alerta + e-mail)
+                </label>
+            </form>
+            <template #footer>
+                <Button variant="secondary" @click="reminderModalOpen = false">Cancelar</Button>
+                <Button type="submit" form="reminder-form" :loading="reminderForm.processing">Registrar lembrete</Button>
+            </template>
         </Modal>
     </AppLayout>
 </template>

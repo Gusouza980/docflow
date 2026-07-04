@@ -2,6 +2,9 @@
 
 namespace App\Providers;
 
+use App\Contracts\Mail\TransactionalMailer;
+use App\Mail\LaravelTransactionalMailer;
+use App\Mail\LogTransactionalMailer;
 use App\Support\OrganizationContext;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -17,6 +20,14 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->scoped(OrganizationContext::class);
+
+        $this->app->singleton(TransactionalMailer::class, function (): TransactionalMailer {
+            if (config('mail.default') === 'log') {
+                return new LogTransactionalMailer;
+            }
+
+            return new LaravelTransactionalMailer;
+        });
     }
 
     /**

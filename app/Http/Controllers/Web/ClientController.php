@@ -68,6 +68,7 @@ class ClientController extends Controller
                 'search' => $request->string('search')->toString(),
                 'status' => $request->string('status')->toString(),
                 'type' => $request->string('type')->toString(),
+                'risk_level' => $request->string('risk_level')->toString(),
                 'responsible_member_id' => $request->string('responsible_member_id')->toString(),
             ],
             'options' => $this->options($membership),
@@ -309,6 +310,7 @@ class ClientController extends Controller
             })
             ->when($request->string('status')->toString(), fn ($query, string $status) => $query->where('status', $status))
             ->when($request->string('type')->toString(), fn ($query, string $type) => $query->where('type', $type))
+            ->when($request->string('risk_level')->toString(), fn ($query, string $riskLevel) => $query->where('risk_level', $riskLevel))
             ->when($request->integer('responsible_member_id'), fn ($query, int $memberId) => $query->whereHas('responsibles', fn ($query) => $query->whereKey($memberId)))
             ->when(! $membership->isAdmin() && ! $membership->isManager(), function ($query) use ($membership): void {
                 $query->where(function ($query) use ($membership): void {

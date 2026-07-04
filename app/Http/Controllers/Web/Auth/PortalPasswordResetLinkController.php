@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers\Web\Auth;
 
+use App\Contracts\Mail\TransactionalMailer;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Web\Auth\PortalForgotPasswordRequest;
 use App\Models\ClientPortalAccess;
 use App\Notifications\PortalResetPasswordNotification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -20,7 +20,7 @@ class PortalPasswordResetLinkController extends Controller
         return Inertia::render('Portal/ForgotPassword');
     }
 
-    public function store(PortalForgotPasswordRequest $request): RedirectResponse
+    public function store(PortalForgotPasswordRequest $request, TransactionalMailer $transactionalMailer): RedirectResponse
     {
         $email = $request->validated('email');
 
@@ -38,7 +38,7 @@ class PortalPasswordResetLinkController extends Controller
                 ['token' => hash('sha256', $token), 'created_at' => now()],
             );
 
-            Notification::send($accesses->first(), new PortalResetPasswordNotification($token));
+            $transactionalMailer->notify($accesses->first(), new PortalResetPasswordNotification($token));
         }
 
         return back()->with('status', 'Se o e-mail existir, enviaremos as instruções de redefinição.');

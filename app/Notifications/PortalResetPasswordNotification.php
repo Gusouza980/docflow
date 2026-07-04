@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Support\Mail\PortalMailMessage;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -30,12 +31,14 @@ class PortalResetPasswordNotification extends Notification implements ShouldQueu
             'email' => $notifiable->email,
         ], absolute: true);
 
-        return (new MailMessage)
-            ->subject('Redefinição de senha do portal')
+        return PortalMailMessage::make()
+            ->subject('Redefinição de senha do portal do cliente')
             ->greeting('Olá, '.$notifiable->name.'!')
             ->line('Recebemos uma solicitação para redefinir a senha do seu acesso ao portal do cliente.')
             ->action('Redefinir senha', $url)
-            ->line('Se você não solicitou a redefinição, ignore este e-mail.')
-            ->line('Este link expira em 60 minutos.');
+            ->line('Se você não solicitou a redefinição, ignore este e-mail. Sua senha permanecerá inalterada.')
+            ->line('Este link expira em 60 minutos.')
+            ->line('Se o botão não funcionar, copie e cole o endereço abaixo no navegador:')
+            ->line($url);
     }
 }
