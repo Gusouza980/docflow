@@ -14,6 +14,7 @@ use App\Models\Document;
 use App\Models\DocumentCategory;
 use App\Models\DocumentVersion;
 use App\Models\OrganizationMember;
+use App\Support\Billing\PlanLimitChecker;
 use App\Support\WebOrganizationContext;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -77,13 +78,15 @@ class DocumentController extends Controller
         ]);
     }
 
-    public function store(StoreDocumentUploadRequest $request, WebOrganizationContext $webOrganizationContext, RecordAuditLog $auditLog): RedirectResponse
+    public function store(StoreDocumentUploadRequest $request, WebOrganizationContext $webOrganizationContext, RecordAuditLog $auditLog, PlanLimitChecker $planLimitChecker): RedirectResponse
     {
         $membership = $webOrganizationContext->membership($request);
 
         abort_unless($membership, HttpResponse::HTTP_NOT_FOUND);
         abort_if($membership->role === OrganizationMember::ROLE_READONLY, HttpResponse::HTTP_FORBIDDEN);
         Gate::authorize('create', Document::class);
+
+        $planLimitChecker->assertStorageWithinLimit($membership->organization, (int) $request->file('file')->getSize());
 
         $document = DB::transaction(function () use ($request, $membership): Document {
             $data = $request->validated();

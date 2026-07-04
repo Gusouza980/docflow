@@ -3,6 +3,8 @@ import { computed } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import AppTopbar from '../Components/Layout/AppTopbar.vue';
 import MainSidebar from '../Components/Layout/MainSidebar.vue';
+import PlanUsageBanner from '../Components/Layout/PlanUsageBanner.vue';
+import SubscriptionBanner from '../Components/Layout/SubscriptionBanner.vue';
 
 defineProps({
     title: { type: String, default: 'Docflow' },
@@ -25,6 +27,8 @@ const user = computed(() => page.props.auth?.user ?? { name: 'Usuário', email: 
             <div class="min-w-0">
                 <AppTopbar :title="title" :breadcrumbs="breadcrumbs" :organization="organizationName" :user="user" />
                 <main class="p-4 sm:p-6 lg:p-8">
+                    <SubscriptionBanner />
+                    <PlanUsageBanner />
                     <slot />
                 </main>
                 <footer class="border-t border-slate-200 bg-white px-4 py-3 text-xs text-slate-500 sm:px-6 lg:px-8">

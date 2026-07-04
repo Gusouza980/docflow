@@ -37,7 +37,11 @@ class AuthenticatedSessionController extends Controller
 
         $auditLog->execute('web.auth.login', $user, request: $request);
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        $defaultRedirect = $user->isPlatformAdmin()
+            ? route('platform.dashboard', absolute: false)
+            : route('dashboard', absolute: false);
+
+        return redirect()->intended($defaultRedirect);
     }
 
     public function destroy(Request $request, RecordAuditLog $auditLog): RedirectResponse

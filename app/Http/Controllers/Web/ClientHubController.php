@@ -19,6 +19,7 @@ use App\Models\OrganizationMember;
 use App\Models\Ticket;
 use App\Models\TicketMessage;
 use App\Models\TicketMessageAttachment;
+use App\Support\Billing\PlanLimitChecker;
 use App\Support\BuildsClientPortalDashboard;
 use App\Support\BuildsTicketHubPayload;
 use App\Support\WebOrganizationContext;
@@ -282,10 +283,14 @@ class ClientHubController extends Controller
         Client $client,
         StorePortalAccessRequest $request,
         WebOrganizationContext $webOrganizationContext,
+        PlanLimitChecker $planLimitChecker,
     ): RedirectResponse {
         $membership = $this->membership($request, $webOrganizationContext);
         abort_if($client->organization_id !== $membership->organization_id, HttpResponse::HTTP_NOT_FOUND);
         Gate::authorize('update', $client);
+
+        $planLimitChecker->assertFeature($membership->organization, 'portal');
+        $planLimitChecker->assertWithinLimit($membership->organization, 'max_portal_accesses', 1);
 
         $token = ClientPortalAccess::makeToken();
         ClientPortalAccess::create([

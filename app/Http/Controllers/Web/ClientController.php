@@ -18,6 +18,7 @@ use App\Models\DocumentRequest;
 use App\Models\MessageTemplate;
 use App\Models\OrganizationMember;
 use App\Models\Ticket;
+use App\Support\Billing\PlanLimitChecker;
 use App\Support\BuildsClientPortalDashboard;
 use App\Support\BuildsTicketHubPayload;
 use App\Support\DisplayFormat;
@@ -82,11 +83,14 @@ class ClientController extends Controller
         StoreClientRequest $request,
         WebOrganizationContext $webOrganizationContext,
         RecordAuditLog $auditLog,
+        PlanLimitChecker $planLimitChecker,
     ): RedirectResponse {
         $membership = $webOrganizationContext->membership($request);
 
         abort_unless($membership, HttpResponse::HTTP_NOT_FOUND);
         abort_if($membership->role === OrganizationMember::ROLE_READONLY, HttpResponse::HTTP_FORBIDDEN);
+
+        $planLimitChecker->assertWithinLimit($membership->organization, 'max_clients', 1);
 
         $client = DB::transaction(function () use ($request, $membership): Client {
             $data = $request->validated();

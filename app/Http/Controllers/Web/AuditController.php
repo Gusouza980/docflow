@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\SchedulerRunLog;
+use App\Support\Billing\PlanLimitChecker;
 use App\Support\WebOrganizationContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -15,7 +16,7 @@ use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 class AuditController extends Controller
 {
-    public function index(Request $request, WebOrganizationContext $webOrganizationContext): Response|RedirectResponse
+    public function index(Request $request, WebOrganizationContext $webOrganizationContext, PlanLimitChecker $planLimitChecker): Response|RedirectResponse
     {
         $membership = $webOrganizationContext->membership($request);
 
@@ -24,6 +25,7 @@ class AuditController extends Controller
         }
 
         abort_unless($membership->isAdmin() || $membership->isManager(), HttpResponse::HTTP_FORBIDDEN);
+        $planLimitChecker->assertFeature($membership->organization, 'audit');
 
         $action = $request->string('action')->toString();
 

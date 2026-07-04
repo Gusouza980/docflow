@@ -13,6 +13,7 @@ use App\Http\Resources\ClientResource;
 use App\Models\AuditLog;
 use App\Models\Client;
 use App\Models\OrganizationMember;
+use App\Support\Billing\PlanLimitChecker;
 use App\Support\OrganizationContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -53,8 +54,10 @@ class ClientController extends Controller
         return ClientResource::collection($clients);
     }
 
-    public function store(StoreClientRequest $request, OrganizationContext $organizationContext, RecordAuditLog $auditLog): JsonResponse
+    public function store(StoreClientRequest $request, OrganizationContext $organizationContext, RecordAuditLog $auditLog, PlanLimitChecker $planLimitChecker): JsonResponse
     {
+        $planLimitChecker->assertWithinLimit($organizationContext->organization(), 'max_clients', 1);
+
         $client = DB::transaction(function () use ($request, $organizationContext): Client {
             $data = $request->validated();
             $responsibleIds = array_values(array_unique($data['responsible_member_ids']));

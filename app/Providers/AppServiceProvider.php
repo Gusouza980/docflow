@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Billing\ManualBillingGateway;
+use App\Contracts\Billing\BillingGateway;
 use App\Contracts\Mail\TransactionalMailer;
 use App\Mail\LaravelTransactionalMailer;
 use App\Mail\LogTransactionalMailer;
@@ -20,6 +22,12 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->scoped(OrganizationContext::class);
+
+        $this->app->singleton(BillingGateway::class, function (): BillingGateway {
+            return match (config('docflow.billing.driver', 'manual')) {
+                default => new ManualBillingGateway,
+            };
+        });
 
         $this->app->singleton(TransactionalMailer::class, function (): TransactionalMailer {
             if (config('mail.default') === 'log') {

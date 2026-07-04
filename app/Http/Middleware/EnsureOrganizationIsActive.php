@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Models\Organization;
 use App\Models\OrganizationMember;
+use App\Support\Billing\OrganizationAccessibility;
 use App\Support\OrganizationContext;
 use Closure;
 use Illuminate\Http\Request;
@@ -11,11 +12,12 @@ use Symfony\Component\HttpFoundation\Response;
 
 class EnsureOrganizationIsActive
 {
-    public function __construct(private OrganizationContext $organizationContext) {}
+    public function __construct(
+        private OrganizationContext $organizationContext,
+        private OrganizationAccessibility $organizationAccessibility,
+    ) {}
 
     /**
-     * Handle an incoming request.
-     *
      * @param  Closure(Request): (Response)  $next
      */
     public function handle(Request $request, Closure $next): Response
@@ -29,8 +31,8 @@ class EnsureOrganizationIsActive
         }
 
         $organization = Organization::query()
+            ->with('subscription')
             ->whereKey($organizationId)
-            ->where('status', Organization::STATUS_ACTIVE)
             ->first();
 
         if (! $organization) {
@@ -48,6 +50,16 @@ class EnsureOrganizationIsActive
         if (! $membership) {
             return response()->json([
                 'message' => 'You do not have access to the active organization.',
+            ], Response::HTTP_FORBIDDEN);
+        }
+
+        if (! $this->organizationAccessibility->isAccessible($organization)) {
+            $blockReason = $this->organizationAccessibility->blockReason($organization);
+
+            return response()->json([
+                'message' => $this->organizationAccessibility->blockMessage($blockReason),
+                'code' => 'subscription_inaccessible',
+                'reason' => $blockReason,
             ], Response::HTTP_FORBIDDEN);
         }
 

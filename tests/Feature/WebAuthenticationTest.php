@@ -37,6 +37,22 @@ class WebAuthenticationTest extends TestCase
         $this->assertAuthenticatedAs($user);
     }
 
+    public function test_platform_admin_is_redirected_to_platform_after_login(): void
+    {
+        $admin = User::factory()->create([
+            'email' => 'platform@docflow.test',
+            'password' => 'password',
+            'is_platform_admin' => true,
+        ]);
+
+        $this->post('/login', [
+            'email' => 'platform@docflow.test',
+            'password' => 'password',
+        ])->assertRedirect('/platform');
+
+        $this->assertAuthenticatedAs($admin);
+    }
+
     public function test_user_cannot_login_with_invalid_web_credentials(): void
     {
         User::factory()->create([

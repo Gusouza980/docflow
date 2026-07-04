@@ -130,7 +130,11 @@ function updateOrganization() {
                             <h2 class="text-sm font-semibold text-slate-950">Workspaces</h2>
                             <p class="mt-1 text-xs text-slate-500">Gerencie organizações e selecione o contexto ativo da sessão.</p>
                         </div>
-                        <Button size="sm" @click="openCreateModal">Nova organização</Button>
+                        <div class="flex gap-2">
+                            <Link v-if="page.props.auth?.permissions?.can_manage_organization && activeOrganizationId" href="/organizations/plan" class="inline-flex h-8 items-center rounded-lg border border-slate-300 bg-white px-3 text-[13px] font-semibold text-slate-800 hover:bg-slate-50">Plano e uso</Link>
+                            <Link v-if="page.props.auth?.permissions?.can_manage_organization && activeOrganizationId" href="/organizations/billing" class="inline-flex h-8 items-center rounded-lg border border-slate-300 bg-white px-3 text-[13px] font-semibold text-slate-800 hover:bg-slate-50">Billing</Link>
+                            <Button size="sm" @click="openCreateModal">Nova organização</Button>
+                        </div>
                     </div>
                 </template>
                 <template #cell-name="{ row }">

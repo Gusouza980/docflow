@@ -5,7 +5,9 @@ namespace App\Models;
 use Database\Factories\OrganizationFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Organization extends Model
 {
@@ -25,6 +27,8 @@ class Organization extends Model
         'status',
         'settings',
         'payment_instructions',
+        'platform_notes',
+        'plan_id',
     ];
 
     protected $attributes = [
@@ -42,6 +46,26 @@ class Organization extends Model
     public function members(): HasMany
     {
         return $this->hasMany(OrganizationMember::class);
+    }
+
+    public function plan(): BelongsTo
+    {
+        return $this->belongsTo(Plan::class);
+    }
+
+    public function planOverrides(): HasMany
+    {
+        return $this->hasMany(OrganizationPlanOverride::class);
+    }
+
+    public function subscription(): HasOne
+    {
+        return $this->hasOne(Subscription::class);
+    }
+
+    public function subscriptionOrFail(): Subscription
+    {
+        return $this->subscription()->firstOrFail();
     }
 
     public function invitations(): HasMany
@@ -92,5 +116,15 @@ class Organization extends Model
     public function calendarEvents(): HasMany
     {
         return $this->hasMany(CalendarEvent::class);
+    }
+
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(SubscriptionInvoice::class);
+    }
+
+    public function isOperational(): bool
+    {
+        return $this->status === self::STATUS_ACTIVE;
     }
 }

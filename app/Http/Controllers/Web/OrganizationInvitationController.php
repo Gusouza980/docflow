@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Web\StoreOrganizationInvitationRequest;
 use App\Models\OrganizationInvitation;
 use App\Models\OrganizationMember;
+use App\Support\Billing\PlanLimitChecker;
 use App\Support\WebOrganizationContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -20,12 +21,14 @@ class OrganizationInvitationController extends Controller
         WebOrganizationContext $webOrganizationContext,
         InviteOrganizationMember $invite,
         RecordAuditLog $auditLog,
+        PlanLimitChecker $planLimitChecker,
     ): RedirectResponse {
         $membership = $webOrganizationContext->membership($request);
 
         abort_unless($membership?->isAdmin(), Response::HTTP_FORBIDDEN);
 
         $organization = $membership->organization;
+        $planLimitChecker->assertWithinLimit($organization, 'max_members', 1);
         $email = mb_strtolower($request->validated('email'));
 
         $existingMember = OrganizationMember::query()

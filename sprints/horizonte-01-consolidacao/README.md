@@ -71,6 +71,6 @@ flowchart LR
 - BI avançado, app mobile nativo.
 - Google Calendar / Outlook.
 
-## Próximo horizonte (referência)
+## Próximo horizonte
 
-Horizonte 2: CRM + serviços/contratos + automações simples — ver `sprints/sprint-08-automacoes-integracoes-modulos/TASKS.md`.
+[Horizonte 2 — Administração da plataforma e assinaturas](../horizonte-02-platform-billing/README.md) (Sprints 13–16).

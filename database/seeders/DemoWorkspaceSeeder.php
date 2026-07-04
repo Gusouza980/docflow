@@ -24,6 +24,8 @@ use App\Models\InternalReminder;
 use App\Models\Organization;
 use App\Models\OrganizationInvitation;
 use App\Models\OrganizationMember;
+use App\Models\Plan;
+use App\Models\Subscription;
 use App\Models\Task;
 use App\Models\TaskChecklistItem;
 use App\Models\TaskTemplate;
@@ -50,11 +52,23 @@ class DemoWorkspaceSeeder extends Seeder
                     'phone' => '(11) 4002-8922',
                     'timezone' => 'America/Sao_Paulo',
                     'status' => Organization::STATUS_ACTIVE,
+                    'plan_id' => Plan::query()->where('slug', 'escritorio')->value('id'),
                     'settings' => [
                         'currency' => 'BRL',
                         'locale' => 'pt_BR',
                         'document_retention_years' => 5,
                     ],
+                ],
+            );
+
+            Subscription::query()->updateOrCreate(
+                ['organization_id' => $organization->id],
+                [
+                    'plan_id' => $organization->plan_id,
+                    'status' => Subscription::STATUS_ACTIVE,
+                    'billing_provider' => Subscription::BILLING_PROVIDER_MANUAL,
+                    'current_period_start' => now(),
+                    'current_period_end' => now()->addMonth(),
                 ],
             );
 

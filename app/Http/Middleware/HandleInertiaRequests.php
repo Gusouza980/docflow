@@ -4,6 +4,10 @@ namespace App\Http\Middleware;
 
 use App\Models\InternalReminder;
 use App\Models\OrganizationMember;
+use App\Models\Plan;
+use App\Models\User;
+use App\Support\Billing\OrganizationAccessibility;
+use App\Support\Billing\PlanLimitChecker;
 use App\Support\BuildsClientPortalDashboard;
 use App\Support\WebOrganizationContext;
 use Illuminate\Http\Request;
@@ -40,15 +44,17 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         $user = $request->user();
-        $membership = app(WebOrganizationContext::class)->membership($request);
+        $webUser = $user instanceof User ? $user : null;
+        $membership = $webUser ? app(WebOrganizationContext::class)->membership($request) : null;
 
         return [
             ...parent::share($request),
             'auth' => [
-                'user' => $user ? [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
+                'user' => $webUser ? [
+                    'id' => $webUser->id,
+                    'name' => $webUser->name,
+                    'email' => $webUser->email,
+                    'is_platform_admin' => $webUser->isPlatformAdmin(),
                 ] : null,
                 'membership' => $membership ? [
                     'id' => $membership->id,
@@ -62,8 +68,22 @@ class HandleInertiaRequests extends Middleware
                     'can_manage_organization' => (bool) ($membership?->isAdmin() || $membership?->isManager()),
                     'can_write' => (bool) ($membership && $membership->role !== OrganizationMember::ROLE_READONLY),
                 ],
+                'plan_summary' => function () use ($webUser, $membership) {
+                    if (! $webUser || ! $membership?->isAdmin() || ! Plan::query()->exists()) {
+                        return null;
+                    }
+
+                    return app(PlanLimitChecker::class)->usageSummary($membership->organization);
+                },
+                'subscription_summary' => function () use ($membership) {
+                    if (! $membership) {
+                        return null;
+                    }
+
+                    return app(OrganizationAccessibility::class)->summaryFor($membership->organization);
+                },
                 'notifications' => [
-                    'unread_count' => ($user && $membership)
+                    'unread_count' => ($webUser && $membership)
                         ? InternalReminder::query()
                             ->where('organization_id', $membership->organization_id)
                             ->where('user_id', $user->id)

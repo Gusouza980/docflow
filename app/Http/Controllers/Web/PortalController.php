@@ -14,6 +14,7 @@ use App\Models\CommunicationConsent;
 use App\Models\MessageTemplate;
 use App\Models\OrganizationMember;
 use App\Models\Ticket;
+use App\Support\Billing\PlanLimitChecker;
 use App\Support\DisplayFormat;
 use App\Support\WebOrganizationContext;
 use Illuminate\Http\RedirectResponse;
@@ -105,11 +106,14 @@ class PortalController extends Controller
         ]);
     }
 
-    public function storeAccess(StorePortalAccessRequest $request, WebOrganizationContext $webOrganizationContext): RedirectResponse
+    public function storeAccess(StorePortalAccessRequest $request, WebOrganizationContext $webOrganizationContext, PlanLimitChecker $planLimitChecker): RedirectResponse
     {
         $membership = $this->membership($request, $webOrganizationContext);
         $client = $this->client($request->validated('client_id'), $membership);
         Gate::authorize('update', $client);
+
+        $planLimitChecker->assertFeature($membership->organization, 'portal');
+        $planLimitChecker->assertWithinLimit($membership->organization, 'max_portal_accesses', 1);
 
         $token = ClientPortalAccess::makeToken();
         $access = ClientPortalAccess::create([

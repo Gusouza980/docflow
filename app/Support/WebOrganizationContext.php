@@ -35,6 +35,19 @@ class WebOrganizationContext
 
     private function resolveMembership(Request $request, User $user): ?OrganizationMember
     {
+        $activeOrganizationId = $request->session()->get('active_organization_id');
+
+        if ($activeOrganizationId) {
+            $sessionMembership = $user->activeOrganizationMemberships()
+                ->with('organization')
+                ->where('organization_id', $activeOrganizationId)
+                ->first();
+
+            if ($sessionMembership) {
+                return $sessionMembership;
+            }
+        }
+
         $memberships = $user->activeOrganizationMemberships()
             ->with('organization')
             ->whereHas('organization', fn ($query) => $query->where('status', Organization::STATUS_ACTIVE))
@@ -47,7 +60,6 @@ class WebOrganizationContext
             return null;
         }
 
-        $activeOrganizationId = $request->session()->get('active_organization_id');
         $membership = $memberships->firstWhere('organization_id', $activeOrganizationId) ?? $memberships->first();
 
         $request->session()->put('active_organization_id', $membership->organization_id);
