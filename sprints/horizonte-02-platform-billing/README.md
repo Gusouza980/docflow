@@ -14,12 +14,12 @@ Introduzir a camada **SaaS** do Docflow: operadores da plataforma gerenciam tena
 
 ## Duração estimada
 
-| Sprint | Foco | Duração sugerida |
-|--------|------|------------------|
-| [Sprint 13](../sprint-13-platform-admin-fundacao/TASKS.md) | Fundação platform admin + gestão de tenants | 4–6 dias |
-| [Sprint 14](../sprint-14-planos-limites/TASKS.md) | Catálogo de planos e engine de limites | 4–6 dias |
-| [Sprint 15](../sprint-15-assinaturas-ciclo-vida/TASKS.md) | Assinaturas, trial e enforcement de acesso | 5–7 dias |
-| [Sprint 16](../sprint-16-billing-self-service/TASKS.md) | Billing, faturas e self-service do tenant | 5–8 dias |
+| Sprint | Foco | Duração sugerida | Status |
+|--------|------|------------------|--------|
+| [Sprint 13](../sprint-13-platform-admin-fundacao/TASKS.md) | Fundação platform admin + gestão de tenants | 4–6 dias | ✅ |
+| [Sprint 14](../sprint-14-planos-limites/TASKS.md) | Catálogo de planos e engine de limites | 4–6 dias | ✅ |
+| [Sprint 15](../sprint-15-assinaturas-ciclo-vida/TASKS.md) | Assinaturas, trial e enforcement de acesso | 5–7 dias | ✅ |
+| [Sprint 16](../sprint-16-billing-self-service/TASKS.md) | Billing, faturas e self-service do tenant | 5–8 dias | ✅ MVP |
 
 **Total:** ~3–5 semanas (1 dev), dependendo do gateway escolhido na Sprint 16.
 
