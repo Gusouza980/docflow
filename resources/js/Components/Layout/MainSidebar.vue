@@ -15,7 +15,9 @@ const items = computed(() => [
     { key: 'team', label: 'Equipe', icon: '◎', href: '/team' },
     ...(page.props.auth?.permissions?.can_access_crm ? [
         { key: 'leads', label: 'CRM', icon: '◈', href: '/leads' },
-        { key: 'onboarding-templates', label: 'Onboarding', icon: '▣', href: '/onboarding-templates' },
+        ...(page.props.auth?.permissions?.can_manage_organization ? [
+            { key: 'onboarding-templates', label: 'Onboarding', icon: '▣', href: '/onboarding-templates' },
+        ] : []),
     ] : []),
     { key: 'clients', label: 'Clientes', icon: '◌', href: '/clients' },
     { key: 'documents', label: 'Documentos', icon: '□', href: '/documents' },

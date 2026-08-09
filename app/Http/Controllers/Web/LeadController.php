@@ -96,6 +96,8 @@ class LeadController extends Controller
 
         $data = $request->validated();
 
+        $stage = $data['stage'] ?? Lead::STAGE_NEW;
+
         $lead = Lead::query()->create([
             'organization_id' => $membership->organization_id,
             'owner_user_id' => $data['owner_user_id'] ?? $request->user()->id,
@@ -103,7 +105,8 @@ class LeadController extends Controller
             'email' => $data['email'] ?? null,
             'phone' => $data['phone'] ?? null,
             'origin' => $data['origin'] ?? null,
-            'stage' => $data['stage'] ?? Lead::STAGE_NEW,
+            'stage' => $stage,
+            'lost_reason' => $stage === Lead::STAGE_LOST ? ($data['lost_reason'] ?? null) : null,
             'estimated_value_cents' => $data['estimated_value_cents'] ?? null,
             'service_interest' => $data['service_interest'] ?? null,
         ]);
@@ -340,20 +343,11 @@ class LeadController extends Controller
 
     private function canViewCrm(OrganizationMember $membership): bool
     {
-        return in_array($membership->role, [
-            OrganizationMember::ROLE_ADMIN,
-            OrganizationMember::ROLE_MANAGER,
-            OrganizationMember::ROLE_PROFESSIONAL,
-            OrganizationMember::ROLE_ASSISTANT,
-        ], true);
+        return $membership->canViewCrm();
     }
 
     private function canManageCrm(OrganizationMember $membership): bool
     {
-        return in_array($membership->role, [
-            OrganizationMember::ROLE_ADMIN,
-            OrganizationMember::ROLE_MANAGER,
-            OrganizationMember::ROLE_PROFESSIONAL,
-        ], true);
+        return $membership->canManageCrm();
     }
 }

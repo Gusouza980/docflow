@@ -27,7 +27,15 @@ class StoreLeadRequest extends FormRequest
             'email' => ['nullable', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:40'],
             'origin' => ['nullable', 'string', Rule::in(array_keys(Lead::originLabels()))],
-            'stage' => ['nullable', 'string', Rule::in(Lead::stages())],
+            'stage' => [
+                'nullable',
+                'string',
+                Rule::in(array_values(array_filter(
+                    Lead::stages(),
+                    fn (string $stage): bool => $stage !== Lead::STAGE_WON,
+                ))),
+            ],
+            'lost_reason' => ['nullable', 'required_if:stage,'.Lead::STAGE_LOST, 'string', 'max:255'],
             'estimated_value_cents' => ['nullable', 'integer', 'min:0'],
             'service_interest' => ['nullable', 'string', 'max:255'],
             'owner_user_id' => [

@@ -13,6 +13,10 @@ class UpdateLeadStage
             throw new InvalidArgumentException('Leads convertidos não podem mudar de etapa.');
         }
 
+        if ($stage === Lead::STAGE_WON) {
+            throw new InvalidArgumentException('Para marcar como aceito, converta o lead em cliente.');
+        }
+
         if (! in_array($stage, Lead::stages(), true)) {
             throw new InvalidArgumentException('Etapa de funil inválida.');
         }

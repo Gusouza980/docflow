@@ -19,7 +19,14 @@ class UpdateLeadStageRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'stage' => ['required', 'string', Rule::in(Lead::stages())],
+            'stage' => [
+                'required',
+                'string',
+                Rule::in(array_values(array_filter(
+                    Lead::stages(),
+                    fn (string $stage): bool => $stage !== Lead::STAGE_WON,
+                ))),
+            ],
             'lost_reason' => ['nullable', 'required_if:stage,'.Lead::STAGE_LOST, 'string', 'max:255'],
         ];
     }

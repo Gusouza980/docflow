@@ -81,6 +81,59 @@ class CrmOnboardingTest extends TestCase
             ->assertSessionHasErrors('lost_reason');
     }
 
+    public function test_won_stage_requires_conversion(): void
+    {
+        [$user, $organization] = $this->createContext('profissional');
+        $lead = Lead::factory()->create([
+            'organization_id' => $organization->id,
+            'owner_user_id' => $user->id,
+            'stage' => Lead::STAGE_NEGOTIATION,
+        ]);
+
+        $this->actingAs($user)
+            ->withSession(['active_organization_id' => $organization->id])
+            ->from("/leads/{$lead->id}")
+            ->patch("/leads/{$lead->id}/stage", [
+                'stage' => Lead::STAGE_WON,
+            ])
+            ->assertSessionHasErrors('stage');
+
+        $this->assertSame(Lead::STAGE_NEGOTIATION, $lead->fresh()->stage);
+        $this->assertNull($lead->fresh()->client_id);
+    }
+
+    public function test_readonly_cannot_see_commercial_hub(): void
+    {
+        [$admin, $organization] = $this->createContext('profissional');
+        $readonly = User::factory()->create();
+        OrganizationMember::factory()->create([
+            'organization_id' => $organization->id,
+            'user_id' => $readonly->id,
+            'role' => OrganizationMember::ROLE_READONLY,
+            'status' => OrganizationMember::STATUS_ACTIVE,
+        ]);
+
+        $lead = Lead::factory()->create([
+            'organization_id' => $organization->id,
+            'owner_user_id' => $admin->id,
+        ]);
+
+        $this->actingAs($admin)
+            ->withSession(['active_organization_id' => $organization->id])
+            ->post("/leads/{$lead->id}/convert")
+            ->assertRedirect();
+
+        $clientId = $lead->fresh()->client_id;
+
+        $this->actingAs($readonly)
+            ->withSession(['active_organization_id' => $organization->id])
+            ->get("/clients/{$clientId}?tab=commercial")
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Clients/Show', false)
+                ->where('hub.commercial', []));
+    }
+
     public function test_convert_lead_creates_client_and_preserves_activities(): void
     {
         [$user, $organization, $member] = $this->createContext('profissional');

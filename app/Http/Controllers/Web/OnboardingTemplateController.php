@@ -15,8 +15,10 @@ use App\Support\WebOrganizationContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
+use InvalidArgumentException;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 class OnboardingTemplateController extends Controller
@@ -127,13 +129,18 @@ class OnboardingTemplateController extends Controller
 
         $client = Client::query()->findOrFail($request->validated('client_id'));
         abort_unless($client->organization_id === $membership->organization_id, HttpResponse::HTTP_NOT_FOUND);
+        Gate::authorize('update', $client);
 
-        $tasks = $startClientOnboarding->execute(
-            client: $client,
-            template: $template,
-            actorUserId: $request->user()->id,
-            assignedMemberId: $membership->id,
-        );
+        try {
+            $tasks = $startClientOnboarding->execute(
+                client: $client,
+                template: $template,
+                actorUserId: $request->user()->id,
+                assignedMemberId: $membership->id,
+            );
+        } catch (InvalidArgumentException $exception) {
+            return back()->with('error', $exception->getMessage());
+        }
 
         return redirect()
             ->route('tasks.index')
