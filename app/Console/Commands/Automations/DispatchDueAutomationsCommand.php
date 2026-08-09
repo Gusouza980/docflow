@@ -39,6 +39,11 @@ class DispatchDueAutomationsCommand extends Command
             Document::query()
                 ->where('organization_id', $organization->id)
                 ->whereNotNull('expires_at')
+                ->whereNotIn('status', [
+                    Document::STATUS_REJECTED,
+                    Document::STATUS_EXPIRED,
+                    Document::STATUS_REPLACED,
+                ])
                 ->whereBetween('expires_at', [now()->toDateString(), now()->addDays(7)->toDateString()])
                 ->limit(200)
                 ->each(function (Document $document) use ($runner, $organization): void {

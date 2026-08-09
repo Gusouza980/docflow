@@ -35,6 +35,8 @@ class InternalReminder extends Model
 
     public const TYPE_CLIENT_DELINQUENT = 'client_delinquent';
 
+    public const TYPE_AUTOMATION = 'automation';
+
     protected $fillable = [
         'organization_id',
         'user_id',
