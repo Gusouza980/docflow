@@ -186,7 +186,7 @@ class DashboardManagementTest extends TestCase
             'receivable_id' => $previousReceivable->id,
             'received_by_user_id' => $user->id,
             'amount_cents' => 40000,
-            'paid_at' => '2026-07-20',
+            'paid_at' => '2026-07-10',
         ]);
 
         $this->actingAs($user)
@@ -348,6 +348,40 @@ class DashboardManagementTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->where('commercial.accepted_proposals_cents', 150000)
                 ->where('commercial.gained_cents', 150000));
+    }
+
+    public function test_converted_lead_with_accepted_proposal_is_not_double_counted(): void
+    {
+        $this->seed(PlanSeeder::class);
+        $this->travelTo('2026-08-15 12:00:00');
+
+        $planId = Plan::query()->where('slug', 'profissional')->value('id');
+        $organization = Organization::factory()->create(['plan_id' => $planId]);
+        $organization->subscription?->update(['plan_id' => $planId]);
+        [$user] = $this->createMember(OrganizationMember::ROLE_ADMIN, $organization);
+
+        $lead = Lead::factory()->create([
+            'organization_id' => $organization->id,
+            'owner_user_id' => $user->id,
+            'stage' => Lead::STAGE_WON,
+            'estimated_value_cents' => 200000,
+            'converted_at' => '2026-08-12 11:00:00',
+        ]);
+        Proposal::factory()->create([
+            'lead_id' => $lead->id,
+            'amount_cents' => 180000,
+            'status' => Proposal::STATUS_ACCEPTED,
+            'decided_at' => '2026-08-11 10:00:00',
+        ]);
+
+        $this->actingAs($user)
+            ->withSession(['active_organization_id' => $organization->id])
+            ->get('/dashboard?period=month')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('commercial.won_leads_cents', 200000)
+                ->where('commercial.accepted_proposals_cents', 0)
+                ->where('commercial.gained_cents', 200000));
     }
 
     /**

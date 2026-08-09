@@ -331,7 +331,14 @@ class ReportMetrics
             ->sum('estimated_value_cents');
 
         $acceptedProposalsCents = (int) Proposal::query()
-            ->whereHas('lead', fn (Builder $query) => $query->whereBelongsTo($membership->organization))
+            ->whereHas('lead', function (Builder $query) use ($membership, $start, $end): void {
+                $query->whereBelongsTo($membership->organization)
+                    ->where(function (Builder $query) use ($start, $end): void {
+                        $query->where('stage', '!=', Lead::STAGE_WON)
+                            ->orWhereNull('converted_at')
+                            ->orWhereNotBetween('converted_at', [$start, $end]);
+                    });
+            })
             ->where('status', Proposal::STATUS_ACCEPTED)
             ->where(function (Builder $query) use ($start, $end): void {
                 $query->whereBetween('decided_at', [$start, $end])
@@ -358,6 +365,18 @@ class ReportMetrics
      */
     public function previousPeriodFilters(array $filters): array
     {
+        if (($filters['period'] ?? null) === 'month') {
+            $reference = now();
+            $previousMonth = $reference->copy()->subMonthNoOverflow();
+            $previousDay = min($reference->day, $previousMonth->daysInMonth);
+
+            return [
+                'period' => 'custom',
+                'start_date' => $previousMonth->copy()->startOfMonth()->toDateString(),
+                'end_date' => $previousMonth->copy()->day($previousDay)->toDateString(),
+            ];
+        }
+
         [$start, $end] = $this->period($filters);
         $daySpan = max(1, (int) $start->diffInDays($end) + 1);
         $previousEnd = $start->copy()->subDay()->endOfDay();

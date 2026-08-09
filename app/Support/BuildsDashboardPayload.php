@@ -133,7 +133,7 @@ class BuildsDashboardPayload
         return [
             'period' => 'month',
             'start_date' => now()->startOfMonth()->toDateString(),
-            'end_date' => now()->endOfMonth()->toDateString(),
+            'end_date' => now()->toDateString(),
         ];
     }
 }

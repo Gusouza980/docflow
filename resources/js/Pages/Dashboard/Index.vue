@@ -206,6 +206,8 @@ const hasValueData = computed(() => {
         return (props.value.received_cents ?? 0) > 0
             || (props.value.open_receivables_cents ?? 0) > 0
             || (props.value.overdue_receivables_cents ?? 0) > 0
+            || (props.value.paid_payables_cents ?? 0) > 0
+            || (props.value.net_period_cents ?? 0) !== 0
             || (props.contracts_revenue?.mrr_cents ?? 0) > 0
             || (props.contracts_revenue?.at_risk_cents ?? 0) > 0
             || (props.commercial?.pipeline_cents ?? 0) > 0
