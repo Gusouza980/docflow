@@ -36,17 +36,19 @@ class StartClientOnboarding
             throw new InvalidArgumentException('Template de onboarding sem itens.');
         }
 
-        $alreadyStarted = Task::query()
-            ->where('organization_id', $client->organization_id)
-            ->where('client_id', $client->id)
-            ->where('title', 'like', '[Onboarding]%')
-            ->exists();
-
-        if ($alreadyStarted) {
-            throw new InvalidArgumentException('Cliente já possui tarefas de onboarding.');
-        }
-
         return DB::transaction(function () use ($client, $template, $actorUserId, $assignedMemberId): Collection {
+            Client::query()->whereKey($client->id)->lockForUpdate()->firstOrFail();
+
+            $alreadyStarted = Task::query()
+                ->where('organization_id', $client->organization_id)
+                ->where('client_id', $client->id)
+                ->where('title', 'like', '[Onboarding]%')
+                ->exists();
+
+            if ($alreadyStarted) {
+                throw new InvalidArgumentException('Cliente já possui tarefas de onboarding.');
+            }
+
             $baseDate = now();
 
             return $template->items->map(function (OnboardingTemplateItem $item) use ($client, $actorUserId, $assignedMemberId, $baseDate): Task {

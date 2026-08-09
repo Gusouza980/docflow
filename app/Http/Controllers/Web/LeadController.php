@@ -20,6 +20,7 @@ use App\Support\DisplayFormat;
 use App\Support\WebOrganizationContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
@@ -306,11 +307,17 @@ class LeadController extends Controller
         abort_unless($lead->organization_id === $membership->organization_id, HttpResponse::HTTP_NOT_FOUND);
         abort_unless($this->canManageCrm($membership), HttpResponse::HTTP_FORBIDDEN);
 
+        $startOnboarding = (bool) $request->boolean('start_onboarding');
+
+        if ($startOnboarding && $lead->client_id !== null) {
+            Gate::authorize('update', $lead->client()->firstOrFail());
+        }
+
         try {
             $client = $convertLeadToClient->execute(
                 lead: $lead,
                 actor: $membership,
-                startOnboarding: (bool) $request->boolean('start_onboarding'),
+                startOnboarding: $startOnboarding,
             );
         } catch (\InvalidArgumentException $exception) {
             return back()->with('error', $exception->getMessage());

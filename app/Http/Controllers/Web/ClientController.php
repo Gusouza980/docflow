@@ -223,8 +223,9 @@ class ClientController extends Controller
                     ->get()
                     ->map(fn (Ticket $ticket): array => $this->ticketPayload->listItem($ticket)),
                 'commercial' => (
-                    $membership->canViewCrm()
-                    && app(PlanLimitChecker::class)->hasFeature($membership->organization, 'crm')
+                    $membership->organization_id === $client->organization_id
+                    && $membership->canViewCrm()
+                    && app(PlanLimitChecker::class)->hasFeature($client->organization, 'crm')
                 )
                     ? $client->leads()
                         ->with(['activities' => fn ($query) => $query->latest('happened_at')->limit(10), 'proposals'])
