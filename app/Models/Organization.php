@@ -108,6 +108,16 @@ class Organization extends Model
         return $this->hasMany(TaskTemplate::class);
     }
 
+    public function leads(): HasMany
+    {
+        return $this->hasMany(Lead::class);
+    }
+
+    public function onboardingTemplates(): HasMany
+    {
+        return $this->hasMany(OnboardingTemplate::class);
+    }
+
     public function deadlines(): HasMany
     {
         return $this->hasMany(Deadline::class);

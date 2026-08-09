@@ -38,6 +38,7 @@ return [
         'reports_scheduling' => 'Agendamento de relatórios',
         'audit' => 'Auditoria de ações',
         'automations' => 'Automações',
+        'crm' => 'CRM e onboarding',
     ],
 
 ];

@@ -101,6 +101,11 @@ class Client extends Model
         return $this->hasMany(ClientContact::class);
     }
 
+    public function leads(): HasMany
+    {
+        return $this->hasMany(Lead::class);
+    }
+
     public function tags(): BelongsToMany
     {
         return $this->belongsToMany(ClientTag::class, 'client_tag')->withTimestamps();

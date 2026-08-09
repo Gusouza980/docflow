@@ -11,6 +11,10 @@ Entregar CRM mínimo viável para o escritório: **leads**, etapas de funil, ati
 - UC-024 a UC-031
 - `TaskTemplate`, `DocumentRequest`, `Client` existentes
 
+## Decisões de kickoff
+
+- CRM disponível **apenas a partir do plano Profissional** (feature `crm` em Profissional e Escritório).
+
 ## Pré-requisitos
 
 - Clientes, tarefas, solicitações de documento e permissões Spatie por org (Horizonte 1).
@@ -46,7 +50,7 @@ Entregar CRM mínimo viável para o escritório: **leads**, etapas de funil, ati
 
 ### Modelagem
 
-- [ ] Migration `leads`:
+- [x] Migration `leads`:
   ```text
   organization_id, client_id nullable
   name, email, phone, origin, stage
@@ -54,42 +58,42 @@ Entregar CRM mínimo viável para o escritório: **leads**, etapas de funil, ati
   service_interest nullable, lost_reason nullable
   converted_at nullable, metadata json
   ```
-- [ ] Migration `lead_activities`: lead_id, type, body, happened_at, created_by_user_id.
-- [ ] Migration `proposals`: lead_id, title, amount_cents, status, sent_at, decided_at, notes.
-- [ ] Migration `onboarding_templates` + `onboarding_template_items` (org-scoped).
-- [ ] Migration `client_onboardings` (+ items status) **ou** reutilizar tasks com tag/source `onboarding`.
-- [ ] Models + factories; policies/permissions (`leads.view`, `leads.manage` ou reutilizar roles admin/manager/assistant).
+- [x] Migration `lead_activities`: lead_id, type, body, happened_at, created_by_user_id.
+- [x] Migration `proposals`: lead_id, title, amount_cents, status, sent_at, decided_at, notes.
+- [x] Migration `onboarding_templates` + `onboarding_template_items` (org-scoped).
+- [x] Migration `client_onboardings` (+ items status) **ou** reutilizar tasks com tag/source `onboarding`.
+- [x] Models + factories; policies/permissions (`leads.view`, `leads.manage` ou reutilizar roles admin/manager/assistant).
 
 ### Actions
 
-- [ ] `CreateLead`, `UpdateLeadStage`, `RecordLeadActivity`.
-- [ ] `CreateProposal`, `AcceptProposal`, `RejectProposal`.
-- [ ] `ConvertLeadToClient`.
-- [ ] `StartClientOnboarding` (a partir de template).
+- [x] `CreateLead`, `UpdateLeadStage`, `RecordLeadActivity`.
+- [x] `CreateProposal`, `AcceptProposal`, `RejectProposal`.
+- [x] `ConvertLeadToClient`.
+- [x] `StartClientOnboarding` (a partir de template).
 
 ### Controllers / rotas web (Inertia)
 
-- [ ] `LeadController` — index (kanban/lista), show, store, update, destroy.
-- [ ] `LeadActivityController`, `ProposalController`.
-- [ ] `LeadConversionController@store`.
-- [ ] `OnboardingTemplateController` (admin) + `ClientOnboardingController`.
-- [ ] Menu sidebar: “CRM” / “Leads”.
+- [x] `LeadController` — index (kanban/lista), show, store, update, destroy.
+- [x] `LeadActivityController`, `ProposalController`.
+- [x] `LeadConversionController@store`.
+- [x] `OnboardingTemplateController` (admin) + `ClientOnboardingController`.
+- [x] Menu sidebar: “CRM” / “Leads”.
 
 ### Frontend
 
-- [ ] `Leads/Index.vue`, `Show.vue`, formulários.
-- [ ] Board por stage (drag opcional; MVP: botões “mover”).
-- [ ] Aba comercial em `Clients/Show` (leads convertidos / histórico).
-- [ ] UI onboarding pendente no cliente.
+- [x] `Leads/Index.vue`, `Show.vue`, formulários.
+- [x] Board por stage (drag opcional; MVP: botões “mover”).
+- [x] Aba comercial em `Clients/Show` (leads convertidos / histórico).
+- [x] UI onboarding pendente no cliente.
 
 ### Testes
 
-- [ ] Feature: criar lead e mover stage.
-- [ ] Feature: perdido exige `lost_reason`.
-- [ ] Feature: converter cria client e preserva activities.
-- [ ] Feature: onboarding cria N tasks a partir do template.
-- [ ] Feature: assistente sem permissão → 403 (se policy restritiva).
-- [ ] Feature: isolamento tenant (lead de outra org → 404).
+- [x] Feature: criar lead e mover stage.
+- [x] Feature: perdido exige `lost_reason`.
+- [x] Feature: converter cria client e preserva activities.
+- [x] Feature: onboarding cria N tasks a partir do template.
+- [x] Feature: assistente sem permissão → 403 (se policy restritiva).
+- [x] Feature: isolamento tenant (lead de outra org → 404).
 
 ## Endpoints (web MVP)
 

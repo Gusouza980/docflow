@@ -1,14 +1,22 @@
 <script setup>
+import { computed } from 'vue';
+import { usePage } from '@inertiajs/vue3';
 import AppSidebar from './AppSidebar.vue';
 
 defineProps({
     active: { type: String, default: null },
 });
 
-const items = [
+const page = usePage();
+
+const items = computed(() => [
     { key: 'dashboard', label: 'Dashboard', icon: '▦', href: '/dashboard' },
     { key: 'organizations', label: 'Organizações', icon: '◫', href: '/organizations' },
     { key: 'team', label: 'Equipe', icon: '◎', href: '/team' },
+    ...(page.props.auth?.permissions?.can_access_crm ? [
+        { key: 'leads', label: 'CRM', icon: '◈', href: '/leads' },
+        { key: 'onboarding-templates', label: 'Onboarding', icon: '▣', href: '/onboarding-templates' },
+    ] : []),
     { key: 'clients', label: 'Clientes', icon: '◌', href: '/clients' },
     { key: 'documents', label: 'Documentos', icon: '□', href: '/documents' },
     { key: 'document-requests', label: 'Solicitações', icon: '▤', href: '/document-requests' },
@@ -22,7 +30,7 @@ const items = [
     { key: 'announcements', label: 'Comunicados', icon: '!', href: '/announcements' },
     { key: 'reports', label: 'Relatórios', icon: '%', href: '/reports' },
     { key: 'audit', label: 'Auditoria', icon: '◉', href: '/audit' },
-];
+]);
 </script>
 
 <template>

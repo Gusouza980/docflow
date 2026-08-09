@@ -37,6 +37,7 @@ class PlanFactory extends Factory
                 'reports_scheduling' => false,
                 'audit' => false,
                 'automations' => false,
+                'crm' => false,
             ],
             'is_public' => true,
             'is_active' => true,

@@ -17,6 +17,7 @@ Fechar o **loop de pagamento externo** do Docflow (Asaas) e abrir os primeiros m
 |---|---------|---------|
 | 1 | Primeira sprint do horizonte | **Asaas** (fecha stretch da Sprint 16; config `ASAAS_*` já existe) |
 | 2 | CRM antes de contratos | Sim — conversão lead→cliente alimenta contratos |
+| 2b | Disponibilidade do CRM | **A partir do plano Profissional** (feature `crm`) |
 | 3 | Onboarding | Checklist + tarefas/docs na Sprint 18; cobrança recorrente amarra na 19/20 |
 | 4 | Escopo da Sprint 08 antiga | **Superseded** — decomposta aqui; verticais/IA ficam fora |
 | 5 | Gateway financeiro interno do escritório | Fora — continua separado do billing SaaS |
@@ -26,7 +27,7 @@ Fechar o **loop de pagamento externo** do Docflow (Asaas) e abrir os primeiros m
 | Sprint | Foco | Duração sugerida | Status |
 |--------|------|------------------|--------|
 | [Sprint 17](../sprint-17-asaas-billing-gateway/TASKS.md) | Gateway Asaas + webhooks reais | 4–6 dias | ✅ |
-| [Sprint 18](../sprint-18-crm-onboarding/TASKS.md) | CRM (leads/funil) + onboarding | 6–8 dias | ⬜ |
+| [Sprint 18](../sprint-18-crm-onboarding/TASKS.md) | CRM (leads/funil) + onboarding (Profissional+) | 6–8 dias | ✅ |
 | [Sprint 19](../sprint-19-servicos-contratos/TASKS.md) | Serviços e contratos | 5–7 dias | ⬜ |
 | [Sprint 20](../sprint-20-automacoes-simples/TASKS.md) | Automações simples + logs | 5–7 dias | ⬜ |
 
