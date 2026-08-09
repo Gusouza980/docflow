@@ -43,6 +43,7 @@ class InternalReminder extends Model
         'remindable_type',
         'remindable_id',
         'type',
+        'body',
         'remind_at',
         'sent_at',
         'read_at',

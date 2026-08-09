@@ -80,6 +80,8 @@ class DispatchDueAutomationsCommand extends Command
                 ->where('organization_id', $organization->id)
                 ->whereDate('due_at', '<', now()->toDateString())
                 ->whereIn('status', [Receivable::STATUS_OPEN, Receivable::STATUS_PARTIAL])
+                ->orderBy('due_at')
+                ->orderBy('id')
                 ->limit(200)
                 ->each(function (Receivable $receivable) use ($runner, $organization): void {
                     $runner->dispatch(

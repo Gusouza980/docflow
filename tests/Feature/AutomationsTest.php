@@ -2,10 +2,14 @@
 
 namespace Tests\Feature;
 
+use App\Automations\Actions\NotifyOrganizationMembersAction;
 use App\Automations\AutomationRunner;
+use App\Enums\DocumentVisibility;
 use App\Models\AutomationLog;
 use App\Models\AutomationRule;
 use App\Models\Client;
+use App\Models\Document;
+use App\Models\InternalReminder;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\Plan;
@@ -13,6 +17,7 @@ use App\Models\Task;
 use App\Models\TaskTemplate;
 use App\Models\TaskTemplateItem;
 use App\Models\User;
+use App\Support\PresentsInternalReminder;
 use Database\Seeders\PlanSeeder;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Tests\TestCase;
@@ -134,6 +139,84 @@ class AutomationsTest extends TestCase
             ->withSession(['active_organization_id' => $organization->id])
             ->get("/automations/{$rule->id}")
             ->assertNotFound();
+    }
+
+    public function test_notify_action_reopens_read_reminders_and_keeps_message(): void
+    {
+        [$user, $organization] = $this->createContext('profissional');
+        $client = Client::factory()->create(['organization_id' => $organization->id]);
+
+        $rule = AutomationRule::factory()->create([
+            'organization_id' => $organization->id,
+            'trigger' => AutomationRule::TRIGGER_CLIENT_CREATED,
+            'is_active' => true,
+            'actions' => [[
+                'type' => AutomationRule::ACTION_NOTIFY_ORGANIZATION_MEMBERS,
+                'params' => [
+                    'roles' => [OrganizationMember::ROLE_ADMIN],
+                    'message' => 'Cliente novo na operação.',
+                ],
+            ]],
+        ]);
+
+        $action = app(NotifyOrganizationMembersAction::class);
+        $action->execute($rule, $client, $rule->actions[0]['params']);
+
+        $reminder = InternalReminder::query()->where('user_id', $user->id)->firstOrFail();
+        $reminder->update(['read_at' => now()]);
+
+        $result = $action->execute($rule, $client, $rule->actions[0]['params']);
+
+        $reminder->refresh();
+
+        $this->assertNull($reminder->read_at);
+        $this->assertSame('Cliente novo na operação.', $reminder->body);
+        $this->assertSame(1, $result['notified_members']);
+
+        $presented = app(PresentsInternalReminder::class)->present($reminder);
+        $this->assertSame('Cliente novo na operação.', $presented['body']);
+    }
+
+    public function test_notify_action_skips_members_without_view_access(): void
+    {
+        [$admin, $organization] = $this->createContext('profissional');
+        $professional = User::factory()->create();
+        OrganizationMember::factory()->create([
+            'organization_id' => $organization->id,
+            'user_id' => $professional->id,
+            'role' => OrganizationMember::ROLE_PROFESSIONAL,
+            'status' => OrganizationMember::STATUS_ACTIVE,
+        ]);
+
+        $document = Document::factory()->create([
+            'organization_id' => $organization->id,
+            'visibility' => DocumentVisibility::Confidential,
+        ]);
+
+        $rule = AutomationRule::factory()->create([
+            'organization_id' => $organization->id,
+        ]);
+
+        $result = app(NotifyOrganizationMembersAction::class)->execute(
+            $rule,
+            $document,
+            [
+                'roles' => [OrganizationMember::ROLE_ADMIN, OrganizationMember::ROLE_PROFESSIONAL],
+                'message' => 'Documento próximo do vencimento.',
+            ],
+        );
+
+        $this->assertSame(1, $result['notified_members']);
+        $this->assertDatabaseHas('internal_reminders', [
+            'organization_id' => $organization->id,
+            'user_id' => $admin->id,
+            'type' => InternalReminder::TYPE_AUTOMATION,
+        ]);
+        $this->assertDatabaseMissing('internal_reminders', [
+            'organization_id' => $organization->id,
+            'user_id' => $professional->id,
+            'type' => InternalReminder::TYPE_AUTOMATION,
+        ]);
     }
 
     /**

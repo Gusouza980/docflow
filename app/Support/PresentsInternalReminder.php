@@ -58,7 +58,7 @@ class PresentsInternalReminder
             InternalReminder::TYPE_PORTAL_TICKET_OPENED => $this->portalTicketOpened($remindable),
             InternalReminder::TYPE_PORTAL_PROFILE_UPDATE => $this->portalProfileUpdate($remindable),
             InternalReminder::TYPE_CLIENT_DELINQUENT => $this->clientDelinquent($remindable),
-            InternalReminder::TYPE_AUTOMATION => $this->automation($remindable),
+            InternalReminder::TYPE_AUTOMATION => $this->automation($reminder, $remindable),
             default => [
                 'title' => 'Notificação',
                 'body' => 'Há uma atualização que requer sua atenção.',
@@ -70,12 +70,16 @@ class PresentsInternalReminder
     /**
      * @return array{title: string, body: string, url: string|null}
      */
-    private function automation(mixed $remindable): array
+    private function automation(InternalReminder $reminder, mixed $remindable): array
     {
+        $body = filled($reminder->body)
+            ? (string) $reminder->body
+            : 'Uma regra de automação gerou esta notificação.';
+
         if ($remindable instanceof Client) {
             return [
                 'title' => 'Automação',
-                'body' => "Atualização automática sobre o cliente {$remindable->display_name}.",
+                'body' => $body,
                 'url' => route('clients.show', $remindable),
             ];
         }
@@ -83,7 +87,7 @@ class PresentsInternalReminder
         if ($remindable instanceof Contract) {
             return [
                 'title' => 'Automação',
-                'body' => "Contrato {$remindable->code} requer atenção (vigência/renovação).",
+                'body' => $body,
                 'url' => route('contracts.show', $remindable),
             ];
         }
@@ -91,7 +95,7 @@ class PresentsInternalReminder
         if ($remindable instanceof Document) {
             return [
                 'title' => 'Automação',
-                'body' => "Documento \"{$remindable->title}\" próximo do vencimento.",
+                'body' => $body,
                 'url' => route('documents.show', $remindable),
             ];
         }
@@ -99,14 +103,14 @@ class PresentsInternalReminder
         if ($remindable instanceof Receivable) {
             return [
                 'title' => 'Automação',
-                'body' => 'Cobrança em atraso requer acompanhamento.',
+                'body' => $body,
                 'url' => route('finance.index'),
             ];
         }
 
         return [
             'title' => 'Automação',
-            'body' => 'Uma regra de automação gerou esta notificação.',
+            'body' => $body,
             'url' => route('automations.index'),
         ];
     }

@@ -38,7 +38,7 @@ class AutomationPresets
                     [
                         'type' => AutomationRule::ACTION_NOTIFY_ORGANIZATION_MEMBERS,
                         'params' => [
-                            'roles' => ['admin', 'manager', 'professional'],
+                            'roles' => ['admin', 'manager'],
                             'message' => 'Documento próximo do vencimento.',
                         ],
                     ],
