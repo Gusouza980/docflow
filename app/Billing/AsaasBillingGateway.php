@@ -126,14 +126,13 @@ class AsaasBillingGateway implements BillingGateway
 
             $this->client->delete('/v3/subscriptions/'.$providerSubscriptionId);
         } catch (AsaasApiException $exception) {
+            // Do not block local cancellation when Asaas is unavailable.
             Log::warning('Failed to cancel Asaas subscription', [
                 'subscription_id' => $subscription->id,
                 'provider_subscription_id' => $providerSubscriptionId,
                 'at_period_end' => $atPeriodEnd,
                 'status' => $exception->status,
             ]);
-
-            throw $exception;
         }
     }
 
@@ -169,7 +168,7 @@ class AsaasBillingGateway implements BillingGateway
             );
         }
 
-        $this->client->post('/v3/payments/'.$paymentId, [
+        $this->client->put('/v3/payments/'.$paymentId, [
             'externalReference' => 'invoice:'.$invoice->id,
         ]);
 
@@ -184,6 +183,7 @@ class AsaasBillingGateway implements BillingGateway
 
         /** @var list<array<string, mixed>> $payments */
         $payments = $response['data'] ?? [];
+        $expectedValue = round(((int) $invoice->amount_cents) / 100, 2);
 
         foreach ($payments as $payment) {
             $externalReference = (string) ($payment['externalReference'] ?? '');
@@ -196,15 +196,23 @@ class AsaasBillingGateway implements BillingGateway
         foreach ($payments as $payment) {
             $status = (string) ($payment['status'] ?? '');
             $externalReference = (string) ($payment['externalReference'] ?? '');
+            $value = isset($payment['value']) ? round((float) $payment['value'], 2) : null;
 
-            if (in_array($status, ['PENDING', 'OVERDUE'], true)
-                && ($externalReference === '' || str_starts_with($externalReference, 'subscription:'))) {
-                return (string) $payment['id'];
+            if (! in_array($status, ['PENDING', 'OVERDUE'], true)) {
+                continue;
             }
+
+            if ($externalReference !== '' && ! str_starts_with($externalReference, 'subscription:')) {
+                continue;
+            }
+
+            if ($value !== null && abs($value - $expectedValue) > 0.009) {
+                continue;
+            }
+
+            return (string) $payment['id'];
         }
 
-        $first = $payments[0] ?? null;
-
-        return is_array($first) ? (string) ($first['id'] ?? '') ?: null : null;
+        return null;
     }
 }

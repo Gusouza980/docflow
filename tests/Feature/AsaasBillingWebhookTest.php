@@ -77,6 +77,7 @@ class AsaasBillingWebhookTest extends TestCase
                 'subscription' => 'sub_abc',
                 'externalReference' => 'invoice:'.$invoice->id,
                 'status' => 'RECEIVED',
+                'value' => 99.0,
             ],
         ];
 
@@ -111,7 +112,7 @@ class AsaasBillingWebhookTest extends TestCase
             'api-sandbox.asaas.com/v3/subscriptions' => Http::response(['id' => 'sub_abc'], 200),
             'api-sandbox.asaas.com/v3/subscriptions/sub_abc/payments*' => Http::response([
                 'data' => [
-                    ['id' => 'pay_001', 'status' => 'PENDING', 'externalReference' => null],
+                    ['id' => 'pay_001', 'status' => 'PENDING', 'externalReference' => null, 'value' => 99.0],
                 ],
             ], 200),
             'api-sandbox.asaas.com/v3/payments/pay_001' => Http::response(['id' => 'pay_001'], 200),

@@ -99,7 +99,8 @@ class AsaasBillingGatewayTest extends TestCase
         Http::fake([
             'api-sandbox.asaas.com/v3/subscriptions/sub_abc/payments*' => Http::response([
                 'data' => [
-                    ['id' => 'pay_001', 'status' => 'PENDING', 'externalReference' => null],
+                    ['id' => 'pay_001', 'status' => 'PENDING', 'externalReference' => null, 'value' => 99.0],
+                    ['id' => 'pay_old', 'status' => 'RECEIVED', 'externalReference' => null, 'value' => 99.0],
                 ],
             ], 200),
             'api-sandbox.asaas.com/v3/payments/pay_001' => Http::response(['id' => 'pay_001'], 200),
@@ -128,6 +129,12 @@ class AsaasBillingGatewayTest extends TestCase
         $paymentId = $gateway->createInvoice($invoice->fresh(['subscription.plan', 'subscription.organization']));
 
         $this->assertSame('pay_001', $paymentId);
+
+        Http::assertSent(function ($request) use ($invoice) {
+            return $request->method() === 'PUT'
+                && str_ends_with($request->url(), '/v3/payments/pay_001')
+                && ($request['externalReference'] ?? null) === 'invoice:'.$invoice->id;
+        });
     }
 
     public function test_cancel_at_period_end_marks_asaas_subscription_inactive(): void
