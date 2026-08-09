@@ -9,6 +9,7 @@ use App\Http\Controllers\Web\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Web\Auth\PortalAuthenticatedSessionController;
 use App\Http\Controllers\Web\Auth\PortalNewPasswordController;
 use App\Http\Controllers\Web\Auth\PortalPasswordResetLinkController;
+use App\Http\Controllers\Web\AutomationRuleController;
 use App\Http\Controllers\Web\CalendarEventController;
 use App\Http\Controllers\Web\ClientContactController;
 use App\Http\Controllers\Web\ClientController;
@@ -227,6 +228,12 @@ Route::middleware('auth')->group(function (): void {
         Route::get('/contracts/{contract}', [ContractController::class, 'show'])->name('contracts.show');
         Route::post('/contracts/{contract}/renew', [ContractController::class, 'renew'])->name('contracts.renew');
         Route::post('/contracts/{contract}/cancel', [ContractController::class, 'cancel'])->name('contracts.cancel');
+
+        Route::get('/automations', [AutomationRuleController::class, 'index'])->name('automations.index');
+        Route::post('/automations', [AutomationRuleController::class, 'store'])->name('automations.store');
+        Route::get('/automations/{automationRule}', [AutomationRuleController::class, 'show'])->name('automations.show');
+        Route::post('/automations/{automationRule}/pause', [AutomationRuleController::class, 'pause'])->name('automations.pause');
+        Route::post('/automations/{automationRule}/resume', [AutomationRuleController::class, 'resume'])->name('automations.resume');
 
         Route::get('/documents', [DocumentController::class, 'index'])->name('documents.index');
         Route::post('/documents', [DocumentController::class, 'store'])->name('documents.store');
