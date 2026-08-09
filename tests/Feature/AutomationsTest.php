@@ -8,6 +8,7 @@ use App\Enums\DocumentVisibility;
 use App\Models\AutomationLog;
 use App\Models\AutomationRule;
 use App\Models\Client;
+use App\Models\Contract;
 use App\Models\Document;
 use App\Models\InternalReminder;
 use App\Models\Organization;
@@ -215,6 +216,40 @@ class AutomationsTest extends TestCase
         $this->assertDatabaseMissing('internal_reminders', [
             'organization_id' => $organization->id,
             'user_id' => $professional->id,
+            'type' => InternalReminder::TYPE_AUTOMATION,
+        ]);
+    }
+
+    public function test_notify_action_handles_contract_with_soft_deleted_client(): void
+    {
+        [$user, $organization] = $this->createContext('profissional');
+        $client = Client::factory()->create(['organization_id' => $organization->id]);
+        $contract = Contract::factory()->create([
+            'organization_id' => $organization->id,
+            'client_id' => $client->id,
+        ]);
+        $client->delete();
+        $contract->unsetRelation('client');
+
+        $rule = AutomationRule::factory()->create([
+            'organization_id' => $organization->id,
+        ]);
+
+        $result = app(NotifyOrganizationMembersAction::class)->execute(
+            $rule,
+            $contract->fresh(),
+            [
+                'roles' => [OrganizationMember::ROLE_ADMIN],
+                'message' => 'Contrato próximo do vencimento.',
+            ],
+        );
+
+        $this->assertSame(1, $result['notified_members']);
+        $this->assertDatabaseHas('internal_reminders', [
+            'organization_id' => $organization->id,
+            'user_id' => $user->id,
+            'remindable_type' => $contract->getMorphClass(),
+            'remindable_id' => $contract->id,
             'type' => InternalReminder::TYPE_AUTOMATION,
         ]);
     }

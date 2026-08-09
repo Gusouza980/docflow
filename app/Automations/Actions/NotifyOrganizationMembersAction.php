@@ -80,6 +80,10 @@ class NotifyOrganizationMembersAction
             return true;
         }
 
-        return Gate::forUser($user)->allows('view', $subject);
+        try {
+            return Gate::forUser($user)->allows('view', $subject);
+        } catch (\Throwable) {
+            return false;
+        }
     }
 }

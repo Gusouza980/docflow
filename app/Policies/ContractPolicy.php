@@ -15,7 +15,13 @@ class ContractPolicy
 
     public function view(User $user, Contract $contract): bool
     {
-        return app(ClientPolicy::class)->view($user, $contract->client);
+        $client = $contract->client;
+
+        if ($client === null) {
+            return $this->canManageOrphanContract($user, $contract);
+        }
+
+        return app(ClientPolicy::class)->view($user, $client);
     }
 
     public function create(User $user): bool
@@ -27,16 +33,39 @@ class ContractPolicy
 
     public function update(User $user, Contract $contract): bool
     {
-        return app(ClientPolicy::class)->update($user, $contract->client);
+        $client = $contract->client;
+
+        if ($client === null) {
+            return $this->canManageOrphanContract($user, $contract);
+        }
+
+        return app(ClientPolicy::class)->update($user, $client);
     }
 
     public function manage(User $user, Contract $contract): bool
     {
         $membership = $user->activeMembershipFor($contract->organization);
 
-        return $membership
-            && $membership->organization_id === $contract->organization_id
-            && ($membership->isAdmin() || $membership->isManager())
-            && app(ClientPolicy::class)->view($user, $contract->client);
+        if (! $membership
+            || $membership->organization_id !== $contract->organization_id
+            || (! $membership->isAdmin() && ! $membership->isManager())) {
+            return false;
+        }
+
+        $client = $contract->client;
+
+        if ($client === null) {
+            return true;
+        }
+
+        return app(ClientPolicy::class)->view($user, $client);
+    }
+
+    private function canManageOrphanContract(User $user, Contract $contract): bool
+    {
+        $membership = $user->activeMembershipFor($contract->organization);
+
+        return $membership !== null
+            && ($membership->isAdmin() || $membership->isManager());
     }
 }
