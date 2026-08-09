@@ -13,6 +13,7 @@ use App\Models\Client;
 use App\Models\ClientService;
 use App\Models\Contract;
 use App\Models\OrganizationMember;
+use App\Reports\ReportMetrics;
 use App\Support\DisplayFormat;
 use App\Support\WebOrganizationContext;
 use Illuminate\Http\RedirectResponse;
@@ -26,8 +27,11 @@ use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 class ContractController extends Controller
 {
-    public function index(Request $request, WebOrganizationContext $webOrganizationContext): Response|RedirectResponse
-    {
+    public function index(
+        Request $request,
+        WebOrganizationContext $webOrganizationContext,
+        ReportMetrics $reportMetrics,
+    ): Response|RedirectResponse {
         $membership = $webOrganizationContext->membership($request);
 
         if (! $membership) {
@@ -38,10 +42,12 @@ class ContractController extends Controller
 
         $status = $request->string('status')->toString();
         $expiringSoon = $request->boolean('expiring_soon');
+        $accessibleClientIds = $reportMetrics->clientQuery($membership)->pluck('id');
 
         $contracts = Contract::query()
             ->with('client')
             ->where('organization_id', $membership->organization_id)
+            ->whereIn('client_id', $accessibleClientIds)
             ->when($status !== '', fn ($query) => $query->where('status', $status))
             ->when($expiringSoon, fn ($query) => $query->expiringWithinDays(30))
             ->latest('id')
@@ -62,8 +68,7 @@ class ContractController extends Controller
                 'billing_intervals' => collect(Contract::billingIntervalLabels())
                     ->map(fn (string $label, string $value): array => ['value' => $value, 'label' => $label])
                     ->values(),
-                'clients' => Client::query()
-                    ->where('organization_id', $membership->organization_id)
+                'clients' => $reportMetrics->clientQuery($membership)
                     ->orderBy('display_name')
                     ->limit(200)
                     ->get(['id', 'display_name'])
@@ -222,7 +227,8 @@ class ContractController extends Controller
             'href' => route('contracts.show', $contract, absolute: false),
             'is_expiring_soon' => $contract->status === Contract::STATUS_ACTIVE
                 && $contract->ends_at !== null
-                && $contract->ends_at->lte(now()->addDays(30)),
+                && $contract->ends_at->gte(now()->startOfDay())
+                && $contract->ends_at->lte(now()->addDays(30)->endOfDay()),
         ];
     }
 }

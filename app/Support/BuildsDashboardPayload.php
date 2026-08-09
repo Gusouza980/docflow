@@ -49,6 +49,7 @@ class BuildsDashboardPayload
                 ? 0
                 : Contract::query()
                     ->whereBelongsTo($membership->organization)
+                    ->whereIn('client_id', $this->reportMetrics->clientQuery($membership)->select('id'))
                     ->expiringWithinDays(30)
                     ->count(),
         ];

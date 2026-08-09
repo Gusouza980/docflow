@@ -352,6 +352,7 @@ class ReportMetrics
         if ($membership->role !== OrganizationMember::ROLE_READONLY) {
             $expiringContracts = Contract::query()
                 ->whereBelongsTo($membership->organization)
+                ->whereIn('client_id', $this->clientQuery($membership)->select('id'))
                 ->expiringWithinDays(30)
                 ->count();
 

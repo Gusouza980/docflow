@@ -289,7 +289,8 @@ class ClientController extends Controller
                         'href' => route('contracts.show', $contract, absolute: false),
                         'is_expiring_soon' => $contract->status === Contract::STATUS_ACTIVE
                             && $contract->ends_at !== null
-                            && $contract->ends_at->lte(now()->addDays(30)),
+                            && $contract->ends_at->gte(now()->startOfDay())
+                            && $contract->ends_at->lte(now()->addDays(30)->endOfDay()),
                     ]),
             ],
             'options' => [

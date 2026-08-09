@@ -31,7 +31,26 @@ class UpsertClientService
             throw new InvalidArgumentException('Tipo de serviço inativo.');
         }
 
-        $payload = [
+        if ($clientService !== null) {
+            if ($clientService->client_id !== $client->id) {
+                throw new InvalidArgumentException('Serviço não pertence a este cliente.');
+            }
+
+            $clientService->update([
+                'service_type_id' => $serviceType->id,
+                'status' => $data['status'] ?? $clientService->status,
+                'starts_at' => array_key_exists('starts_at', $data) ? $data['starts_at'] : $clientService->starts_at,
+                'ends_at' => array_key_exists('ends_at', $data) ? $data['ends_at'] : $clientService->ends_at,
+                'assigned_to_member_id' => array_key_exists('assigned_to_member_id', $data)
+                    ? $data['assigned_to_member_id']
+                    : $clientService->assigned_to_member_id,
+                'notes' => array_key_exists('notes', $data) ? $data['notes'] : $clientService->notes,
+            ]);
+
+            return $clientService->fresh(['serviceType', 'assignee.user']);
+        }
+
+        return ClientService::query()->create([
             'organization_id' => $client->organization_id,
             'client_id' => $client->id,
             'service_type_id' => $serviceType->id,
@@ -40,18 +59,6 @@ class UpsertClientService
             'ends_at' => $data['ends_at'] ?? null,
             'assigned_to_member_id' => $data['assigned_to_member_id'] ?? null,
             'notes' => $data['notes'] ?? null,
-        ];
-
-        if ($clientService !== null) {
-            if ($clientService->client_id !== $client->id) {
-                throw new InvalidArgumentException('Serviço não pertence a este cliente.');
-            }
-
-            $clientService->update($payload);
-
-            return $clientService->fresh(['serviceType', 'assignee.user']);
-        }
-
-        return ClientService::query()->create($payload)->load(['serviceType', 'assignee.user']);
+        ])->load(['serviceType', 'assignee.user']);
     }
 }

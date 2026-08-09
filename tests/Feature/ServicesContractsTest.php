@@ -213,6 +213,59 @@ class ServicesContractsTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_professional_cannot_list_contracts_of_restricted_clients(): void
+    {
+        [$admin, $organization, $adminMember] = $this->createContext();
+        $professional = User::factory()->create();
+        $professionalMember = OrganizationMember::factory()->create([
+            'organization_id' => $organization->id,
+            'user_id' => $professional->id,
+            'role' => OrganizationMember::ROLE_PROFESSIONAL,
+            'status' => OrganizationMember::STATUS_ACTIVE,
+        ]);
+
+        $restrictedClient = Client::factory()->create([
+            'organization_id' => $organization->id,
+            'primary_responsible_member_id' => $adminMember->id,
+            'access_policy' => Client::ACCESS_RESTRICTED,
+        ]);
+        $openClient = Client::factory()->create([
+            'organization_id' => $organization->id,
+            'primary_responsible_member_id' => $professionalMember->id,
+            'access_policy' => Client::ACCESS_ALL_MEMBERS,
+        ]);
+
+        Contract::factory()->create([
+            'organization_id' => $organization->id,
+            'client_id' => $restrictedClient->id,
+            'code' => 'CTR-RESTRICTED',
+            'status' => Contract::STATUS_ACTIVE,
+        ]);
+        Contract::factory()->create([
+            'organization_id' => $organization->id,
+            'client_id' => $openClient->id,
+            'code' => 'CTR-OPEN',
+            'status' => Contract::STATUS_ACTIVE,
+        ]);
+
+        $this->actingAs($professional)
+            ->withSession(['active_organization_id' => $organization->id])
+            ->get('/contracts')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Contracts/Index', false)
+                ->has('contracts', 1)
+                ->where('contracts.0.code', 'CTR-OPEN'));
+
+        $this->actingAs($admin)
+            ->withSession(['active_organization_id' => $organization->id])
+            ->get('/contracts')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Contracts/Index', false)
+                ->has('contracts', 2));
+    }
+
     /**
      * @return array{0: User, 1: Organization, 2: OrganizationMember}
      */
