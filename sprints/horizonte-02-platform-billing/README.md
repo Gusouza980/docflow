@@ -83,6 +83,10 @@ flowchart LR
 - Impersonação de usuário tenant.
 - Gateway Pix/boleto/cartão **do financeiro interno** (continua separado do billing SaaS).
 
+## Próximo horizonte
+
+[Horizonte 3 — Comercial do SaaS e operação do escritório](../horizonte-03-comercial-operacao/README.md) (Sprints 17–20: Asaas → CRM → contratos → automações).
+
 ## Referências
 
 - `docs/briefing_app_gestao_escritorios.md` — seção 19 (planos comerciais)

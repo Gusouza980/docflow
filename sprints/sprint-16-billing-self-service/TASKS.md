@@ -188,3 +188,5 @@ Completar o loop comercial: **faturas** da assinatura SaaS, registro manual ou v
 ## Nota sobre gateway
 
 **Recomendação MVP:** entregar Sprint 16 completa com `ManualBillingGateway` + testes; Asaas como stretch goal na mesma sprint ou Sprint 17 fina. Isso desbloqueia operação comercial manual enquanto integração externa amadurece.
+
+**Status:** MVP entregue no `main`. Stretch Asaas → [Sprint 17](../sprint-17-asaas-billing-gateway/TASKS.md) ([Horizonte 3](../horizonte-03-comercial-operacao/README.md)).
