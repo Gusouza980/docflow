@@ -9,6 +9,10 @@ class UpdateLeadStage
 {
     public function execute(Lead $lead, string $stage, ?string $lostReason = null): Lead
     {
+        if ($lead->isConverted()) {
+            throw new InvalidArgumentException('Leads convertidos não podem mudar de etapa.');
+        }
+
         if (! in_array($stage, Lead::stages(), true)) {
             throw new InvalidArgumentException('Etapa de funil inválida.');
         }

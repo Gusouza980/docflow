@@ -16,39 +16,48 @@ class ConvertLeadToClient
 
     public function execute(Lead $lead, OrganizationMember $actor, bool $startOnboarding = false): Client
     {
-        if ($lead->isConverted() && $lead->client_id !== null) {
-            return $lead->client()->firstOrFail();
-        }
-
         return DB::transaction(function () use ($lead, $actor, $startOnboarding): Client {
-            $this->planLimitChecker->assertWithinLimit($lead->organization, 'max_clients', 1);
+            $lockedLead = Lead::query()
+                ->whereKey($lead->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($lockedLead->client_id !== null) {
+                return $lockedLead->client()->firstOrFail();
+            }
+
+            if ($lockedLead->converted_at !== null) {
+                throw new InvalidArgumentException('Este lead já foi convertido e não possui cliente vinculado.');
+            }
+
+            $this->planLimitChecker->assertWithinLimit($lockedLead->organization, 'max_clients', 1);
 
             $client = Client::query()->create([
-                'organization_id' => $lead->organization_id,
+                'organization_id' => $lockedLead->organization_id,
                 'primary_responsible_member_id' => $actor->id,
                 'type' => Client::TYPE_INDIVIDUAL,
-                'display_name' => $lead->name,
+                'display_name' => $lockedLead->name,
                 'status' => Client::STATUS_ACTIVE,
-                'origin' => $lead->origin,
-                'potential_revenue_cents' => $lead->estimated_value_cents,
+                'origin' => $lockedLead->origin,
+                'potential_revenue_cents' => $lockedLead->estimated_value_cents,
                 'entered_at' => now()->toDateString(),
-                'internal_notes' => $lead->service_interest
-                    ? 'Convertido do CRM. Interesse: '.$lead->service_interest
+                'internal_notes' => $lockedLead->service_interest
+                    ? 'Convertido do CRM. Interesse: '.$lockedLead->service_interest
                     : 'Convertido do CRM.',
             ]);
 
-            if ($lead->email || $lead->phone) {
+            if ($lockedLead->email || $lockedLead->phone) {
                 ClientContact::query()->create([
-                    'organization_id' => $lead->organization_id,
+                    'organization_id' => $lockedLead->organization_id,
                     'client_id' => $client->id,
-                    'name' => $lead->name,
-                    'email' => $lead->email,
-                    'phone' => $lead->phone,
+                    'name' => $lockedLead->name,
+                    'email' => $lockedLead->email,
+                    'phone' => $lockedLead->phone,
                     'is_primary' => true,
                 ]);
             }
 
-            $lead->update([
+            $lockedLead->update([
                 'client_id' => $client->id,
                 'stage' => Lead::STAGE_WON,
                 'converted_at' => now(),
@@ -56,7 +65,7 @@ class ConvertLeadToClient
             ]);
 
             if ($startOnboarding) {
-                $template = $lead->organization->onboardingTemplates()
+                $template = $lockedLead->organization->onboardingTemplates()
                     ->where('is_active', true)
                     ->with('items')
                     ->latest('id')

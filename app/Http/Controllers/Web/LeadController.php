@@ -38,6 +38,7 @@ class LeadController extends Controller
         }
 
         $planLimitChecker->assertFeature($membership->organization, 'crm');
+        abort_unless($this->canViewCrm($membership), HttpResponse::HTTP_FORBIDDEN);
 
         $stage = $request->string('stage')->toString();
         $origin = $request->string('origin')->toString();
@@ -125,6 +126,7 @@ class LeadController extends Controller
         }
 
         $planLimitChecker->assertFeature($membership->organization, 'crm');
+        abort_unless($this->canViewCrm($membership), HttpResponse::HTTP_FORBIDDEN);
         abort_unless($lead->organization_id === $membership->organization_id, HttpResponse::HTTP_NOT_FOUND);
 
         $lead->load([
@@ -200,7 +202,12 @@ class LeadController extends Controller
         abort_unless($this->canManageCrm($membership), HttpResponse::HTTP_FORBIDDEN);
 
         $data = $request->validated();
-        $updateLeadStage->execute($lead, $data['stage'], $data['lost_reason'] ?? null);
+
+        try {
+            $updateLeadStage->execute($lead, $data['stage'], $data['lost_reason'] ?? null);
+        } catch (\InvalidArgumentException $exception) {
+            return back()->with('error', $exception->getMessage());
+        }
 
         return back()->with('status', 'Etapa atualizada.');
     }
@@ -329,6 +336,16 @@ class LeadController extends Controller
             'owner_name' => $lead->owner?->name,
             'is_converted' => $lead->isConverted(),
         ];
+    }
+
+    private function canViewCrm(OrganizationMember $membership): bool
+    {
+        return in_array($membership->role, [
+            OrganizationMember::ROLE_ADMIN,
+            OrganizationMember::ROLE_MANAGER,
+            OrganizationMember::ROLE_PROFESSIONAL,
+            OrganizationMember::ROLE_ASSISTANT,
+        ], true);
     }
 
     private function canManageCrm(OrganizationMember $membership): bool

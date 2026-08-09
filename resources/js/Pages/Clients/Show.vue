@@ -43,16 +43,16 @@ const chatContainer = ref(null);
 const chatMessages = ref([...(props.hub.communications?.messages ?? [])]);
 let pollTimer = null;
 
-const hubTabs = [
+const hubTabs = computed(() => [
     { value: 'overview', label: 'Visão geral' },
-    { value: 'commercial', label: 'Comercial' },
+    ...(page.props.auth?.permissions?.can_access_crm ? [{ value: 'commercial', label: 'Comercial' }] : []),
     { value: 'communication', label: 'Comunicação' },
     { value: 'documents', label: 'Documentos' },
     { value: 'requests', label: 'Solicitações' },
     { value: 'tickets', label: 'Chamados' },
     { value: 'portal', label: 'Portal' },
     { value: 'activity', label: 'Atividade' },
-];
+]);
 
 const documentColumns = [{ key: 'title', label: 'Documento' }, { key: 'status', label: 'Status' }, { key: 'expires_at', label: 'Vencimento' }];
 const requestColumns = [{ key: 'title', label: 'Solicitação' }, { key: 'status', label: 'Status' }, { key: 'due_at', label: 'Prazo' }];
