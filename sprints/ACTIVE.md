@@ -1,8 +1,8 @@
 # Sprint ativa
 
-**Status:** Sprint 20 implementada — Horizonte 3 completo no código  
+**Status:** Sprint 21 implementada — Horizonte 4 iniciado  
 **Última sync:** 2026-08-09  
-**Branch:** `feat/sprint-20-automacoes-simples`
+**Branch:** `feat/sprint-21-dashboard-resultado-valor`
 
 ## Concluído
 
@@ -13,14 +13,16 @@
 | [18](sprint-18-crm-onboarding/TASKS.md) | CRM + onboarding (Profissional+) | [x] |
 | [19](sprint-19-servicos-contratos/TASKS.md) | Serviços e contratos | [x] |
 | [20](sprint-20-automacoes-simples/TASKS.md) | Automações simples | [x] |
+| [21](sprint-21-dashboard-resultado-valor/TASKS.md) | Dashboard de resultado e valor | [x] |
 
 ## Em foco
 
-Horizonte 3 fechado na stack de PRs. Próximo: merge da stack ou Horizonte 4.
+Horizonte 4: Sprint 21 na stack. Próximo: ROI Docflow (automações) ou merge da stack.
 
-Plano: [Horizonte 3](horizonte-03-comercial-operacao/README.md).
+Plano: [Horizonte 4](horizonte-04-prova-de-valor/README.md).
 
 ## Notas
 
-- Feature `crm` e `automations`: Profissional+.
-- Automações: presets + logs idempotentes + scheduler `automations:dispatch-due`.
+- Hero do dashboard = resultado (recebido, MRR, pipeline, risco).
+- CRM no painel só com feature `crm` (Profissional+).
+- ROI Docflow (automações × horas) fica para sprint seguinte.

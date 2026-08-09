@@ -31,7 +31,11 @@ class BuildsDashboardPayload
         $filters = $this->normalizeFilters($filters);
         $overview = $this->reportMetrics->overview($membership, $filters);
         $canAccessFinance = $this->reportMetrics->canAccessFinance($membership);
+        $canAccessCrm = $this->reportMetrics->canAccessCrm($membership);
         $clientQuery = $this->reportMetrics->clientQuery($membership);
+        $value = $this->reportMetrics->valueSummary($membership, $filters);
+        $contractsRevenue = $this->reportMetrics->contractsRevenueSummary($membership);
+        $commercial = $this->reportMetrics->commercialSummary($membership, $filters);
 
         $metrics = [
             'active_clients' => (clone $clientQuery)->where('status', Client::STATUS_ACTIVE)->count(),
@@ -55,17 +59,21 @@ class BuildsDashboardPayload
         ];
 
         if ($canAccessFinance) {
-            $finance = $this->reportMetrics->finance($membership, $filters);
-
-            $metrics['open_receivables_cents'] = $finance['summary']['open_receivables_cents'];
-            $metrics['overdue_receivables_cents'] = $finance['summary']['overdue_receivables_cents'];
-            $metrics['received_cents'] = $finance['summary']['received_cents'];
+            $metrics['open_receivables_cents'] = $value['open_receivables_cents'];
+            $metrics['overdue_receivables_cents'] = $value['overdue_receivables_cents'];
+            $metrics['received_cents'] = $value['received_cents'];
+            $metrics['net_period_cents'] = $value['net_period_cents'];
+            $metrics['paid_payables_cents'] = $value['paid_payables_cents'];
         }
 
         return [
             'can_access_finance' => $canAccessFinance,
+            'can_access_crm' => $canAccessCrm,
             'period' => $overview['period'],
             'filters' => $filters,
+            'value' => $value,
+            'contracts_revenue' => $contractsRevenue,
+            'commercial' => $commercial,
             'metrics' => $metrics,
             'alerts' => $overview['alerts'],
             'structuralPendencies' => (clone $clientQuery)
