@@ -43,6 +43,7 @@ use App\Http\Controllers\Web\Platform\OrganizationController as PlatformOrganiza
 use App\Http\Controllers\Web\Platform\OrganizationPlanController as PlatformOrganizationPlanController;
 use App\Http\Controllers\Web\Platform\PlanController as PlatformPlanController;
 use App\Http\Controllers\Web\Platform\SubscriptionController as PlatformSubscriptionController;
+use App\Http\Controllers\Web\Platform\UsageGuideController as PlatformUsageGuideController;
 use App\Http\Controllers\Web\PortalClientNotificationController;
 use App\Http\Controllers\Web\PortalController;
 use App\Http\Controllers\Web\ReportController;
@@ -106,6 +107,8 @@ Route::middleware(['auth', 'platform.admin'])->prefix('platform')->name('platfor
     Route::get('/invoices', [PlatformInvoiceController::class, 'index'])->name('invoices.index');
     Route::post('/invoices/{invoice}/mark-paid', [PlatformInvoiceController::class, 'markPaid'])->name('invoices.mark-paid');
     Route::post('/invoices/{invoice}/void', [PlatformInvoiceController::class, 'void'])->name('invoices.void');
+    Route::get('/guides', [PlatformUsageGuideController::class, 'index'])->name('guides.index');
+    Route::get('/guides/{guide}', [PlatformUsageGuideController::class, 'show'])->name('guides.show');
 });
 
 Route::middleware('portal.guest')->group(function (): void {
