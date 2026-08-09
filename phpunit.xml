@@ -36,5 +36,8 @@
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
+        <env name="DOCFLOW_BILLING_DRIVER" value="manual" force="true"/>
+        <env name="ASAAS_API_KEY" value="" force="true"/>
+        <env name="ASAAS_WEBHOOK_SECRET" value="" force="true"/>
     </php>
 </phpunit>

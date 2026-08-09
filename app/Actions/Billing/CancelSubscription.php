@@ -2,16 +2,23 @@
 
 namespace App\Actions\Billing;
 
+use App\Contracts\Billing\BillingGateway;
 use App\Models\Organization;
 use App\Models\Subscription;
 use Illuminate\Support\Facades\DB;
 
 class CancelSubscription
 {
+    public function __construct(private BillingGateway $billingGateway) {}
+
     public function execute(Organization $organization, bool $immediate = true): Subscription
     {
-        return DB::transaction(function () use ($organization, $immediate): Subscription {
-            $subscription = $organization->subscriptionOrFail();
+        $subscription = $organization->subscriptionOrFail();
+
+        $this->billingGateway->cancelSubscription($subscription, atPeriodEnd: ! $immediate);
+
+        return DB::transaction(function () use ($organization, $immediate, $subscription): Subscription {
+            $subscription->refresh();
 
             if ($immediate) {
                 $subscription->update([

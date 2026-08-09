@@ -17,8 +17,11 @@ return [
     'billing' => [
         'driver' => env('DOCFLOW_BILLING_DRIVER', 'manual'),
         'invoice_due_days' => (int) env('DOCFLOW_BILLING_INVOICE_DUE_DAYS', 7),
+        // Sandbox: https://api-sandbox.asaas.com — Production: https://api.asaas.com
+        'asaas_base_url' => env('ASAAS_BASE_URL', 'https://api-sandbox.asaas.com'),
         'asaas_api_key' => env('ASAAS_API_KEY'),
         'asaas_webhook_secret' => env('ASAAS_WEBHOOK_SECRET'),
+        'asaas_billing_type' => env('ASAAS_BILLING_TYPE', 'UNDEFINED'),
         'webhook_secret' => env('DOCFLOW_BILLING_WEBHOOK_SECRET'),
     ],
 

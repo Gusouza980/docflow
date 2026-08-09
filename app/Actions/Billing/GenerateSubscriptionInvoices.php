@@ -35,9 +35,10 @@ class GenerateSubscriptionInvoices
                     return;
                 }
 
-                $invoice = $this->generateSubscriptionInvoice->execute($subscription);
+                $created = false;
+                $invoice = $this->generateSubscriptionInvoice->execute($subscription, $created);
 
-                if ($invoice !== null && $invoice->wasRecentlyCreated) {
+                if ($invoice !== null && $created) {
                     $generated++;
                 }
             });

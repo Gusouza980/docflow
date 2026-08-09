@@ -12,13 +12,7 @@ class BillingWebhookController extends Controller
 {
     public function store(Request $request, string $provider): JsonResponse
     {
-        $secret = match ($provider) {
-            'asaas' => config('docflow.billing.asaas_webhook_secret'),
-            'manual' => config('docflow.billing.webhook_secret'),
-            default => null,
-        };
-
-        if ($secret && $request->header('X-Billing-Webhook-Secret') !== $secret) {
+        if (! $this->isAuthorized($request, $provider)) {
             return response()->json(['message' => 'Unauthorized'], Response::HTTP_UNAUTHORIZED);
         }
 
@@ -32,5 +26,41 @@ class BillingWebhookController extends Controller
         ProcessBillingWebhook::dispatch($provider, $eventId, $payload);
 
         return response()->json(['received' => true]);
+    }
+
+    private function isAuthorized(Request $request, string $provider): bool
+    {
+        return match ($provider) {
+            'asaas' => $this->isAuthorizedAsaas($request),
+            'manual' => $this->isAuthorizedManual($request),
+            default => false,
+        };
+    }
+
+    private function isAuthorizedAsaas(Request $request): bool
+    {
+        $secret = (string) config('docflow.billing.asaas_webhook_secret');
+
+        if ($secret === '') {
+            return false;
+        }
+
+        $token = (string) ($request->header('asaas-access-token')
+            ?? $request->header('Asaas-Access-Token')
+            ?? $request->header('X-Billing-Webhook-Secret')
+            ?? '');
+
+        return hash_equals($secret, $token);
+    }
+
+    private function isAuthorizedManual(Request $request): bool
+    {
+        $secret = (string) config('docflow.billing.webhook_secret');
+
+        if ($secret === '') {
+            return false;
+        }
+
+        return hash_equals($secret, (string) $request->header('X-Billing-Webhook-Secret'));
     }
 }

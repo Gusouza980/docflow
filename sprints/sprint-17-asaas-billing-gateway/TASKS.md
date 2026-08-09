@@ -14,6 +14,11 @@ Substituir o gap opcional da Sprint 16: implementação real de **`AsaasBillingG
 - `App\Http\Controllers\Web\Webhooks\BillingWebhookController`
 - Docs Asaas: Customers, Subscriptions, Payments, Webhooks
 
+## Decisões de kickoff
+
+- **Modelo Asaas:** subscription nativa (`POST /v3/subscriptions`), não payment avulso.
+- **Ambiente:** sandbox `https://api-sandbox.asaas.com`.
+
 ## Pré-requisitos
 
 - Sprint 16 MVP (manual billing + faturas + webhook genérico).
@@ -48,36 +53,36 @@ Substituir o gap opcional da Sprint 16: implementação real de **`AsaasBillingG
 
 ### HTTP client / config
 
-- [ ] Cliente HTTP tipado ou Action `App\Billing\Asaas\AsaasClient` (base URL sandbox/prod via env).
-- [ ] `config/docflow.php`: `billing.asaas_base_url`, confirmar keys já existentes.
-- [ ] Documentar sandbox em `.env.example` + README curto em comentário do gateway.
+- [x] Cliente HTTP tipado ou Action `App\Billing\Asaas\AsaasClient` (base URL sandbox/prod via env).
+- [x] `config/docflow.php`: `billing.asaas_base_url`, confirmar keys já existentes.
+- [x] Documentar sandbox em `.env.example` + README curto em comentário do gateway.
 
 ### Gateway
 
-- [ ] `App\Billing\AsaasBillingGateway` implementando `BillingGateway`.
-- [ ] Binding em `AppServiceProvider` quando `driver === 'asaas'`.
-- [ ] Persistir IDs em `subscriptions` / `subscription_invoices`.
-- [ ] Tratamento de erros HTTP → exception de domínio + log context (org_id, invoice_id).
+- [x] `App\Billing\AsaasBillingGateway` implementando `BillingGateway`.
+- [x] Binding em `AppServiceProvider` quando `driver === 'asaas'`.
+- [x] Persistir IDs em `subscriptions` / `subscription_invoices`.
+- [x] Tratamento de erros HTTP → exception de domínio + log context (org_id, invoice_id).
 
 ### Webhook
 
-- [ ] Validar token/secret Asaas em `BillingWebhookController` (ou middleware dedicado).
-- [ ] Normalizar payload Asaas → formato consumido por `ProcessBillingWebhook` **ou** especializar o job com strategy por provider.
-- [ ] Mapear pelo menos: pagamento confirmado, pagamento vencido/estornado (definir mínimo no kickoff).
-- [ ] Testes com fixture de payload Asaas (sem rede).
+- [x] Validar token/secret Asaas em `BillingWebhookController` (ou middleware dedicado).
+- [x] Normalizar payload Asaas → formato consumido por `ProcessBillingWebhook` **ou** especializar o job com strategy por provider.
+- [x] Mapear pelo menos: pagamento confirmado, pagamento vencido/estornado (definir mínimo no kickoff).
+- [x] Testes com fixture de payload Asaas (sem rede).
 
 ### Integração com commands
 
-- [ ] `GenerateSubscriptionInvoice` chama `createInvoice` no gateway ativo.
-- [ ] Falha Asaas não deixa fatura local inconsistente (transação / status `draft` → `open` só após provider id, ou retry job — escolher e documentar).
+- [x] `GenerateSubscriptionInvoice` chama `createInvoice` no gateway ativo.
+- [x] Falha Asaas não deixa fatura local inconsistente (transação / status `draft` → `open` só após provider id, ou retry job — escolher e documentar).
 
 ### Testes
 
-- [ ] Unit: `AsaasBillingGateway` com HTTP fake (customer/invoice).
-- [ ] Feature: webhook Asaas válido → invoice paid + subscription active.
-- [ ] Feature: webhook com secret inválido → 401 e zero side effects.
-- [ ] Feature: mesmo `event_id` 2x → 1 efeito.
-- [ ] Feature: driver `manual` nos testes existentes não regressa.
+- [x] Unit: `AsaasBillingGateway` com HTTP fake (customer/invoice).
+- [x] Feature: webhook Asaas válido → invoice paid + subscription active.
+- [x] Feature: webhook com secret inválido → 401 e zero side effects.
+- [x] Feature: mesmo `event_id` 2x → 1 efeito.
+- [x] Feature: driver `manual` nos testes existentes não regressa.
 
 ## Endpoints
 

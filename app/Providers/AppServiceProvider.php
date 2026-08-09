@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Billing\Asaas\AsaasClient;
+use App\Billing\AsaasBillingGateway;
 use App\Billing\ManualBillingGateway;
 use App\Contracts\Billing\BillingGateway;
 use App\Contracts\Mail\TransactionalMailer;
@@ -23,8 +25,11 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->scoped(OrganizationContext::class);
 
-        $this->app->singleton(BillingGateway::class, function (): BillingGateway {
+        $this->app->singleton(AsaasClient::class);
+
+        $this->app->singleton(BillingGateway::class, function ($app): BillingGateway {
             return match (config('docflow.billing.driver', 'manual')) {
+                'asaas' => $app->make(AsaasBillingGateway::class),
                 default => new ManualBillingGateway,
             };
         });

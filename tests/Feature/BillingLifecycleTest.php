@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Actions\Billing\MarkInvoicePaid;
+use App\Actions\Billing\MarkSubscriptionPastDue;
 use App\Jobs\ProcessBillingWebhook;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
@@ -152,8 +153,14 @@ class BillingLifecycleTest extends TestCase
 
         Queue::assertPushed(ProcessBillingWebhook::class);
 
-        (new ProcessBillingWebhook('manual', 'evt_test_123', $payload))->handle(app(MarkInvoicePaid::class));
-        (new ProcessBillingWebhook('manual', 'evt_test_123', $payload))->handle(app(MarkInvoicePaid::class));
+        (new ProcessBillingWebhook('manual', 'evt_test_123', $payload))->handle(
+            app(MarkInvoicePaid::class),
+            app(MarkSubscriptionPastDue::class),
+        );
+        (new ProcessBillingWebhook('manual', 'evt_test_123', $payload))->handle(
+            app(MarkInvoicePaid::class),
+            app(MarkSubscriptionPastDue::class),
+        );
 
         $this->assertDatabaseCount('billing_webhook_events', 1);
         $invoice->refresh();
