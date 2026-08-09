@@ -26,3 +26,4 @@ Plano: [Horizonte 4](horizonte-04-prova-de-valor/README.md).
 - Hero do dashboard = resultado (recebido, MRR, pipeline, risco).
 - CRM no painel só com feature `crm` (Profissional+).
 - ROI Docflow (automações × horas) fica para sprint seguinte.
+- UX moeda: inputs Web passam a aceitar reais (pt-BR); storage/API seguem em `*_cents` (`feat/money-reais-inputs`).

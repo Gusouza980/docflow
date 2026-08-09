@@ -464,7 +464,7 @@ function copyPortalUrl() {
                             </div>
                             <div>
                                 <dt class="text-xs font-semibold uppercase text-slate-500">Receita potencial</dt>
-                                <dd class="mt-1 text-sm text-slate-900">{{ client.potential_revenue_cents ?? 'Restrito' }}</dd>
+                                <dd class="mt-1 text-sm text-slate-900">{{ client.potential_revenue_cents == null ? 'Restrito' : money(client.potential_revenue_cents) }}</dd>
                             </div>
                             <div>
                                 <dt class="text-xs font-semibold uppercase text-slate-500">Responsável principal</dt>

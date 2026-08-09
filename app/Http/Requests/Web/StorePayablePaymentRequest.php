@@ -2,13 +2,29 @@
 
 namespace App\Http\Requests\Web;
 
+use App\Http\Requests\Concerns\ConvertsMoneyFields;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StorePayablePaymentRequest extends FormRequest
 {
+    use ConvertsMoneyFields;
+
     public function authorize(): bool
     {
         return $this->user() !== null;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->prepareMoneyFields();
+    }
+
+    /**
+     * @return list<string>
+     */
+    protected function moneyFields(): array
+    {
+        return ['amount_cents'];
     }
 
     public function rules(): array

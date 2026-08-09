@@ -11,9 +11,11 @@ import Badge from '../../Components/UI/Badge.vue';
 import Card from '../../Components/UI/Card.vue';
 import StatusPill from '../../Components/UI/StatusPill.vue';
 import TextInput from '../../Components/Forms/TextInput.vue';
+import CurrencyInput from '../../Components/Forms/CurrencyInput.vue';
 import SelectInput from '../../Components/Forms/SelectInput.vue';
 import DisplayDate from '../../Components/UI/DisplayDate.vue';
 import TextareaInput from '../../Components/Forms/TextareaInput.vue';
+import { formatBrlCurrency, formatBrlFromCents } from '../../lib/money';
 
 const props = defineProps({
     metrics: { type: Object, required: true },
@@ -37,7 +39,7 @@ const reminderModalOpen = ref(false);
 const paymentTarget = ref(null);
 const paymentType = ref('receivable');
 const withEmpty = (items, label = 'Todos') => [{ value: '', label }, ...items];
-const money = (cents) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format((cents ?? 0) / 100);
+const money = (cents) => formatBrlCurrency(cents ?? 0);
 const incomeCategories = computed(() => props.options.categories.filter((category) => ['income', 'both'].includes(category.type)));
 const expenseCategories = computed(() => props.options.categories.filter((category) => ['expense', 'both'].includes(category.type)));
 
@@ -165,7 +167,7 @@ function openPayment(type, item) {
     paymentType.value = type;
     paymentTarget.value = item;
     paymentForm.reset();
-    paymentForm.amount_cents = item.balance_cents;
+    paymentForm.amount_cents = formatBrlFromCents(item.balance_cents);
     paymentForm.paid_at = new Date().toISOString().slice(0, 10);
     paymentModalOpen.value = true;
 }
@@ -199,7 +201,7 @@ function generateRecurrence(recurrence) {
 function openRenegotiate(receivable) {
     paymentTarget.value = receivable;
     renegotiateForm.reset();
-    renegotiateForm.amount_cents = receivable.balance_cents;
+    renegotiateForm.amount_cents = formatBrlFromCents(receivable.balance_cents);
     renegotiateForm.due_at = receivable.due_at;
     renegotiateForm.description = receivable.description;
     renegotiateModalOpen.value = true;
@@ -289,7 +291,7 @@ function submitReminder() {
                 <SelectInput id="receivable-client" v-model="receivableForm.client_id" label="Cliente" :options="withEmpty(options.clients, 'Selecione')" :error="receivableForm.errors.client_id" />
                 <SelectInput id="receivable-category" v-model="receivableForm.financial_category_id" label="Categoria" :options="withEmpty(incomeCategories, 'Sem categoria')" :error="receivableForm.errors.financial_category_id" />
                 <TextInput id="receivable-description" v-model="receivableForm.description" label="Descrição" required :error="receivableForm.errors.description" />
-                <div class="grid gap-4 sm:grid-cols-3"><TextInput id="receivable-amount" v-model="receivableForm.amount_cents" type="number" label="Valor em centavos" required :error="receivableForm.errors.amount_cents" /><TextInput id="receivable-due" v-model="receivableForm.due_at" type="date" label="Vencimento" required :error="receivableForm.errors.due_at" /><TextInput id="receivable-competence" v-model="receivableForm.competence_date" type="date" label="Competência" :error="receivableForm.errors.competence_date" /></div>
+                <div class="grid gap-4 sm:grid-cols-3"><CurrencyInput id="receivable-amount" v-model="receivableForm.amount_cents" label="Valor" required :error="receivableForm.errors.amount_cents" /><TextInput id="receivable-due" v-model="receivableForm.due_at" type="date" label="Vencimento" required :error="receivableForm.errors.due_at" /><TextInput id="receivable-competence" v-model="receivableForm.competence_date" type="date" label="Competência" :error="receivableForm.errors.competence_date" /></div>
                 <TextareaInput id="receivable-notes" v-model="receivableForm.notes" label="Observações" :error="receivableForm.errors.notes" />
             </form>
             <template #actions><Button type="submit" form="receivable-form" :loading="receivableForm.processing">Salvar</Button></template>
@@ -301,7 +303,7 @@ function submitReminder() {
                 <SelectInput id="payable-category" v-model="payableForm.financial_category_id" label="Categoria" :options="withEmpty(expenseCategories, 'Sem categoria')" :error="payableForm.errors.financial_category_id" />
                 <TextInput id="payable-description" v-model="payableForm.description" label="Descrição" required :error="payableForm.errors.description" />
                 <TextInput id="payable-vendor" v-model="payableForm.vendor_name" label="Fornecedor" :error="payableForm.errors.vendor_name" />
-                <div class="grid gap-4 sm:grid-cols-3"><TextInput id="payable-amount" v-model="payableForm.amount_cents" type="number" label="Valor em centavos" required :error="payableForm.errors.amount_cents" /><TextInput id="payable-due" v-model="payableForm.due_at" type="date" label="Vencimento" required :error="payableForm.errors.due_at" /><TextInput id="payable-competence" v-model="payableForm.competence_date" type="date" label="Competência" :error="payableForm.errors.competence_date" /></div>
+                <div class="grid gap-4 sm:grid-cols-3"><CurrencyInput id="payable-amount" v-model="payableForm.amount_cents" label="Valor" required :error="payableForm.errors.amount_cents" /><TextInput id="payable-due" v-model="payableForm.due_at" type="date" label="Vencimento" required :error="payableForm.errors.due_at" /><TextInput id="payable-competence" v-model="payableForm.competence_date" type="date" label="Competência" :error="payableForm.errors.competence_date" /></div>
                 <label class="flex items-center gap-2 text-sm font-medium text-slate-700"><input v-model="payableForm.is_reimbursable" type="checkbox" class="rounded border-slate-300 text-blue-600 focus:ring-blue-300" />Reembolsável ao cliente</label>
             </form>
             <template #actions><Button type="submit" form="payable-form" :loading="payableForm.processing">Salvar</Button></template>
@@ -317,7 +319,7 @@ function submitReminder() {
 
         <Modal v-if="paymentModalOpen" open :title="paymentType === 'receivable' ? 'Registrar recebimento' : 'Registrar pagamento'" @close="paymentModalOpen = false">
             <form id="payment-form" class="grid gap-4" @submit.prevent="submitPayment">
-                <TextInput id="payment-amount" v-model="paymentForm.amount_cents" type="number" label="Valor em centavos" required :error="paymentForm.errors.amount_cents" />
+                <CurrencyInput id="payment-amount" v-model="paymentForm.amount_cents" label="Valor" required :error="paymentForm.errors.amount_cents" />
                 <TextInput id="payment-date" v-model="paymentForm.paid_at" type="date" label="Data" required :error="paymentForm.errors.paid_at" />
                 <TextInput id="payment-method" v-model="paymentForm.method" label="Método" :error="paymentForm.errors.method" />
                 <TextareaInput id="payment-notes" v-model="paymentForm.notes" label="Observações" :error="paymentForm.errors.notes" />
@@ -338,7 +340,7 @@ function submitReminder() {
                 <SelectInput id="recurrence-category" v-model="recurrenceForm.financial_category_id" label="Categoria" :options="withEmpty(incomeCategories, 'Sem categoria')" :error="recurrenceForm.errors.financial_category_id" />
                 <TextInput id="recurrence-description" v-model="recurrenceForm.description" label="Descrição" required :error="recurrenceForm.errors.description" />
                 <div class="grid gap-4 sm:grid-cols-3">
-                    <TextInput id="recurrence-amount" v-model="recurrenceForm.amount_cents" type="number" label="Valor em centavos" required :error="recurrenceForm.errors.amount_cents" />
+                    <CurrencyInput id="recurrence-amount" v-model="recurrenceForm.amount_cents" label="Valor" required :error="recurrenceForm.errors.amount_cents" />
                     <TextInput id="recurrence-billing-day" v-model="recurrenceForm.billing_day" type="number" min="1" max="28" label="Dia de vencimento" required :error="recurrenceForm.errors.billing_day" />
                     <TextInput id="recurrence-start" v-model="recurrenceForm.start_date" type="date" label="Início" required :error="recurrenceForm.errors.start_date" />
                 </div>
@@ -356,7 +358,7 @@ function submitReminder() {
                 <TextareaInput id="renegotiate-reason" v-model="renegotiateForm.renegotiation_reason" label="Motivo da renegociação" required :error="renegotiateForm.errors.renegotiation_reason" />
                 <TextInput id="renegotiate-description" v-model="renegotiateForm.description" label="Descrição da nova cobrança" :error="renegotiateForm.errors.description" />
                 <div class="grid gap-4 sm:grid-cols-2">
-                    <TextInput id="renegotiate-amount" v-model="renegotiateForm.amount_cents" type="number" label="Novo valor em centavos" required :error="renegotiateForm.errors.amount_cents" />
+                    <CurrencyInput id="renegotiate-amount" v-model="renegotiateForm.amount_cents" label="Novo valor" required :error="renegotiateForm.errors.amount_cents" />
                     <TextInput id="renegotiate-due" v-model="renegotiateForm.due_at" type="date" label="Novo vencimento" required :error="renegotiateForm.errors.due_at" />
                 </div>
                 <TextareaInput id="renegotiate-notes" v-model="renegotiateForm.notes" label="Observações" :error="renegotiateForm.errors.notes" />

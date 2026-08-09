@@ -35,13 +35,14 @@ class ServicesContractsTest extends TestCase
             ->withSession(['active_organization_id' => $organization->id])
             ->post('/service-types', [
                 'name' => 'BPO Contábil',
-                'default_amount_cents' => 150000,
+                'default_amount_cents' => '1.500,00',
                 'default_billing_interval' => ServiceType::BILLING_MONTH,
             ])
             ->assertRedirect(route('service-types.index'));
 
         $type = ServiceType::query()->where('organization_id', $organization->id)->firstOrFail();
         $this->assertSame('BPO Contábil', $type->name);
+        $this->assertSame(150000, $type->default_amount_cents);
 
         $this->actingAs($otherUser)
             ->withSession(['active_organization_id' => $otherOrganization->id])
@@ -102,7 +103,7 @@ class ServicesContractsTest extends TestCase
                 'client_id' => $client->id,
                 'code' => 'CTR-1001',
                 'status' => Contract::STATUS_ACTIVE,
-                'amount_cents' => 250000,
+                'amount_cents' => '2.500,00',
                 'billing_interval' => Contract::BILLING_MONTH,
                 'starts_at' => now()->toDateString(),
                 'ends_at' => now()->addYear()->toDateString(),
@@ -111,6 +112,7 @@ class ServicesContractsTest extends TestCase
 
         $contract = Contract::query()->where('code', 'CTR-1001')->firstOrFail();
         $this->assertSame(Contract::STATUS_ACTIVE, $contract->status);
+        $this->assertSame(250000, $contract->amount_cents);
         $this->assertNotNull($contract->ends_at);
     }
 

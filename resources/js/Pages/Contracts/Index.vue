@@ -8,8 +8,10 @@ import Modal from '../../Components/Overlays/Modal.vue';
 import Button from '../../Components/UI/Button.vue';
 import Badge from '../../Components/UI/Badge.vue';
 import TextInput from '../../Components/Forms/TextInput.vue';
+import CurrencyInput from '../../Components/Forms/CurrencyInput.vue';
 import SelectInput from '../../Components/Forms/SelectInput.vue';
 import TextareaInput from '../../Components/Forms/TextareaInput.vue';
+import { formatBrlCurrency } from '../../lib/money';
 
 const props = defineProps({
     contracts: { type: Array, default: () => [] },
@@ -47,13 +49,7 @@ const createForm = useForm({
     scope_excluded: '',
 });
 
-const money = (cents) => {
-    if (cents === null || cents === undefined || cents === '') {
-        return '—';
-    }
-
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(cents) / 100);
-};
+const money = formatBrlCurrency;
 
 function applyFilters() {
     filterForm.get('/contracts', { preserveState: true, preserveScroll: true });
@@ -62,7 +58,7 @@ function applyFilters() {
 function submitCreate() {
     createForm.transform((data) => ({
         ...data,
-        amount_cents: data.amount_cents === '' ? null : Number(data.amount_cents),
+        amount_cents: data.amount_cents === '' ? null : data.amount_cents,
         ends_at: data.ends_at || null,
     })).post('/contracts', {
         preserveScroll: true,
@@ -142,7 +138,7 @@ const statusTone = (status) => {
                 <SelectInput id="contract-client" v-model="createForm.client_id" label="Cliente" :options="options.clients" required :error="createForm.errors.client_id" />
                 <TextInput id="contract-code" v-model="createForm.code" label="Código" required :error="createForm.errors.code" />
                 <SelectInput id="contract-status" v-model="createForm.status" label="Status" :options="options.statuses.filter((item) => ['draft', 'active'].includes(item.value))" />
-                <TextInput id="contract-amount" v-model="createForm.amount_cents" type="number" label="Valor (centavos)" :error="createForm.errors.amount_cents" />
+                <CurrencyInput id="contract-amount" v-model="createForm.amount_cents" label="Valor" :error="createForm.errors.amount_cents" />
                 <SelectInput id="contract-interval" v-model="createForm.billing_interval" label="Recorrência" :options="options.billing_intervals" :error="createForm.errors.billing_interval" />
                 <TextInput id="contract-starts" v-model="createForm.starts_at" type="date" label="Início" required :error="createForm.errors.starts_at" />
                 <TextInput id="contract-ends" v-model="createForm.ends_at" type="date" label="Término" :error="createForm.errors.ends_at" />

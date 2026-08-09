@@ -8,8 +8,10 @@ import Modal from '../../Components/Overlays/Modal.vue';
 import Button from '../../Components/UI/Button.vue';
 import Badge from '../../Components/UI/Badge.vue';
 import TextInput from '../../Components/Forms/TextInput.vue';
+import CurrencyInput from '../../Components/Forms/CurrencyInput.vue';
 import SelectInput from '../../Components/Forms/SelectInput.vue';
 import TextareaInput from '../../Components/Forms/TextareaInput.vue';
+import { formatBrlCurrency, formatBrlFromCents } from '../../lib/money';
 
 const props = defineProps({
     serviceTypes: { type: Array, default: () => [] },
@@ -45,18 +47,12 @@ const editForm = useForm({
     default_billing_interval: 'month',
 });
 
-const money = (cents) => {
-    if (cents === null || cents === undefined || cents === '') {
-        return '—';
-    }
-
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(cents) / 100);
-};
+const money = formatBrlCurrency;
 
 function submitCreate() {
     createForm.transform((data) => ({
         ...data,
-        default_amount_cents: data.default_amount_cents === '' ? null : Number(data.default_amount_cents),
+        default_amount_cents: data.default_amount_cents === '' ? null : data.default_amount_cents,
     })).post('/service-types', {
         preserveScroll: true,
         onSuccess: () => {
@@ -72,7 +68,7 @@ function openEdit(type) {
     editForm.name = type.name;
     editForm.description = type.description ?? '';
     editForm.is_active = type.is_active;
-    editForm.default_amount_cents = type.default_amount_cents ?? '';
+    editForm.default_amount_cents = formatBrlFromCents(type.default_amount_cents);
     editForm.default_billing_interval = type.default_billing_interval ?? 'month';
     editModalOpen.value = true;
 }
@@ -80,7 +76,7 @@ function openEdit(type) {
 function submitEdit() {
     editForm.transform((data) => ({
         ...data,
-        default_amount_cents: data.default_amount_cents === '' ? null : Number(data.default_amount_cents),
+        default_amount_cents: data.default_amount_cents === '' ? null : data.default_amount_cents,
     })).patch(`/service-types/${selectedType.value.id}`, {
         preserveScroll: true,
         onSuccess: () => {
@@ -132,7 +128,7 @@ function submitEdit() {
             <form class="grid gap-3" @submit.prevent="submitCreate">
                 <TextInput id="service-type-name" v-model="createForm.name" label="Nome" required :error="createForm.errors.name" />
                 <TextareaInput id="service-type-description" v-model="createForm.description" label="Descrição" :error="createForm.errors.description" />
-                <TextInput id="service-type-amount" v-model="createForm.default_amount_cents" type="number" label="Valor sugerido (centavos)" :error="createForm.errors.default_amount_cents" />
+                <CurrencyInput id="service-type-amount" v-model="createForm.default_amount_cents" label="Valor sugerido" :error="createForm.errors.default_amount_cents" />
                 <SelectInput id="service-type-interval" v-model="createForm.default_billing_interval" label="Recorrência sugerida" :options="options.billing_intervals" :error="createForm.errors.default_billing_interval" />
                 <div class="flex justify-end gap-2">
                     <Button type="button" variant="secondary" @click="createModalOpen = false">Cancelar</Button>
@@ -145,7 +141,7 @@ function submitEdit() {
             <form class="grid gap-3" @submit.prevent="submitEdit">
                 <TextInput id="edit-service-type-name" v-model="editForm.name" label="Nome" required :error="editForm.errors.name" />
                 <TextareaInput id="edit-service-type-description" v-model="editForm.description" label="Descrição" :error="editForm.errors.description" />
-                <TextInput id="edit-service-type-amount" v-model="editForm.default_amount_cents" type="number" label="Valor sugerido (centavos)" :error="editForm.errors.default_amount_cents" />
+                <CurrencyInput id="edit-service-type-amount" v-model="editForm.default_amount_cents" label="Valor sugerido" :error="editForm.errors.default_amount_cents" />
                 <SelectInput id="edit-service-type-interval" v-model="editForm.default_billing_interval" label="Recorrência sugerida" :options="options.billing_intervals" :error="editForm.errors.default_billing_interval" />
                 <label class="flex items-center gap-2 text-sm text-slate-700">
                     <input v-model="editForm.is_active" type="checkbox" class="rounded border-slate-300" />
