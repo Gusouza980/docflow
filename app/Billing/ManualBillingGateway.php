@@ -14,7 +14,7 @@ class ManualBillingGateway implements BillingGateway
         return null;
     }
 
-    public function createSubscription(Subscription $subscription): ?string
+    public function createSubscription(Subscription $subscription, ?string $nextDueDate = null): ?string
     {
         return null;
     }

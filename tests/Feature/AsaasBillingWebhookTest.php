@@ -15,6 +15,7 @@ use App\Models\SubscriptionInvoice;
 use App\Models\User;
 use Database\Seeders\PlanSeeder;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
+use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
@@ -105,18 +106,65 @@ class AsaasBillingWebhookTest extends TestCase
         $this->assertSame(Organization::STATUS_ACTIVE, $organization->status);
     }
 
+    public function test_asaas_webhook_without_payment_id_is_not_applied(): void
+    {
+        [$user, $organization] = $this->createAdminContext();
+
+        $organization->subscription->update([
+            'provider_subscription_id' => 'sub_abc',
+        ]);
+
+        $invoice = SubscriptionInvoice::factory()->open()->create([
+            'subscription_id' => $organization->subscription->id,
+            'organization_id' => $organization->id,
+            'amount_cents' => 9900,
+        ]);
+
+        $payload = [
+            'id' => 'evt_asaas_forged',
+            'event' => 'PAYMENT_RECEIVED',
+            'payment' => [
+                'externalReference' => 'invoice:'.$invoice->id,
+            ],
+        ];
+
+        $this->expectException(\RuntimeException::class);
+
+        (new ProcessBillingWebhook('asaas', 'evt_asaas_forged', $payload))
+            ->handle(app(MarkInvoicePaid::class), app(MarkSubscriptionPastDue::class));
+    }
+
     public function test_generate_invoice_with_asaas_driver_stores_provider_payment_id(): void
     {
-        Http::fake([
-            'api-sandbox.asaas.com/v3/customers' => Http::response(['id' => 'cus_123'], 200),
-            'api-sandbox.asaas.com/v3/subscriptions' => Http::response(['id' => 'sub_abc'], 200),
-            'api-sandbox.asaas.com/v3/subscriptions/sub_abc/payments*' => Http::response([
-                'data' => [
-                    ['id' => 'pay_001', 'status' => 'PENDING', 'externalReference' => null, 'value' => 99.0],
-                ],
-            ], 200),
-            'api-sandbox.asaas.com/v3/payments/pay_001' => Http::response(['id' => 'pay_001'], 200),
-        ]);
+        Http::fake(function (Request $request) {
+            if (str_contains($request->url(), '/v3/customers')) {
+                return Http::response(['id' => 'cus_123'], 200);
+            }
+
+            if (str_ends_with(parse_url($request->url(), PHP_URL_PATH) ?: '', '/v3/subscriptions')) {
+                return Http::response(['id' => 'sub_abc'], 200);
+            }
+
+            if (str_contains($request->url(), '/payments')) {
+                return Http::response([
+                    'data' => [
+                        [
+                            'id' => 'pay_001',
+                            'status' => 'PENDING',
+                            'externalReference' => null,
+                            'value' => 99.0,
+                            'dueDate' => now()->addDays(7)->toDateString(),
+                        ],
+                    ],
+                ], 200);
+            }
+
+            if (str_contains($request->url(), '/v3/payments/pay_001')) {
+                return Http::response(['id' => 'pay_001'], 200);
+            }
+
+            return Http::response(['error' => 'unfaked '.$request->url()], 500);
+        });
 
         [$user, $organization] = $this->createAdminContext();
 

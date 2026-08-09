@@ -76,11 +76,15 @@ class AsaasBillingGatewayTest extends TestCase
         $subscription->update([
             'plan_id' => $plan->id,
             'provider_customer_id' => 'cus_123',
-            'current_period_end' => now()->addDay(),
+            'current_period_start' => now(),
+            'current_period_end' => now()->addMonth(),
         ]);
 
         $gateway = new AsaasBillingGateway(new AsaasClient);
-        $providerSubscriptionId = $gateway->createSubscription($subscription->fresh(['organization', 'plan']));
+        $providerSubscriptionId = $gateway->createSubscription(
+            $subscription->fresh(['organization', 'plan']),
+            nextDueDate: now()->addDays(7)->toDateString(),
+        );
 
         $this->assertSame('sub_abc', $providerSubscriptionId);
         $this->assertSame('sub_abc', $subscription->fresh()->provider_subscription_id);
@@ -90,7 +94,8 @@ class AsaasBillingGatewayTest extends TestCase
             return str_ends_with($request->url(), '/v3/subscriptions')
                 && $request['customer'] === 'cus_123'
                 && $request['cycle'] === 'MONTHLY'
-                && $request['value'] === 99.0;
+                && $request['value'] === 99.0
+                && $request['nextDueDate'] === now()->addDays(7)->toDateString();
         });
     }
 
@@ -99,8 +104,20 @@ class AsaasBillingGatewayTest extends TestCase
         Http::fake([
             'api-sandbox.asaas.com/v3/subscriptions/sub_abc/payments*' => Http::response([
                 'data' => [
-                    ['id' => 'pay_001', 'status' => 'PENDING', 'externalReference' => null, 'value' => 99.0],
-                    ['id' => 'pay_old', 'status' => 'RECEIVED', 'externalReference' => null, 'value' => 99.0],
+                    [
+                        'id' => 'pay_001',
+                        'status' => 'PENDING',
+                        'externalReference' => null,
+                        'value' => 99.0,
+                        'dueDate' => now()->addDays(7)->toDateString(),
+                    ],
+                    [
+                        'id' => 'pay_old',
+                        'status' => 'RECEIVED',
+                        'externalReference' => null,
+                        'value' => 99.0,
+                        'dueDate' => now()->subMonth()->toDateString(),
+                    ],
                 ],
             ], 200),
             'api-sandbox.asaas.com/v3/payments/pay_001' => Http::response(['id' => 'pay_001'], 200),
@@ -123,6 +140,7 @@ class AsaasBillingGatewayTest extends TestCase
             'subscription_id' => $subscription->id,
             'organization_id' => $organization->id,
             'amount_cents' => 9900,
+            'due_at' => now()->addDays(7),
         ]);
 
         $gateway = new AsaasBillingGateway(new AsaasClient);

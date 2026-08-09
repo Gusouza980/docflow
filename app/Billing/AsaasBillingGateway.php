@@ -51,7 +51,7 @@ class AsaasBillingGateway implements BillingGateway
         return $customerId;
     }
 
-    public function createSubscription(Subscription $subscription): ?string
+    public function createSubscription(Subscription $subscription, ?string $nextDueDate = null): ?string
     {
         $subscription->loadMissing(['organization', 'plan']);
 
@@ -75,7 +75,8 @@ class AsaasBillingGateway implements BillingGateway
             ]);
         }
 
-        $nextDueDate = ($subscription->current_period_end ?? now()->addDay())->toDateString();
+        $nextDueDate ??= $subscription->current_period_start?->toDateString()
+            ?? now()->toDateString();
         $cycle = $plan->billing_interval === 'year' ? 'YEARLY' : 'MONTHLY';
         $value = round(((int) $plan->price_cents) / 100, 2);
 
@@ -150,7 +151,10 @@ class AsaasBillingGateway implements BillingGateway
         }
 
         if ($subscription->provider_subscription_id === null || $subscription->provider_subscription_id === '') {
-            $this->createSubscription($subscription->fresh(['organization', 'plan']));
+            $this->createSubscription(
+                $subscription->fresh(['organization', 'plan']),
+                $invoice->due_at?->toDateString() ?? now()->toDateString(),
+            );
             $subscription->refresh();
         }
 
@@ -184,6 +188,13 @@ class AsaasBillingGateway implements BillingGateway
         /** @var list<array<string, mixed>> $payments */
         $payments = $response['data'] ?? [];
         $expectedValue = round(((int) $invoice->amount_cents) / 100, 2);
+        $invoiceDueDate = $invoice->due_at?->toDateString();
+
+        $claimedPaymentIds = SubscriptionInvoice::query()
+            ->whereNotNull('provider_invoice_id')
+            ->where('id', '!=', $invoice->id)
+            ->pluck('provider_invoice_id')
+            ->all();
 
         foreach ($payments as $payment) {
             $externalReference = (string) ($payment['externalReference'] ?? '');
@@ -193,10 +204,18 @@ class AsaasBillingGateway implements BillingGateway
             }
         }
 
+        $candidates = [];
+
         foreach ($payments as $payment) {
+            $paymentId = (string) ($payment['id'] ?? '');
             $status = (string) ($payment['status'] ?? '');
             $externalReference = (string) ($payment['externalReference'] ?? '');
             $value = isset($payment['value']) ? round((float) $payment['value'], 2) : null;
+            $dueDate = isset($payment['dueDate']) ? (string) $payment['dueDate'] : null;
+
+            if ($paymentId === '' || in_array($paymentId, $claimedPaymentIds, true)) {
+                continue;
+            }
 
             if (! in_array($status, ['PENDING', 'OVERDUE'], true)) {
                 continue;
@@ -210,9 +229,18 @@ class AsaasBillingGateway implements BillingGateway
                 continue;
             }
 
-            return (string) $payment['id'];
+            $candidates[] = [
+                'id' => $paymentId,
+                'due_date_matches' => $invoiceDueDate !== null && $dueDate === $invoiceDueDate,
+            ];
         }
 
-        return null;
+        foreach ($candidates as $candidate) {
+            if ($candidate['due_date_matches']) {
+                return $candidate['id'];
+            }
+        }
+
+        return count($candidates) === 1 ? $candidates[0]['id'] : null;
     }
 }

@@ -97,6 +97,10 @@ class ProcessBillingWebhook implements ShouldQueue
             return true;
         }
 
+        if ($invoice->status === SubscriptionInvoice::STATUS_PAID || ! $invoice->isOpen()) {
+            return true;
+        }
+
         $markSubscriptionPastDue->execute($invoice->subscription->organization);
 
         return true;
@@ -111,53 +115,57 @@ class ProcessBillingWebhook implements ShouldQueue
         $providerSubscriptionId = (string) ($payment['subscription'] ?? '');
         $paymentValue = isset($payment['value']) ? round((float) $payment['value'], 2) : null;
 
-        if ($paymentId !== '') {
-            $byProviderId = SubscriptionInvoice::query()
-                ->where('provider_invoice_id', $paymentId)
-                ->first();
+        if ($paymentId === '' || $providerSubscriptionId === '' || $paymentValue === null) {
+            return null;
+        }
 
-            if ($byProviderId !== null && $this->paymentMatchesInvoice($byProviderId, $providerSubscriptionId, $paymentValue)) {
-                return $byProviderId;
-            }
+        $byProviderId = SubscriptionInvoice::query()
+            ->where('provider_invoice_id', $paymentId)
+            ->first();
+
+        if ($byProviderId !== null
+            && $this->paymentMatchesInvoice($byProviderId, $providerSubscriptionId, $paymentValue)) {
+            return $byProviderId;
         }
 
         $externalReference = (string) ($payment['externalReference'] ?? '');
 
-        if (str_starts_with($externalReference, 'invoice:')) {
-            $invoiceId = (int) substr($externalReference, strlen('invoice:'));
-            $byReference = SubscriptionInvoice::query()->find($invoiceId);
-
-            if ($byReference !== null && $this->paymentMatchesInvoice($byReference, $providerSubscriptionId, $paymentValue)) {
-                return $byReference;
-            }
+        if (! str_starts_with($externalReference, 'invoice:')) {
+            return null;
         }
 
-        return null;
+        $invoiceId = (int) substr($externalReference, strlen('invoice:'));
+        $byReference = SubscriptionInvoice::query()->find($invoiceId);
+
+        if ($byReference === null
+            || ! $this->paymentMatchesInvoice($byReference, $providerSubscriptionId, $paymentValue)) {
+            return null;
+        }
+
+        $existingProviderId = (string) ($byReference->provider_invoice_id ?? '');
+
+        if ($existingProviderId !== '' && ! hash_equals($existingProviderId, $paymentId)) {
+            return null;
+        }
+
+        return $byReference;
     }
 
     private function paymentMatchesInvoice(
         SubscriptionInvoice $invoice,
         string $providerSubscriptionId,
-        ?float $paymentValue,
+        float $paymentValue,
     ): bool {
         $invoice->loadMissing('subscription');
 
-        if ($providerSubscriptionId !== '') {
-            $subscriptionProviderId = (string) ($invoice->subscription?->provider_subscription_id ?? '');
+        $subscriptionProviderId = (string) ($invoice->subscription?->provider_subscription_id ?? '');
 
-            if ($subscriptionProviderId !== '' && ! hash_equals($subscriptionProviderId, $providerSubscriptionId)) {
-                return false;
-            }
+        if ($subscriptionProviderId === '' || ! hash_equals($subscriptionProviderId, $providerSubscriptionId)) {
+            return false;
         }
 
-        if ($paymentValue !== null) {
-            $expected = round(((int) $invoice->amount_cents) / 100, 2);
+        $expected = round(((int) $invoice->amount_cents) / 100, 2);
 
-            if (abs($expected - $paymentValue) > 0.009) {
-                return false;
-            }
-        }
-
-        return true;
+        return abs($expected - $paymentValue) <= 0.009;
     }
 }
