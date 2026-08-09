@@ -174,6 +174,16 @@ class Client extends Model
         return $this->hasMany(Receivable::class);
     }
 
+    public function services(): HasMany
+    {
+        return $this->hasMany(ClientService::class);
+    }
+
+    public function contracts(): HasMany
+    {
+        return $this->hasMany(Contract::class);
+    }
+
     public function generatedReports(): HasMany
     {
         return $this->hasMany(GeneratedReport::class);

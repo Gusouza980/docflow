@@ -11,15 +11,19 @@ use App\Http\Requests\Web\UpdateClientStatusRequest;
 use App\Models\AuditLog;
 use App\Models\Client;
 use App\Models\ClientPortalAccess;
+use App\Models\ClientService;
 use App\Models\ClientTag;
 use App\Models\CommunicationConsent;
+use App\Models\Contract;
 use App\Models\Document;
 use App\Models\DocumentRequest;
 use App\Models\Lead;
 use App\Models\LeadActivity;
 use App\Models\MessageTemplate;
 use App\Models\OrganizationMember;
+use App\Models\Plan;
 use App\Models\Proposal;
+use App\Models\ServiceType;
 use App\Models\Ticket;
 use App\Support\Billing\PlanLimitChecker;
 use App\Support\BuildsClientPortalDashboard;
@@ -225,6 +229,7 @@ class ClientController extends Controller
                 'commercial' => (
                     $membership->organization_id === $client->organization_id
                     && $membership->canViewCrm()
+                    && Plan::query()->exists()
                     && app(PlanLimitChecker::class)->hasFeature($client->organization, 'crm')
                 )
                     ? $client->leads()
@@ -253,6 +258,39 @@ class ClientController extends Controller
                             ]),
                         ])
                     : [],
+                'services' => $client->services()
+                    ->with(['serviceType', 'assignee.user'])
+                    ->latest('id')
+                    ->get()
+                    ->map(fn (ClientService $service): array => [
+                        'id' => $service->id,
+                        'service_type_id' => $service->service_type_id,
+                        'service_type_name' => $service->serviceType?->name,
+                        'status' => $service->status,
+                        'status_label' => ClientService::statusLabels()[$service->status] ?? $service->status,
+                        'starts_at' => DisplayFormat::date($service->starts_at),
+                        'ends_at' => DisplayFormat::date($service->ends_at),
+                        'assigned_to_member_id' => $service->assigned_to_member_id,
+                        'assignee_name' => $service->assignee?->user?->name,
+                        'notes' => $service->notes,
+                    ]),
+                'contracts' => $client->contracts()
+                    ->latest('id')
+                    ->get()
+                    ->map(fn (Contract $contract): array => [
+                        'id' => $contract->id,
+                        'code' => $contract->code,
+                        'status' => $contract->status,
+                        'status_label' => Contract::statusLabels()[$contract->status] ?? $contract->status,
+                        'amount_cents' => $contract->amount_cents,
+                        'billing_interval_label' => Contract::billingIntervalLabels()[$contract->billing_interval] ?? $contract->billing_interval,
+                        'starts_at' => DisplayFormat::date($contract->starts_at),
+                        'ends_at' => DisplayFormat::date($contract->ends_at),
+                        'href' => route('contracts.show', $contract, absolute: false),
+                        'is_expiring_soon' => $contract->status === Contract::STATUS_ACTIVE
+                            && $contract->ends_at !== null
+                            && $contract->ends_at->lte(now()->addDays(30)),
+                    ]),
             ],
             'options' => [
                 ...$this->options($membership),
@@ -276,6 +314,18 @@ class ClientController extends Controller
                     ['value' => 'whatsapp', 'label' => 'WhatsApp'],
                     ['value' => 'phone', 'label' => 'Telefone'],
                 ],
+                'service_types' => ServiceType::query()
+                    ->where('organization_id', $membership->organization_id)
+                    ->where('is_active', true)
+                    ->orderBy('name')
+                    ->get(['id', 'name'])
+                    ->map(fn (ServiceType $type): array => [
+                        'value' => $type->id,
+                        'label' => $type->name,
+                    ]),
+                'service_statuses' => collect(ClientService::statusLabels())
+                    ->map(fn (string $label, string $value): array => ['value' => $value, 'label' => $label])
+                    ->values(),
             ],
             'can' => [
                 'update' => $request->user()->can('update', $client),

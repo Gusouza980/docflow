@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Models\Client;
+use App\Models\Contract;
 use App\Models\OrganizationMember;
 use App\Reports\ReportMetrics;
 use Illuminate\Http\Request;
@@ -44,6 +45,12 @@ class BuildsDashboardPayload
             'overdue_documents' => $overview['documents']['overdue'],
             'due_soon_documents' => $overview['documents']['due_soon'],
             'open_tickets' => $overview['communication']['open_tickets'],
+            'expiring_contracts' => $membership->role === OrganizationMember::ROLE_READONLY
+                ? 0
+                : Contract::query()
+                    ->whereBelongsTo($membership->organization)
+                    ->expiringWithinDays(30)
+                    ->count(),
         ];
 
         if ($canAccessFinance) {

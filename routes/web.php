@@ -17,7 +17,9 @@ use App\Http\Controllers\Web\ClientPortalController;
 use App\Http\Controllers\Web\ClientPortalInviteController;
 use App\Http\Controllers\Web\ClientPortalOnboardingController;
 use App\Http\Controllers\Web\ClientProfileUpdateController;
+use App\Http\Controllers\Web\ClientServiceController;
 use App\Http\Controllers\Web\ClientTagController;
+use App\Http\Controllers\Web\ContractController;
 use App\Http\Controllers\Web\DashboardController;
 use App\Http\Controllers\Web\DeadlineController;
 use App\Http\Controllers\Web\DocumentCategoryController;
@@ -43,6 +45,7 @@ use App\Http\Controllers\Web\Platform\SubscriptionController as PlatformSubscrip
 use App\Http\Controllers\Web\PortalClientNotificationController;
 use App\Http\Controllers\Web\PortalController;
 use App\Http\Controllers\Web\ReportController;
+use App\Http\Controllers\Web\ServiceTypeController;
 use App\Http\Controllers\Web\SubscriptionRequiredController;
 use App\Http\Controllers\Web\TaskChecklistItemController;
 use App\Http\Controllers\Web\TaskController;
@@ -212,6 +215,18 @@ Route::middleware('auth')->group(function (): void {
         Route::get('/clients/{client}/tickets/attachments/{attachment}/download', [ClientHubController::class, 'downloadTicketAttachment'])->name('clients.tickets.attachments.download');
         Route::post('/clients/{client}/portal-accesses', [ClientHubController::class, 'storePortalAccess'])->name('clients.portal-accesses.store');
         Route::patch('/clients/{client}/portal-accesses/{access}/revoke', [ClientHubController::class, 'revokePortalAccess'])->name('clients.portal-accesses.revoke');
+        Route::post('/clients/{client}/services', [ClientServiceController::class, 'store'])->name('clients.services.store');
+        Route::patch('/clients/{client}/services/{service}', [ClientServiceController::class, 'update'])->name('clients.services.update');
+
+        Route::get('/service-types', [ServiceTypeController::class, 'index'])->name('service-types.index');
+        Route::post('/service-types', [ServiceTypeController::class, 'store'])->name('service-types.store');
+        Route::patch('/service-types/{serviceType}', [ServiceTypeController::class, 'update'])->name('service-types.update');
+
+        Route::get('/contracts', [ContractController::class, 'index'])->name('contracts.index');
+        Route::post('/contracts', [ContractController::class, 'store'])->name('contracts.store');
+        Route::get('/contracts/{contract}', [ContractController::class, 'show'])->name('contracts.show');
+        Route::post('/contracts/{contract}/renew', [ContractController::class, 'renew'])->name('contracts.renew');
+        Route::post('/contracts/{contract}/cancel', [ContractController::class, 'cancel'])->name('contracts.cancel');
 
         Route::get('/documents', [DocumentController::class, 'index'])->name('documents.index');
         Route::post('/documents', [DocumentController::class, 'store'])->name('documents.store');
