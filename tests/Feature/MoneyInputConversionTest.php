@@ -83,6 +83,30 @@ class MoneyInputConversionTest extends TestCase
         ]);
     }
 
+    public function test_client_update_preserves_potential_revenue_when_sent_as_reais(): void
+    {
+        [$user, $organization, $member] = $this->createAdminContext();
+        $client = $this->createClient($organization, $member);
+        $client->update(['potential_revenue_cents' => 450000]);
+
+        $this->actingAs($user)
+            ->withSession(['active_organization_id' => $organization->id])
+            ->patch("/clients/{$client->id}", [
+                'display_name' => $client->display_name,
+                'priority' => $client->priority->value,
+                'risk_level' => $client->risk_level,
+                'potential_revenue_cents' => '4.500,00',
+                'access_policy' => $client->access_policy,
+                'responsible_member_ids' => [$member->id],
+                'individual_profile' => [
+                    'full_name' => $client->display_name,
+                ],
+            ])
+            ->assertRedirect();
+
+        $this->assertSame(450000, $client->fresh()->potential_revenue_cents);
+    }
+
     public function test_receivable_amount_rejects_more_than_two_decimal_places(): void
     {
         [$user, $organization, $member] = $this->createFinanceContext();
@@ -128,12 +152,28 @@ class MoneyInputConversionTest extends TestCase
      */
     private function createFinanceContext(): array
     {
+        return $this->createMemberContext(OrganizationMember::ROLE_FINANCE);
+    }
+
+    /**
+     * @return array{0: User, 1: Organization, 2: OrganizationMember}
+     */
+    private function createAdminContext(): array
+    {
+        return $this->createMemberContext(OrganizationMember::ROLE_ADMIN);
+    }
+
+    /**
+     * @return array{0: User, 1: Organization, 2: OrganizationMember}
+     */
+    private function createMemberContext(string $role): array
+    {
         $organization = Organization::factory()->create();
         $user = User::factory()->create();
         $member = OrganizationMember::factory()->create([
             'organization_id' => $organization->id,
             'user_id' => $user->id,
-            'role' => OrganizationMember::ROLE_FINANCE,
+            'role' => $role,
             'status' => OrganizationMember::STATUS_ACTIVE,
         ]);
 
