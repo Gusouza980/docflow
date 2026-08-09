@@ -142,8 +142,22 @@ const statusTone = (status) => {
                 <SelectInput id="contract-interval" v-model="createForm.billing_interval" label="Recorrência" :options="options.billing_intervals" :error="createForm.errors.billing_interval" />
                 <TextInput id="contract-starts" v-model="createForm.starts_at" type="date" label="Início" required :error="createForm.errors.starts_at" />
                 <TextInput id="contract-ends" v-model="createForm.ends_at" type="date" label="Término" :error="createForm.errors.ends_at" />
-                <TextareaInput id="contract-scope-in" v-model="createForm.scope_included" label="Escopo incluído" :error="createForm.errors.scope_included" />
-                <TextareaInput id="contract-scope-out" v-model="createForm.scope_excluded" label="Escopo excluído" :error="createForm.errors.scope_excluded" />
+                <TextareaInput
+                    id="contract-scope-in"
+                    v-model="createForm.scope_included"
+                    label="O que está incluso"
+                    hint="Descreva entregas, volume e frequência cobertos por este contrato."
+                    placeholder="Ex.: BPO contábil mensal, até 50 notas fiscais, envio de guias até o dia 10."
+                    :error="createForm.errors.scope_included"
+                />
+                <TextareaInput
+                    id="contract-scope-out"
+                    v-model="createForm.scope_excluded"
+                    label="O que não está incluso"
+                    hint="Registre limites e itens que ficam de fora para evitar dúvida com o cliente."
+                    placeholder="Ex.: Folha de pagamento, auditoria e consultoria tributária sob demanda."
+                    :error="createForm.errors.scope_excluded"
+                />
                 <div class="flex justify-end gap-2">
                     <Button type="button" variant="secondary" @click="createModalOpen = false">Cancelar</Button>
                     <Button type="submit" :disabled="createForm.processing">Salvar</Button>
