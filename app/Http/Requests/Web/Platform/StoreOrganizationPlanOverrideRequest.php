@@ -30,6 +30,7 @@ class StoreOrganizationPlanOverrideRequest extends FormRequest
             'features.reports_scheduling' => ['nullable', 'boolean'],
             'features.audit' => ['nullable', 'boolean'],
             'features.automations' => ['nullable', 'boolean'],
+            'features.crm' => ['nullable', 'boolean'],
         ];
     }
 }
