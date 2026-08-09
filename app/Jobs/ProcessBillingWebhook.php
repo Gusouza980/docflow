@@ -123,9 +123,10 @@ class ProcessBillingWebhook implements ShouldQueue
             ->where('provider_invoice_id', $paymentId)
             ->first();
 
-        if ($byProviderId !== null
-            && $this->paymentMatchesInvoice($byProviderId, $providerSubscriptionId, $paymentValue)) {
-            return $byProviderId;
+        if ($byProviderId !== null) {
+            return $this->paymentMatchesInvoice($byProviderId, $providerSubscriptionId, $paymentValue)
+                ? $byProviderId
+                : null;
         }
 
         $externalReference = (string) ($payment['externalReference'] ?? '');
