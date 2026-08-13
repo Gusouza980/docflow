@@ -6,12 +6,16 @@ use App\Models\Client;
 use App\Models\ClientMessage;
 use App\Models\Contract;
 use App\Models\DocumentRequestItem;
+use App\Models\Lead;
 use App\Models\OrganizationMember;
 use App\Models\Payable;
 use App\Models\Payment;
+use App\Models\Plan;
+use App\Models\Proposal;
 use App\Models\Receivable;
 use App\Models\Task;
 use App\Models\Ticket;
+use App\Support\Billing\PlanLimitChecker;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -195,6 +199,196 @@ class ReportMetrics
         return in_array($membership->role, [OrganizationMember::ROLE_ADMIN, OrganizationMember::ROLE_MANAGER, OrganizationMember::ROLE_FINANCE], true);
     }
 
+    public function canAccessCrm(OrganizationMember $membership): bool
+    {
+        if (! $membership->canViewCrm() || ! Plan::query()->exists()) {
+            return false;
+        }
+
+        return app(PlanLimitChecker::class)->hasFeature($membership->organization, 'crm');
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return array<string, mixed>
+     */
+    public function valueSummary(OrganizationMember $membership, array $filters = []): array
+    {
+        [$start, $end] = $this->period($filters);
+        $previousFilters = $this->previousPeriodFilters($filters);
+        [$previousStart, $previousEnd] = $this->period($previousFilters);
+
+        if (! $this->canAccessFinance($membership)) {
+            $tasks = $this->taskSummary($membership, $start, $end);
+            $previousTasks = $this->taskSummary($membership, $previousStart, $previousEnd);
+            $approvedDocuments = $this->approvedDocumentsInPeriod($membership, $start, $end);
+            $previousApprovedDocuments = $this->approvedDocumentsInPeriod($membership, $previousStart, $previousEnd);
+            $activeClients = (clone $this->clientQuery($membership))->where('status', Client::STATUS_ACTIVE)->count();
+
+            return [
+                'mode' => 'operational',
+                'completed_tasks' => $tasks['completed'],
+                'completed_tasks_delta' => $tasks['completed'] - $previousTasks['completed'],
+                'approved_documents' => $approvedDocuments,
+                'approved_documents_delta' => $approvedDocuments - $previousApprovedDocuments,
+                'active_clients' => $activeClients,
+                'previous_period' => [
+                    'start' => $previousStart->toDateString(),
+                    'end' => $previousEnd->toDateString(),
+                ],
+            ];
+        }
+
+        $finance = $this->finance($membership, $filters);
+        $previousFinance = $this->finance($membership, $previousFilters);
+        $received = (int) $finance['summary']['received_cents'];
+        $previousReceived = (int) $previousFinance['summary']['received_cents'];
+        $paidPayables = (int) $finance['summary']['paid_payables_cents'];
+
+        return [
+            'mode' => 'finance',
+            'received_cents' => $received,
+            'received_delta_cents' => $received - $previousReceived,
+            'received_delta_percent' => $this->deltaPercent($received, $previousReceived),
+            'open_receivables_cents' => (int) $finance['summary']['open_receivables_cents'],
+            'overdue_receivables_cents' => (int) $finance['summary']['overdue_receivables_cents'],
+            'paid_payables_cents' => $paidPayables,
+            'net_period_cents' => $received - $paidPayables,
+            'previous_period' => [
+                'start' => $previousStart->toDateString(),
+                'end' => $previousEnd->toDateString(),
+                'received_cents' => $previousReceived,
+            ],
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function contractsRevenueSummary(OrganizationMember $membership): ?array
+    {
+        if ($membership->role === OrganizationMember::ROLE_READONLY) {
+            return null;
+        }
+
+        $contracts = Contract::query()
+            ->whereBelongsTo($membership->organization)
+            ->whereIn('client_id', $this->clientQuery($membership)->select('id'));
+
+        $activeContracts = (clone $contracts)
+            ->where('status', Contract::STATUS_ACTIVE)
+            ->get(['amount_cents', 'billing_interval']);
+
+        $mrrCents = (int) $activeContracts->sum(function (Contract $contract): int {
+            return match ($contract->billing_interval) {
+                Contract::BILLING_MONTH => (int) $contract->amount_cents,
+                Contract::BILLING_YEAR => (int) round(((int) $contract->amount_cents) / 12),
+                default => 0,
+            };
+        });
+
+        $expiringQuery = (clone $contracts)->expiringWithinDays(30);
+
+        return [
+            'mrr_cents' => $mrrCents,
+            'active_contracts' => $activeContracts->count(),
+            'expiring_count' => (clone $expiringQuery)->count(),
+            'at_risk_cents' => (int) (clone $expiringQuery)->sum('amount_cents'),
+            'href' => route('contracts.index', ['expiring_soon' => 1], absolute: false),
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return array<string, mixed>|null
+     */
+    public function commercialSummary(OrganizationMember $membership, array $filters = []): ?array
+    {
+        if (! $this->canAccessCrm($membership)) {
+            return null;
+        }
+
+        [$start, $end] = $this->period($filters);
+
+        $openStages = [
+            Lead::STAGE_NEW,
+            Lead::STAGE_FIRST_CONTACT,
+            Lead::STAGE_DIAGNOSIS,
+            Lead::STAGE_PROPOSAL,
+            Lead::STAGE_NEGOTIATION,
+        ];
+
+        $leads = Lead::query()->whereBelongsTo($membership->organization);
+
+        $pipelineCents = (int) (clone $leads)
+            ->whereIn('stage', $openStages)
+            ->sum('estimated_value_cents');
+
+        $wonLeadsCents = (int) (clone $leads)
+            ->where('stage', Lead::STAGE_WON)
+            ->whereNotNull('converted_at')
+            ->whereBetween('converted_at', [$start, $end])
+            ->sum('estimated_value_cents');
+
+        $acceptedProposalsCents = (int) Proposal::query()
+            ->whereHas('lead', function (Builder $query) use ($membership, $start, $end): void {
+                $query->whereBelongsTo($membership->organization)
+                    ->where(function (Builder $query) use ($start, $end): void {
+                        $query->where('stage', '!=', Lead::STAGE_WON)
+                            ->orWhereNull('converted_at')
+                            ->orWhereNotBetween('converted_at', [$start, $end]);
+                    });
+            })
+            ->where('status', Proposal::STATUS_ACCEPTED)
+            ->where(function (Builder $query) use ($start, $end): void {
+                $query->whereBetween('decided_at', [$start, $end])
+                    ->orWhere(function (Builder $query) use ($start, $end): void {
+                        $query->whereNull('decided_at')
+                            ->whereBetween('updated_at', [$start, $end]);
+                    });
+            })
+            ->sum('amount_cents');
+
+        return [
+            'pipeline_cents' => $pipelineCents,
+            'open_leads' => (clone $leads)->whereIn('stage', $openStages)->count(),
+            'won_leads_cents' => $wonLeadsCents,
+            'accepted_proposals_cents' => $acceptedProposalsCents,
+            'gained_cents' => $wonLeadsCents + $acceptedProposalsCents,
+            'href' => route('leads.index', absolute: false),
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return array<string, mixed>
+     */
+    public function previousPeriodFilters(array $filters): array
+    {
+        if (($filters['period'] ?? null) === 'month') {
+            $reference = now();
+            $previousMonth = $reference->copy()->subMonthNoOverflow();
+            $previousDay = min($reference->day, $previousMonth->daysInMonth);
+
+            return [
+                'period' => 'custom',
+                'start_date' => $previousMonth->copy()->startOfMonth()->toDateString(),
+                'end_date' => $previousMonth->copy()->day($previousDay)->toDateString(),
+            ];
+        }
+
+        [$start, $end] = $this->period($filters);
+        $daySpan = max(1, (int) $start->diffInDays($end) + 1);
+        $previousEnd = $start->copy()->subDay()->endOfDay();
+        $previousStart = $previousEnd->copy()->subDays($daySpan - 1)->startOfDay();
+
+        return [
+            'period' => 'custom',
+            'start_date' => $previousStart->toDateString(),
+            'end_date' => $previousEnd->toDateString(),
+        ];
+    }
+
     public function clientQuery(OrganizationMember $membership): Builder
     {
         return Client::query()
@@ -234,6 +428,24 @@ class ReportMetrics
             'overdue' => (clone $query)->whereDate('due_at', '<', now()->toDateString())->whereNotIn('status', [DocumentRequestItem::STATUS_APPROVED, DocumentRequestItem::STATUS_CANCELLED])->count(),
             'due_soon' => (clone $query)->whereBetween('due_at', [now()->toDateString(), now()->addDays(7)->toDateString()])->whereNotIn('status', [DocumentRequestItem::STATUS_APPROVED, DocumentRequestItem::STATUS_CANCELLED])->count(),
         ];
+    }
+
+    private function approvedDocumentsInPeriod(OrganizationMember $membership, Carbon $start, Carbon $end): int
+    {
+        return DocumentRequestItem::query()
+            ->whereBelongsTo($membership->organization)
+            ->where('status', DocumentRequestItem::STATUS_APPROVED)
+            ->whereBetween('approved_at', [$start, $end])
+            ->count();
+    }
+
+    private function deltaPercent(int $current, int $previous): ?float
+    {
+        if ($previous === 0) {
+            return null;
+        }
+
+        return round((($current - $previous) / $previous) * 100, 1);
     }
 
     /**
