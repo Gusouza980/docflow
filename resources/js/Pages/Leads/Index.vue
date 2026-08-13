@@ -6,7 +6,9 @@ import Alert from '../../Components/Feedback/Alert.vue';
 import Button from '../../Components/UI/Button.vue';
 import Modal from '../../Components/Overlays/Modal.vue';
 import TextInput from '../../Components/Forms/TextInput.vue';
+import CurrencyInput from '../../Components/Forms/CurrencyInput.vue';
 import SelectInput from '../../Components/Forms/SelectInput.vue';
+import { formatBrlCurrency } from '../../lib/money';
 
 const props = defineProps({
     grouped: { type: Object, required: true },
@@ -39,10 +41,7 @@ function submitCreate() {
     });
 }
 
-function money(cents) {
-    if (cents == null) return '—';
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(cents / 100);
-}
+const money = formatBrlCurrency;
 </script>
 
 <template>
@@ -94,7 +93,7 @@ function money(cents) {
                 <TextInput v-model="createForm.phone" label="Telefone" :error="createForm.errors.phone" />
                 <SelectInput v-model="createForm.origin" label="Origem" :options="withEmpty(options.origins, 'Selecione')" :error="createForm.errors.origin" />
                 <SelectInput v-model="createForm.stage" label="Etapa" :options="options.stages" :error="createForm.errors.stage" />
-                <TextInput v-model="createForm.estimated_value_cents" label="Valor estimado (centavos)" :error="createForm.errors.estimated_value_cents" />
+                <CurrencyInput id="lead-estimated-value" v-model="createForm.estimated_value_cents" label="Valor estimado" :error="createForm.errors.estimated_value_cents" />
                 <TextInput v-model="createForm.service_interest" label="Serviço de interesse" :error="createForm.errors.service_interest" />
                 <div class="flex justify-end gap-2">
                     <Button type="button" variant="secondary" @click="createOpen = false">Cancelar</Button>

@@ -6,7 +6,9 @@ import Alert from '../../../Components/Feedback/Alert.vue';
 import Button from '../../../Components/UI/Button.vue';
 import Card from '../../../Components/UI/Card.vue';
 import TextInput from '../../../Components/Forms/TextInput.vue';
+import CurrencyInput from '../../../Components/Forms/CurrencyInput.vue';
 import TextareaInput from '../../../Components/Forms/TextareaInput.vue';
+import { formatBrlFromCents } from '../../../lib/money';
 
 const props = defineProps({
     plan: { type: Object, default: null },
@@ -21,7 +23,7 @@ const form = useForm({
     slug: props.plan?.slug ?? '',
     name: props.plan?.name ?? '',
     description: props.plan?.description ?? '',
-    price_cents: props.plan?.price_cents ?? 0,
+    price_cents: props.plan ? formatBrlFromCents(props.plan.price_cents) : '',
     billing_interval: props.plan?.billing_interval ?? 'month',
     trial_days: props.plan?.trial_days ?? 14,
     limits: {
@@ -62,7 +64,7 @@ function submit() {
                     <TextInput id="plan-name" v-model="form.name" label="Nome" required :error="form.errors.name" />
                     <TextareaInput id="plan-description" v-model="form.description" label="Descrição" :error="form.errors.description" />
                     <div class="grid gap-3 sm:grid-cols-3">
-                        <TextInput id="plan-price" v-model="form.price_cents" type="number" min="0" label="Preço (centavos)" required :error="form.errors.price_cents" />
+                        <CurrencyInput id="plan-price" v-model="form.price_cents" label="Preço" required :error="form.errors.price_cents" />
                         <TextInput id="plan-trial" v-model="form.trial_days" type="number" min="0" label="Trial (dias)" required :error="form.errors.trial_days" />
                         <TextInput id="plan-sort" v-model="form.sort_order" type="number" min="0" label="Ordem" :error="form.errors.sort_order" />
                     </div>

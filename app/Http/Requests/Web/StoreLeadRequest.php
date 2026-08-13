@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Web;
 
+use App\Http\Requests\Concerns\ConvertsMoneyFields;
 use App\Models\Lead;
 use App\Models\OrganizationMember;
 use App\Support\WebOrganizationContext;
@@ -10,9 +11,24 @@ use Illuminate\Validation\Rule;
 
 class StoreLeadRequest extends FormRequest
 {
+    use ConvertsMoneyFields;
+
     public function authorize(): bool
     {
         return true;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->prepareMoneyFields();
+    }
+
+    /**
+     * @return list<string>
+     */
+    protected function moneyFields(): array
+    {
+        return ['estimated_value_cents'];
     }
 
     /**

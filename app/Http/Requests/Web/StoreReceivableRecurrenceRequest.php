@@ -2,15 +2,31 @@
 
 namespace App\Http\Requests\Web;
 
+use App\Http\Requests\Concerns\ConvertsMoneyFields;
 use App\Models\ReceivableRecurrence;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class StoreReceivableRecurrenceRequest extends FormRequest
 {
+    use ConvertsMoneyFields;
+
     public function authorize(): bool
     {
         return $this->user() !== null;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->prepareMoneyFields();
+    }
+
+    /**
+     * @return list<string>
+     */
+    protected function moneyFields(): array
+    {
+        return ['amount_cents'];
     }
 
     /**

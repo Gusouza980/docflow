@@ -15,6 +15,7 @@ import TextInput from '../../Components/Forms/TextInput.vue';
 import SelectInput from '../../Components/Forms/SelectInput.vue';
 import TextareaInput from '../../Components/Forms/TextareaInput.vue';
 import CheckboxInput from '../../Components/Forms/CheckboxInput.vue';
+import { formatBrlFromCents } from '../../lib/money';
 
 const props = defineProps({
     client: { type: Object, required: true },
@@ -146,7 +147,7 @@ const editForm = useForm({
     document_number: props.client.document_number ?? '',
     priority: props.client.priority ?? 'normal',
     risk_level: props.client.risk_level ?? 'low',
-    potential_revenue_cents: props.client.potential_revenue_cents ?? '',
+    potential_revenue_cents: formatBrlFromCents(props.client.potential_revenue_cents),
     origin: props.client.origin ?? '',
     access_policy: props.client.access_policy ?? 'all_members',
     internal_notes: props.client.internal_notes ?? '',
@@ -464,7 +465,7 @@ function copyPortalUrl() {
                             </div>
                             <div>
                                 <dt class="text-xs font-semibold uppercase text-slate-500">Receita potencial</dt>
-                                <dd class="mt-1 text-sm text-slate-900">{{ client.potential_revenue_cents ?? 'Restrito' }}</dd>
+                                <dd class="mt-1 text-sm text-slate-900">{{ client.potential_revenue_cents == null ? 'Restrito' : money(client.potential_revenue_cents) }}</dd>
                             </div>
                             <div>
                                 <dt class="text-xs font-semibold uppercase text-slate-500">Responsável principal</dt>

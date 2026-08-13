@@ -3,6 +3,8 @@
 namespace App\Http\Requests\Web;
 
 use App\Enums\ClientPriority;
+use App\Http\Requests\Concerns\ConvertsMoneyFields;
+use App\Models\Client;
 use App\Models\OrganizationMember;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -10,9 +12,19 @@ use Illuminate\Validation\Validator;
 
 class UpdateClientRequest extends FormRequest
 {
+    use ConvertsMoneyFields;
+
     public function authorize(): bool
     {
         return $this->user()?->can('update', $this->route('client')) ?? false;
+    }
+
+    /**
+     * @return list<string>
+     */
+    protected function moneyFields(): array
+    {
+        return ['potential_revenue_cents'];
     }
 
     /**
@@ -54,6 +66,8 @@ class UpdateClientRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
+        $this->prepareMoneyFields();
+
         if ($this->filled('document_number')) {
             $this->merge([
                 'document_number' => preg_replace('/\D+/', '', (string) $this->input('document_number')),

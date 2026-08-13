@@ -6,8 +6,10 @@ import Alert from '../../Components/Feedback/Alert.vue';
 import Button from '../../Components/UI/Button.vue';
 import Badge from '../../Components/UI/Badge.vue';
 import TextInput from '../../Components/Forms/TextInput.vue';
+import CurrencyInput from '../../Components/Forms/CurrencyInput.vue';
 import SelectInput from '../../Components/Forms/SelectInput.vue';
 import TextareaInput from '../../Components/Forms/TextareaInput.vue';
+import { formatBrlCurrency } from '../../lib/money';
 
 const props = defineProps({
     lead: { type: Object, required: true },
@@ -67,10 +69,7 @@ function convertLead() {
     convertForm.post(`/leads/${props.lead.id}/convert`);
 }
 
-function money(cents) {
-    if (cents == null) return '—';
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(cents / 100);
-}
+const money = formatBrlCurrency;
 </script>
 
 <template>
@@ -141,7 +140,7 @@ function money(cents) {
                     <h3 class="text-sm font-semibold text-slate-900">Propostas</h3>
                     <form v-if="can.manage" class="mt-3 grid gap-3" @submit.prevent="submitProposal">
                         <TextInput v-model="proposalForm.title" label="Título" :error="proposalForm.errors.title" />
-                        <TextInput v-model="proposalForm.amount_cents" label="Valor (centavos)" :error="proposalForm.errors.amount_cents" />
+                        <CurrencyInput id="proposal-amount" v-model="proposalForm.amount_cents" label="Valor" :error="proposalForm.errors.amount_cents" />
                         <SelectInput v-model="proposalForm.status" label="Status" :options="options.proposal_statuses" :error="proposalForm.errors.status" />
                         <TextareaInput v-model="proposalForm.notes" label="Notas" :error="proposalForm.errors.notes" />
                         <div class="flex justify-end">

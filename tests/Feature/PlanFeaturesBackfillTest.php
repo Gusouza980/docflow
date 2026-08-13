@@ -102,7 +102,7 @@ class PlanFeaturesBackfillTest extends TestCase
                 'slug' => 'unlimited',
                 'name' => 'Unlimited',
                 'description' => 'Tudo incluso',
-                'price_cents' => 99900,
+                'price_cents' => '999,00',
                 'billing_interval' => Plan::BILLING_INTERVAL_MONTH,
                 'trial_days' => 14,
                 'limits' => [

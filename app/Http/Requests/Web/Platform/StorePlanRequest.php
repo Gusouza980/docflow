@@ -2,15 +2,31 @@
 
 namespace App\Http\Requests\Web\Platform;
 
+use App\Http\Requests\Concerns\ConvertsMoneyFields;
 use App\Models\Plan;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class StorePlanRequest extends FormRequest
 {
+    use ConvertsMoneyFields;
+
     public function authorize(): bool
     {
         return $this->user()?->isPlatformAdmin() ?? false;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->prepareMoneyFields();
+    }
+
+    /**
+     * @return list<string>
+     */
+    protected function moneyFields(): array
+    {
+        return ['price_cents'];
     }
 
     /**

@@ -70,17 +70,18 @@ class WebFinanceManagementTest extends TestCase
                 'client_id' => $client->id,
                 'financial_category_id' => $category->id,
                 'description' => 'Honorários mensais',
-                'amount_cents' => 100000,
+                'amount_cents' => '1.000,00',
                 'due_at' => now()->addDays(5)->toDateString(),
             ])
             ->assertRedirect('/finance');
 
         $receivable = Receivable::firstOrFail();
+        $this->assertSame(100000, $receivable->amount_cents);
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
             ->post("/finance/receivables/{$receivable->id}/payments", [
-                'amount_cents' => 40000,
+                'amount_cents' => '400,00',
                 'paid_at' => now()->toDateString(),
             ])
             ->assertRedirect('/finance');
@@ -90,7 +91,7 @@ class WebFinanceManagementTest extends TestCase
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
             ->post("/finance/receivables/{$receivable->id}/payments", [
-                'amount_cents' => 60000,
+                'amount_cents' => '600,00',
                 'paid_at' => now()->toDateString(),
             ])
             ->assertRedirect('/finance');
@@ -110,18 +111,19 @@ class WebFinanceManagementTest extends TestCase
                 'client_id' => $client->id,
                 'description' => 'Custas',
                 'vendor_name' => 'Tribunal',
-                'amount_cents' => 25000,
+                'amount_cents' => '250,00',
                 'due_at' => now()->addDay()->toDateString(),
                 'is_reimbursable' => true,
             ])
             ->assertRedirect('/finance');
 
         $payable = Payable::firstOrFail();
+        $this->assertSame(25000, $payable->amount_cents);
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
             ->post("/finance/payables/{$payable->id}/payments", [
-                'amount_cents' => 25000,
+                'amount_cents' => '250,00',
                 'paid_at' => now()->toDateString(),
             ])
             ->assertRedirect('/finance');
@@ -184,7 +186,7 @@ class WebFinanceManagementTest extends TestCase
             ->withSession(['active_organization_id' => $organization->id])
             ->patch("/finance/receivables/{$receivable->id}/renegotiate", [
                 'renegotiation_reason' => 'Cliente solicitou parcelamento',
-                'amount_cents' => 80000,
+                'amount_cents' => '800,00',
                 'due_at' => now()->addDays(15)->toDateString(),
             ])
             ->assertRedirect('/finance');
