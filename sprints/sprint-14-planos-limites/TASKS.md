@@ -55,24 +55,24 @@ Implementar **planos comerciais** (Essencial, Profissional, Escritório) com lim
 
 ### Modelagem
 
-- [ ] Migration `plans`:
+- [x] Migration `plans`:
   ```text
   slug (unique), name, description
   price_cents, billing_interval (month|year)
   trial_days, limits (json), features (json)
   is_public, is_active, sort_order
   ```
-- [ ] Migration `organization_plan_overrides`:
+- [x] Migration `organization_plan_overrides`:
   ```text
   organization_id, limits (json nullable), features (json nullable)
   reason, expires_at nullable, created_by_user_id
   ```
-- [ ] Models `Plan`, `OrganizationPlanOverride` + factories.
-- [ ] Enum ou constants `PlanFeature`, `PlanLimit` em `App\Enums` ou `config/docflow.php`.
+- [x] Models `Plan`, `OrganizationPlanOverride` + factories.
+- [x] Enum ou constants `PlanFeature`, `PlanLimit` em `App\Enums` ou `config/docflow.php`.
 
 ### Config
 
-- [ ] Estender `config/docflow.php`:
+- [x] Estender `config/docflow.php`:
   ```php
   'plan_features' => [...labels para UI...],
   'plan_limits' => [...labels e unidades...],
@@ -81,54 +81,54 @@ Implementar **planos comerciais** (Essencial, Profissional, Escritório) com lim
 
 ### Seeders
 
-- [ ] `PlanSeeder` com Essencial / Profissional / Escritório (valores do briefing):
+- [x] `PlanSeeder` com Essencial / Profissional / Escritório (valores do briefing):
   | Plano | max_members | max_clients | max_storage_mb | portal | audit |
   |-------|-------------|-------------|----------------|--------|-------|
   | Essencial | 3 | 50 | 2048 | false | false |
   | Profissional | 15 | 300 | 20480 | true | false |
   | Escritório | 50 | -1 (ilimitado) | 102400 | true | true |
-- [ ] Registrar no `DatabaseSeeder`.
+- [x] Registrar no `DatabaseSeeder`.
 
 ### Services
 
-- [ ] `App\Support\Billing\ResolvesOrganizationPlan` — plano efetivo + merge override.
-- [ ] `App\Support\Billing\OrganizationUsage` — métodos: `membersCount()`, `clientsCount()`, `storageMb()`, `portalAccessesCount()`.
-- [ ] `App\Support\Billing\PlanLimitChecker`:
+- [x] `App\Support\Billing\ResolvesOrganizationPlan` — plano efetivo + merge override.
+- [x] `App\Support\Billing\OrganizationUsage` — métodos: `membersCount()`, `clientsCount()`, `storageMb()`, `portalAccessesCount()`.
+- [x] `App\Support\Billing\PlanLimitChecker`:
   - `assertWithinLimit(Organization, metric)` → void ou exception.
   - `usageSummary(Organization)` → array para UI.
   - `hasFeature(Organization, feature)` → bool.
-- [ ] Exception `PlanLimitExceededException` → handler JSON/Inertia friendly.
+- [x] Exception `PlanLimitExceededException` → handler JSON/Inertia friendly.
 
 ### Integração nos fluxos existentes
 
-- [ ] `InviteOrganizationMember` / store convite — checar `max_members`.
-- [ ] `ClientController@store` (web + API se existir) — checar `max_clients`.
-- [ ] Criação de portal access — checar `max_portal_accesses` + feature `portal`.
-- [ ] Upload documento — checar storage (hook no action de upload existente).
-- [ ] `AuditController` — checar feature `audit` antes de renderizar.
+- [x] `InviteOrganizationMember` / store convite — checar `max_members`.
+- [x] `ClientController@store` (web + API se existir) — checar `max_clients`.
+- [x] Criação de portal access — checar `max_portal_accesses` + feature `portal`.
+- [x] Upload documento — checar storage (hook no action de upload existente).
+- [x] `AuditController` — checar feature `audit` antes de renderizar.
 
 ### Platform admin UI
 
-- [ ] `Platform\PlanController` — CRUD planos (index, create, edit; destroy soft via `is_active`).
-- [ ] `Platform\OrganizationPlanOverrideController` — criar/revogar override na página show da org.
-- [ ] Páginas Vue: `Platform/Plans/Index.vue`, `Form.vue`; seção overrides em `Organizations/Show.vue`.
+- [x] `Platform\PlanController` — CRUD planos (index, create, edit; destroy soft via `is_active`).
+- [x] `Platform\OrganizationPlanOverrideController` — criar/revogar override na página show da org.
+- [x] Páginas Vue: `Platform/Plans/Index.vue`, `Form.vue`; seção overrides em `Organizations/Show.vue`.
 
 ### Tenant UI
 
-- [ ] `OrganizationPlanController@show` — `GET /organizations/plan`.
-- [ ] `Organizations/Plan.vue` — tabela limites vs uso, lista de features, badge do plano.
-- [ ] Componente `PlanUsageBanner.vue` — exibir no `AppLayout` quando ≥ 80% ou feature missing.
-- [ ] Compartilhar `plan_summary` via `HandleInertiaRequests` (admin only).
+- [x] `OrganizationPlanController@show` — `GET /organizations/plan`.
+- [x] `Organizations/Plan.vue` — tabela limites vs uso, lista de features, badge do plano.
+- [x] Componente `PlanUsageBanner.vue` — exibir no `AppLayout` quando ≥ 80% ou feature missing.
+- [x] Compartilhar `plan_summary` via `HandleInertiaRequests` (admin only).
 
 ### Testes
 
-- [ ] Unit: `PlanLimitChecker` merge override + expiração.
-- [ ] Unit: `OrganizationUsage` contagens corretas.
-- [ ] Feature: convite bloqueado ao atingir `max_members`.
-- [ ] Feature: criar cliente bloqueado ao atingir `max_clients`.
-- [ ] Feature: portal access bloqueado sem feature `portal`.
-- [ ] Feature: assistente não acessa `/organizations/plan` (403 — admin only).
-- [ ] Feature: platform admin cria override e org passa a aceitar mais membros.
+- [x] Unit: `PlanLimitChecker` merge override + expiração.
+- [x] Unit: `OrganizationUsage` contagens corretas.
+- [x] Feature: convite bloqueado ao atingir `max_members`.
+- [x] Feature: criar cliente bloqueado ao atingir `max_clients`.
+- [x] Feature: portal access bloqueado sem feature `portal`.
+- [x] Feature: assistente não acessa `/organizations/plan` (403 — admin only).
+- [x] Feature: platform admin cria override e org passa a aceitar mais membros.
 
 ## Endpoints
 

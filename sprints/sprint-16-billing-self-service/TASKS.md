@@ -62,7 +62,7 @@ Completar o loop comercial: **faturas** da assinatura SaaS, registro manual ou v
 
 ### Modelagem
 
-- [ ] Migration `subscription_invoices`:
+- [x] Migration `subscription_invoices`:
   ```text
   subscription_id, organization_id
   amount_cents, currency (BRL default)
@@ -70,61 +70,61 @@ Completar o loop comercial: **faturas** da assinatura SaaS, registro manual ou v
   provider_invoice_id nullable
   payment_method nullable, metadata json
   ```
-- [ ] Migration `billing_webhook_events` (idempotência):
+- [x] Migration `billing_webhook_events` (idempotência):
   ```text
   provider, event_id (unique), payload json, processed_at
   ```
-- [ ] Models + factories.
+- [x] Models + factories.
 
 ### Gateway
 
-- [ ] `App\Contracts\Billing\BillingGateway`:
+- [x] `App\Contracts\Billing\BillingGateway`:
   - `createCustomer(Organization)`, `createSubscription(Subscription)`
   - `cancelSubscription(Subscription, bool $atPeriodEnd)`
   - `createInvoice(SubscriptionInvoice)` (opcional MVP manual)
-- [ ] `App\Billing\ManualBillingGateway` — implementação no-op / local.
-- [ ] Binding em `AppServiceProvider`: `config('docflow.billing.driver')`.
+- [x] `App\Billing\ManualBillingGateway` — implementação no-op / local.
+- [x] Binding em `AppServiceProvider`: `config('docflow.billing.driver')`.
 - [ ] (Opcional) `AsaasBillingGateway` — customer + subscription + webhook signature.
-- [ ] `App\Jobs\ProcessBillingWebhook` — dispatch por provider.
+- [x] `App\Jobs\ProcessBillingWebhook` — dispatch por provider.
 
 ### Actions / commands
 
-- [ ] `App\Actions\Billing\GenerateSubscriptionInvoice` — cria fatura `open` para período.
-- [ ] `App\Actions\Billing\MarkInvoicePaid` — paid + ativa subscription + audit.
-- [ ] `App\Actions\Billing\MarkInvoicePastDue` — subscription past_due.
-- [ ] `App\Actions\Billing\RequestPlanChange` — tenant self-service upgrade/downgrade.
-- [ ] Command `billing:generate-invoices` — faturas de renovação (mensal) + pós-trial.
-- [ ] Command `billing:mark-overdue-invoices` — open + due_at passado → past_due.
-- [ ] Scheduler: daily após `subscriptions:*`.
+- [x] `App\Actions\Billing\GenerateSubscriptionInvoice` — cria fatura `open` para período.
+- [x] `App\Actions\Billing\MarkInvoicePaid` — paid + ativa subscription + audit.
+- [x] `App\Actions\Billing\MarkInvoicePastDue` — subscription past_due.
+- [x] `App\Actions\Billing\RequestPlanChange` — tenant self-service upgrade/downgrade.
+- [x] Command `billing:generate-invoices` — faturas de renovação (mensal) + pós-trial.
+- [x] Command `billing:mark-overdue-invoices` — open + due_at passado → past_due.
+- [x] Scheduler: daily após `subscriptions:*`.
 
 ### Notificações
 
-- [ ] `SubscriptionTrialEndingNotification` — admin(s) da org.
-- [ ] `SubscriptionInvoiceIssuedNotification`.
-- [ ] `SubscriptionPaymentConfirmedNotification`.
-- [ ] `SubscriptionSuspendedNotification`.
-- [ ] Command `billing:notify-trial-ending` (D-3, D-1).
+- [x] `SubscriptionTrialEndingNotification` — admin(s) da org.
+- [x] `SubscriptionInvoiceIssuedNotification`.
+- [x] `SubscriptionPaymentConfirmedNotification`.
+- [x] `SubscriptionSuspendedNotification`.
+- [x] Command `billing:notify-trial-ending` (D-3, D-1).
 
 ### Controllers e rotas
 
-- [ ] `OrganizationBillingController` (tenant):
+- [x] `OrganizationBillingController` (tenant):
   - `GET /organizations/billing`
   - `POST /organizations/billing/change-plan`
   - `POST /organizations/billing/cancel`
-- [ ] `Platform\InvoiceController` — index cross-tenant, markPaid, void.
-- [ ] `Webhooks\AsaasWebhookController` ou `StripeWebhookController` — POST público com secret.
-- [ ] Atualizar `Platform\DashboardController` — widgets MRR, inadimplentes, trials.
+- [x] `Platform\InvoiceController` — index cross-tenant, markPaid, void.
+- [x] `Webhooks\BillingWebhookController` — POST público com secret (`/webhooks/billing/{provider}`; Asaas/Stripe dedicados ficam no stretch).
+- [x] Atualizar `Platform\DashboardController` — widgets MRR, inadimplentes, trials.
 
 ### Frontend
 
-- [ ] `Organizations/Billing.vue` — plano, faturas, ações self-service.
-- [ ] `Platform/Invoices/Index.vue` — listagem global.
-- [ ] Modal confirmar upgrade/downgrade com diff de limites.
-- [ ] Link “Billing” em `/organizations` ou sidebar (admin only).
+- [x] `Organizations/Billing.vue` — plano, faturas, ações self-service.
+- [x] `Platform/Invoices/Index.vue` — listagem global.
+- [x] Modal confirmar upgrade/downgrade com diff de limites.
+- [x] Link “Billing” em `/organizations` ou sidebar (admin only).
 
 ### Config / env
 
-- [ ] `config/docflow.php`:
+- [x] `config/docflow.php`:
   ```php
   'billing' => [
       'driver' => env('DOCFLOW_BILLING_DRIVER', 'manual'),
@@ -132,19 +132,19 @@ Completar o loop comercial: **faturas** da assinatura SaaS, registro manual ou v
       'asaas_webhook_secret' => env('ASAAS_WEBHOOK_SECRET'),
   ],
   ```
-- [ ] Documentar em `.env.example`.
+- [x] Documentar em `.env.example`.
 
 ### Testes
 
-- [ ] Unit: `ManualBillingGateway` fluxos básicos.
-- [ ] Feature: trial expirado gera fatura open (command).
-- [ ] Feature: mark paid reativa subscription past_due.
-- [ ] Feature: fatura overdue marca subscription past_due.
-- [ ] Feature: tenant admin change plan upgrade altera plan_id.
-- [ ] Feature: cancel at period end não bloqueia até fim do período.
-- [ ] Feature: webhook idempotente (mesmo event_id 2x → 1 efeito).
-- [ ] Feature: e-mail trial ending enfileirado (fake mail/queue).
-- [ ] Feature: platform admin mark invoice paid auditado.
+- [x] Unit: `ManualBillingGateway` fluxos básicos.
+- [x] Feature: trial expirado gera fatura open (command).
+- [x] Feature: mark paid reativa subscription past_due.
+- [x] Feature: fatura overdue marca subscription past_due.
+- [x] Feature: tenant admin change plan upgrade altera plan_id.
+- [x] Feature: cancel at period end não bloqueia até fim do período.
+- [x] Feature: webhook idempotente (mesmo event_id 2x → 1 efeito).
+- [x] Feature: e-mail trial ending enfileirado (fake mail/queue).
+- [x] Feature: platform admin mark invoice paid auditado.
 
 ## Endpoints
 

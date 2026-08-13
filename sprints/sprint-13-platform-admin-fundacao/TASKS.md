@@ -42,64 +42,64 @@ Criar a camada operacional **Docflow → tenants**: autenticação de platform a
 
 ### Modelagem
 
-- [ ] Migration: `users.is_platform_admin` boolean default false.
-- [ ] Migration: `organizations.platform_notes` text nullable.
-- [ ] Migration: `platform_audit_logs`:
+- [x] Migration: `users.is_platform_admin` boolean default false.
+- [x] Migration: `organizations.platform_notes` text nullable.
+- [x] Migration: `platform_audit_logs`:
   - `platform_admin_user_id`, `action`, `subject_type`, `subject_id`, `metadata` JSON, `ip_address`, `user_agent`, timestamps.
-- [ ] Model `PlatformAuditLog` + factory mínima.
+- [x] Model `PlatformAuditLog` + factory mínima.
 
 ### Autorização
 
-- [ ] Middleware `EnsurePlatformAdmin`: exige `auth` + `user->is_platform_admin`.
-- [ ] Registrar alias em `bootstrap/app.php`: `platform.admin`.
-- [ ] **Não** usar Spatie `super-admin` para este fluxo (documentar no código).
+- [x] Middleware `EnsurePlatformAdmin`: exige `auth` + `user->is_platform_admin`.
+- [x] Registrar alias em `bootstrap/app.php`: `platform.admin`.
+- [x] **Não** usar Spatie `super-admin` para este fluxo (documentar no código).
 
 ### Actions / services
 
-- [ ] `App\Actions\Platform\RecordPlatformAuditLog` — espelho de `RecordAuditLog`, sem `organization_id` obrigatório.
-- [ ] `App\Actions\Platform\SuspendOrganization` — update status + audit + metadata (motivo).
-- [ ] `App\Actions\Platform\ReactivateOrganization` — update status + audit.
-- [ ] `App\Support\PlatformOrganizationMetrics` — contagens: members, clients, receivables open (opcional), último login (opcional fase 2).
+- [x] `App\Actions\Platform\RecordPlatformAuditLog` — espelho de `RecordAuditLog`, sem `organization_id` obrigatório.
+- [x] `App\Actions\Platform\SuspendOrganization` — update status + audit + metadata (motivo).
+- [x] `App\Actions\Platform\ReactivateOrganization` — update status + audit.
+- [x] `App\Support\PlatformOrganizationMetrics` — contagens: members, clients, receivables open (opcional), último login (opcional fase 2).
 
 ### Controllers e rotas
 
-- [ ] `Platform\DashboardController@index` — cards: total orgs, ativas, suspensas.
-- [ ] `Platform\OrganizationController@index` — listagem paginada + filtros.
-- [ ] `Platform\OrganizationController@show` — detalhe + métricas + notas.
-- [ ] `Platform\OrganizationController@updateNotes` — PATCH notas internas.
-- [ ] `Platform\OrganizationController@suspend` / `@reactivate` — POST.
-- [ ] Grupo de rotas em `routes/web.php`:
+- [x] `Platform\DashboardController@index` — cards: total orgs, ativas, suspensas.
+- [x] `Platform\OrganizationController@index` — listagem paginada + filtros.
+- [x] `Platform\OrganizationController@show` — detalhe + métricas + notas.
+- [x] `Platform\OrganizationController@updateNotes` — PATCH notas internas.
+- [x] `Platform\OrganizationController@suspend` / `@reactivate` — POST.
+- [x] Grupo de rotas em `routes/web.php`:
   ```php
   Route::prefix('platform')->middleware(['auth', 'platform.admin'])->name('platform.')->group(...)
   ```
 
 ### Frontend (Inertia)
 
-- [ ] Layout `PlatformLayout.vue` — nav: Dashboard, Organizações, (placeholder Planos/Assinaturas).
-- [ ] `Platform/Dashboard/Index.vue` — KPIs globais.
-- [ ] `Platform/Organizations/Index.vue` — tabela, filtros, badges de status.
-- [ ] `Platform/Organizations/Show.vue` — detalhe, ações suspender/reativar, formulário de notas.
-- [ ] Modal de confirmação para suspender (motivo obrigatório ou opcional — definir no kickoff).
+- [x] Layout `PlatformLayout.vue` — nav: Dashboard, Organizações, (placeholder Planos/Assinaturas).
+- [x] `Platform/Dashboard/Index.vue` — KPIs globais.
+- [x] `Platform/Organizations/Index.vue` — tabela, filtros, badges de status.
+- [x] `Platform/Organizations/Show.vue` — detalhe, ações suspender/reativar, formulário de notas.
+- [x] Modal de confirmação para suspender (motivo obrigatório ou opcional — definir no kickoff).
 
 ### Seeders
 
-- [ ] `PlatformAdminSeeder` ou extensão de `DemoWorkspaceSeeder`: usuário `platform@docflow.test` com `is_platform_admin = true`.
-- [ ] Documentar credenciais em comentário do seeder (não commitar senha real).
+- [x] `PlatformAdminSeeder` ou extensão de `DemoWorkspaceSeeder`: usuário `platform@docflow.test` com `is_platform_admin = true`.
+- [x] Documentar credenciais em comentário do seeder (não commitar senha real).
 
 ### Enforcement inicial (preparação Sprint 15)
 
-- [ ] Extrair checagem `Organization::STATUS_ACTIVE` para helper `Organization::isOperational()` (suspensa = false).
-- [ ] **Não** bloquear web ainda — apenas preparar helper; enforcement completo na Sprint 15.
+- [x] Extrair checagem `Organization::STATUS_ACTIVE` para helper `Organization::isOperational()` (suspensa = false).
+- [x] **Não** bloquear web ainda — apenas preparar helper; enforcement completo na Sprint 15.
 
 ### Testes
 
-- [ ] Feature: platform admin acessa `/platform` → 200.
-- [ ] Feature: admin de tenant acessa `/platform` → 403.
-- [ ] Feature: assistente acessa `/platform` → 403.
-- [ ] Feature: suspender org altera `status` e grava `platform_audit_logs`.
-- [ ] Feature: reativar org restaura `status active`.
-- [ ] Feature: atualizar `platform_notes` auditado.
-- [ ] Feature: listagem paginada retorna orgs de múltiplas orgs (cross-tenant isolado ao controller platform).
+- [x] Feature: platform admin acessa `/platform` → 200.
+- [x] Feature: admin de tenant acessa `/platform` → 403.
+- [x] Feature: assistente acessa `/platform` → 403.
+- [x] Feature: suspender org altera `status` e grava `platform_audit_logs`.
+- [x] Feature: reativar org restaura `status active`.
+- [x] Feature: atualizar `platform_notes` auditado.
+- [x] Feature: listagem paginada retorna orgs de múltiplas orgs (cross-tenant isolado ao controller platform).
 
 ## Endpoints
 

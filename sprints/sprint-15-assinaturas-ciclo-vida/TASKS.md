@@ -60,7 +60,7 @@ Vincular cada organização a uma **assinatura** com ciclo de vida (trial → ac
 
 ### Modelagem
 
-- [ ] Migration `subscriptions`:
+- [x] Migration `subscriptions`:
   ```text
   organization_id (unique), plan_id
   status, billing_provider (manual default)
@@ -69,13 +69,13 @@ Vincular cada organização a uma **assinatura** com ciclo de vida (trial → ac
   canceled_at, cancel_at_period_end (bool)
   metadata (json)
   ```
-- [ ] Model `Subscription` + factory + estados helpers:
+- [x] Model `Subscription` + factory + estados helpers:
   - `isTrialing()`, `isAccessible()`, `daysUntilTrialEnds()`, `onGracePeriod()`.
-- [ ] Relacionamentos: `Organization::subscription()`, `Plan::subscriptions()`.
+- [x] Relacionamentos: `Organization::subscription()`, `Plan::subscriptions()`.
 
 ### Config
 
-- [ ] `config/docflow.php`:
+- [x] `config/docflow.php`:
   ```php
   'subscription' => [
       'default_trial_days' => 14,
@@ -86,57 +86,57 @@ Vincular cada organização a uma **assinatura** com ciclo de vida (trial → ac
 
 ### Actions
 
-- [ ] `App\Actions\Billing\CreateTrialSubscription` — chamado em `CreateOrganization`.
-- [ ] `App\Actions\Billing\ChangeOrganizationPlan` — platform admin; recalcula limites via Sprint 14.
-- [ ] `App\Actions\Billing\ExtendTrial` — adiciona dias a `trial_ends_at`.
-- [ ] `App\Actions\Billing\CancelSubscription` — imediato ou `cancel_at_period_end`.
-- [ ] `App\Actions\Billing\MarkSubscriptionPastDue` / `ActivateSubscription`.
+- [x] `App\Actions\Billing\CreateTrialSubscription` — chamado em `CreateOrganization`.
+- [x] `App\Actions\Billing\ChangeOrganizationPlan` — platform admin; recalcula limites via Sprint 14.
+- [x] `App\Actions\Billing\ExtendTrial` — adiciona dias a `trial_ends_at`.
+- [x] `App\Actions\Billing\CancelSubscription` — imediato ou `cancel_at_period_end`.
+- [x] `App\Actions\Billing\MarkSubscriptionPastDue` / `ActivateSubscription`.
 
 ### Middleware
 
-- [ ] `EnsureOrganizationAccessible` — lógica unificada org + subscription.
-- [ ] Registrar alias `org.accessible`.
-- [ ] Refatorar `EnsureOrganizationIsActive` para delegar ou deprecar em favor do novo.
-- [ ] Aplicar `org.accessible` em `routes/web.php` (grupo auth tenant).
-- [ ] Aplicar em rotas API tenant-scoped.
-- [ ] Portal: `EnsurePortalOrganizationAccessible` ou check em `ClientPortalController` base.
+- [x] `EnsureOrganizationAccessible` — lógica unificada org + subscription.
+- [x] Registrar alias `org.accessible`.
+- [x] Refatorar `EnsureOrganizationIsActive` para delegar ou deprecar em favor do novo.
+- [x] Aplicar `org.accessible` em `routes/web.php` (grupo auth tenant).
+- [x] Aplicar em rotas API tenant-scoped.
+- [x] Portal: `EnsurePortalOrganizationAccessible` ou check em `ClientPortalController` base.
 
 ### Commands + scheduler
 
-- [ ] `subscriptions:expire-trials` — idempotente, log em `scheduler_run_logs`.
-- [ ] `subscriptions:apply-grace-expiry` — past_due além do grace → cancel + suspend.
-- [ ] Registrar em `bootstrap/app.php` (diário, ex.: 06:00).
+- [x] `subscriptions:expire-trials` — idempotente, log em `scheduler_run_logs`.
+- [x] `subscriptions:apply-grace-expiry` — past_due além do grace → cancel + suspend.
+- [x] Registrar em `bootstrap/app.php` (diário, ex.: 06:00).
 
 ### Controllers
 
-- [ ] `Platform\SubscriptionController` — show, changePlan, extendTrial, cancel, activate, pause.
-- [ ] `SubscriptionRequiredController@show` — página bloqueio (`GET /subscription/required`).
-- [ ] Atualizar `CreateOrganization` para criar trial subscription.
+- [x] `Platform\SubscriptionController` — show, changePlan, extendTrial, cancel, activate, pause.
+- [x] `SubscriptionRequiredController@show` — página bloqueio (`GET /subscription/required`).
+- [x] Atualizar `CreateOrganization` para criar trial subscription.
 
 ### Frontend
 
-- [ ] `Platform/Organizations/Show.vue` — seção assinatura + ações.
-- [ ] `Subscription/Required.vue` — mensagem + contato suporte + link plano (se admin).
-- [ ] `Organizations/Plan.vue` — status trial/active/past_due, datas.
-- [ ] `SubscriptionBanner.vue` no `AppLayout` — trial/expirado/past_due.
-- [ ] `HandleInertiaRequests` — compartilhar `subscription_status`, `trial_days_left`.
+- [x] `Platform/Organizations/Show.vue` — seção assinatura + ações.
+- [x] `Subscription/Required.vue` — mensagem + contato suporte + link plano (se admin).
+- [x] `Organizations/Plan.vue` — status trial/active/past_due, datas.
+- [x] `SubscriptionBanner.vue` no `AppLayout` — trial/expirado/past_due.
+- [x] `HandleInertiaRequests` — compartilhar `subscription_status`, `trial_days_left`.
 
 ### Integração PlanLimitChecker
 
-- [ ] `ResolvesOrganizationPlan` passa a ler `subscription.plan_id` (fallback default se sem assinatura).
-- [ ] Assinatura `canceled` → bloqueio antes de checar limites.
+- [x] `ResolvesOrganizationPlan` passa a ler `subscription.plan_id` (fallback default se sem assinatura).
+- [x] Assinatura `canceled` → bloqueio antes de checar limites.
 
 ### Testes
 
-- [ ] Feature: criar org gera subscription `trialing` com plano essencial.
-- [ ] Feature: org suspensa manualmente → 403 web e API.
-- [ ] Feature: trial expirado → redirect `/subscription/required`.
-- [ ] Feature: `past_due` dentro do grace → acesso OK com banner.
-- [ ] Feature: `past_due` após grace → bloqueio + org suspended.
-- [ ] Feature: platform admin estende trial → usuário volta a acessar.
-- [ ] Feature: platform admin change plan → `PlanLimitChecker` reflete novo plano.
-- [ ] Feature: portal bloqueado quando org suspensa.
-- [ ] Feature: commands idempotentes (rodar 2x não duplica efeitos).
+- [x] Feature: criar org gera subscription `trialing` com plano essencial.
+- [x] Feature: org suspensa manualmente → 403 web e API.
+- [x] Feature: trial expirado → redirect `/subscription/required`.
+- [x] Feature: `past_due` dentro do grace → acesso OK com banner.
+- [x] Feature: `past_due` após grace → bloqueio + org suspended.
+- [x] Feature: platform admin estende trial → usuário volta a acessar.
+- [x] Feature: platform admin change plan → `PlanLimitChecker` reflete novo plano.
+- [x] Feature: portal bloqueado quando org suspensa.
+- [x] Feature: commands idempotentes (rodar 2x não duplica efeitos).
 
 ## Endpoints
 
