@@ -67,6 +67,10 @@ class HandleInertiaRequests extends Middleware
                 'permissions' => [
                     'can_manage_organization' => (bool) ($membership?->isAdmin() || $membership?->isManager()),
                     'can_write' => (bool) ($membership && $membership->role !== OrganizationMember::ROLE_READONLY),
+                    'can_access_crm' => (bool) ($membership
+                        && $membership->canViewCrm()
+                        && Plan::query()->exists()
+                        && app(PlanLimitChecker::class)->hasFeature($membership->organization, 'crm')),
                 ],
                 'plan_summary' => function () use ($webUser, $membership) {
                     if (! $webUser || ! $membership?->isAdmin() || ! Plan::query()->exists()) {

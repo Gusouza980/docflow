@@ -26,7 +26,9 @@ use App\Http\Controllers\Web\DocumentRequestController;
 use App\Http\Controllers\Web\DocumentRequestItemController;
 use App\Http\Controllers\Web\FinanceController;
 use App\Http\Controllers\Web\InternalNotificationController;
+use App\Http\Controllers\Web\LeadController;
 use App\Http\Controllers\Web\MessageTemplateController;
+use App\Http\Controllers\Web\OnboardingTemplateController;
 use App\Http\Controllers\Web\OrganizationBillingController;
 use App\Http\Controllers\Web\OrganizationController;
 use App\Http\Controllers\Web\OrganizationInvitationController;
@@ -176,6 +178,19 @@ Route::middleware('auth')->group(function (): void {
         Route::delete('/organization-invitations/{organizationInvitation}', [OrganizationInvitationController::class, 'destroy'])->name('organization-invitations.destroy');
         Route::patch('/organization-members/{organizationMember}/suspend', [OrganizationMemberController::class, 'suspend'])->name('organization-members.suspend');
         Route::patch('/organization-members/{organizationMember}/reactivate', [OrganizationMemberController::class, 'reactivate'])->name('organization-members.reactivate');
+
+        Route::get('/leads', [LeadController::class, 'index'])->name('leads.index');
+        Route::post('/leads', [LeadController::class, 'store'])->name('leads.store');
+        Route::get('/leads/{lead}', [LeadController::class, 'show'])->name('leads.show');
+        Route::patch('/leads/{lead}/stage', [LeadController::class, 'updateStage'])->name('leads.stage.update');
+        Route::post('/leads/{lead}/activities', [LeadController::class, 'storeActivity'])->name('leads.activities.store');
+        Route::post('/leads/{lead}/proposals', [LeadController::class, 'storeProposal'])->name('leads.proposals.store');
+        Route::patch('/leads/{lead}/proposals/{proposal}/status', [LeadController::class, 'updateProposalStatus'])->name('leads.proposals.status.update');
+        Route::post('/leads/{lead}/convert', [LeadController::class, 'convert'])->name('leads.convert');
+
+        Route::get('/onboarding-templates', [OnboardingTemplateController::class, 'index'])->name('onboarding-templates.index');
+        Route::post('/onboarding-templates', [OnboardingTemplateController::class, 'store'])->name('onboarding-templates.store');
+        Route::post('/onboarding-templates/{template}/start', [OnboardingTemplateController::class, 'start'])->name('onboarding-templates.start');
 
         Route::get('/clients', [ClientController::class, 'index'])->name('clients.index');
         Route::post('/clients', [ClientController::class, 'store'])->name('clients.store');

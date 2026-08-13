@@ -43,15 +43,16 @@ const chatContainer = ref(null);
 const chatMessages = ref([...(props.hub.communications?.messages ?? [])]);
 let pollTimer = null;
 
-const hubTabs = [
+const hubTabs = computed(() => [
     { value: 'overview', label: 'Visão geral' },
+    ...(page.props.auth?.permissions?.can_access_crm ? [{ value: 'commercial', label: 'Comercial' }] : []),
     { value: 'communication', label: 'Comunicação' },
     { value: 'documents', label: 'Documentos' },
     { value: 'requests', label: 'Solicitações' },
     { value: 'tickets', label: 'Chamados' },
     { value: 'portal', label: 'Portal' },
     { value: 'activity', label: 'Atividade' },
-];
+]);
 
 const documentColumns = [{ key: 'title', label: 'Documento' }, { key: 'status', label: 'Status' }, { key: 'expires_at', label: 'Vencimento' }];
 const requestColumns = [{ key: 'title', label: 'Solicitação' }, { key: 'status', label: 'Status' }, { key: 'due_at', label: 'Prazo' }];
@@ -530,6 +531,39 @@ function copyPortalUrl() {
                         <p v-else class="text-sm text-slate-500">Nenhum evento registrado.</p>
                     </Card>
                 </div>
+                </div>
+
+                <div v-else-if="activeTab === 'commercial'" class="grid gap-4">
+                    <Card title="Histórico comercial (CRM)">
+                        <div v-if="hub.commercial?.length" class="grid gap-3">
+                            <div v-for="lead in hub.commercial" :key="lead.id" class="rounded-lg border border-slate-200 p-4">
+                                <div class="flex flex-wrap items-center justify-between gap-2">
+                                    <div>
+                                        <p class="font-semibold text-slate-950">{{ lead.name }}</p>
+                                        <p class="mt-1 text-xs text-slate-500">{{ lead.stage_label }} · {{ lead.origin_label || 'Sem origem' }} · convertido em {{ lead.converted_at || '—' }}</p>
+                                    </div>
+                                    <Link :href="lead.href" class="text-sm font-semibold text-slate-800 underline">Abrir lead</Link>
+                                </div>
+                                <div class="mt-3 grid gap-2 sm:grid-cols-2">
+                                    <div>
+                                        <p class="text-xs font-semibold uppercase text-slate-500">Atividades</p>
+                                        <ul class="mt-1 grid gap-1">
+                                            <li v-for="activity in lead.activities" :key="activity.id" class="text-sm text-slate-700">{{ activity.type_label }}: {{ activity.body }}</li>
+                                            <li v-if="!lead.activities.length" class="text-xs text-slate-400">Sem atividades</li>
+                                        </ul>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs font-semibold uppercase text-slate-500">Propostas</p>
+                                        <ul class="mt-1 grid gap-1">
+                                            <li v-for="proposal in lead.proposals" :key="proposal.id" class="text-sm text-slate-700">{{ proposal.title }} · {{ proposal.status_label }}</li>
+                                            <li v-if="!lead.proposals.length" class="text-xs text-slate-400">Sem propostas</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <p v-else class="text-sm text-slate-500">Nenhum lead convertido vinculado a este cliente.</p>
+                    </Card>
                 </div>
 
                 <div v-else-if="activeTab === 'communication'" class="grid gap-4">

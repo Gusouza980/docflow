@@ -28,6 +28,7 @@ class PlanSeeder extends Seeder
                     'reports_scheduling' => false,
                     'audit' => false,
                     'automations' => false,
+                    'crm' => false,
                 ],
             ],
             [
@@ -48,6 +49,7 @@ class PlanSeeder extends Seeder
                     'reports_scheduling' => true,
                     'audit' => false,
                     'automations' => true,
+                    'crm' => true,
                 ],
             ],
             [
@@ -68,6 +70,7 @@ class PlanSeeder extends Seeder
                     'reports_scheduling' => true,
                     'audit' => true,
                     'automations' => true,
+                    'crm' => true,
                 ],
             ],
         ];

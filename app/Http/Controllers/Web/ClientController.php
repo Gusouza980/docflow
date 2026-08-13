@@ -15,8 +15,11 @@ use App\Models\ClientTag;
 use App\Models\CommunicationConsent;
 use App\Models\Document;
 use App\Models\DocumentRequest;
+use App\Models\Lead;
+use App\Models\LeadActivity;
 use App\Models\MessageTemplate;
 use App\Models\OrganizationMember;
+use App\Models\Proposal;
 use App\Models\Ticket;
 use App\Support\Billing\PlanLimitChecker;
 use App\Support\BuildsClientPortalDashboard;
@@ -219,6 +222,37 @@ class ClientController extends Controller
                     ->limit(30)
                     ->get()
                     ->map(fn (Ticket $ticket): array => $this->ticketPayload->listItem($ticket)),
+                'commercial' => (
+                    $membership->organization_id === $client->organization_id
+                    && $membership->canViewCrm()
+                    && app(PlanLimitChecker::class)->hasFeature($client->organization, 'crm')
+                )
+                    ? $client->leads()
+                        ->with(['activities' => fn ($query) => $query->latest('happened_at')->limit(10), 'proposals'])
+                        ->latest('id')
+                        ->get()
+                        ->map(fn (Lead $lead): array => [
+                            'id' => $lead->id,
+                            'name' => $lead->name,
+                            'stage' => $lead->stage,
+                            'stage_label' => $lead->stageLabel(),
+                            'origin_label' => Lead::originLabels()[$lead->origin] ?? $lead->origin,
+                            'converted_at' => DisplayFormat::dateTime($lead->converted_at),
+                            'href' => route('leads.show', $lead, absolute: false),
+                            'activities' => $lead->activities->map(fn (LeadActivity $activity): array => [
+                                'id' => $activity->id,
+                                'type_label' => LeadActivity::typeLabels()[$activity->type] ?? $activity->type,
+                                'body' => $activity->body,
+                                'happened_at' => DisplayFormat::dateTime($activity->happened_at),
+                            ]),
+                            'proposals' => $lead->proposals->map(fn (Proposal $proposal): array => [
+                                'id' => $proposal->id,
+                                'title' => $proposal->title,
+                                'amount_cents' => $proposal->amount_cents,
+                                'status_label' => Proposal::statusLabels()[$proposal->status] ?? $proposal->status,
+                            ]),
+                        ])
+                    : [],
             ],
             'options' => [
                 ...$this->options($membership),

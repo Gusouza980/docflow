@@ -2,14 +2,16 @@
 
 namespace App\Models;
 
+use Database\Factories\OrganizationMemberFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class OrganizationMember extends Model
 {
-    /** @use HasFactory<\Database\Factories\OrganizationMemberFactory> */
+    /** @use HasFactory<OrganizationMemberFactory> */
     use HasFactory;
 
     public const ROLE_ADMIN = 'admin';
@@ -75,6 +77,25 @@ class OrganizationMember extends Model
         return $this->status === self::STATUS_ACTIVE;
     }
 
+    public function canViewCrm(): bool
+    {
+        return in_array($this->role, [
+            self::ROLE_ADMIN,
+            self::ROLE_MANAGER,
+            self::ROLE_PROFESSIONAL,
+            self::ROLE_ASSISTANT,
+        ], true);
+    }
+
+    public function canManageCrm(): bool
+    {
+        return in_array($this->role, [
+            self::ROLE_ADMIN,
+            self::ROLE_MANAGER,
+            self::ROLE_PROFESSIONAL,
+        ], true);
+    }
+
     public function responsibleClients(): BelongsToMany
     {
         return $this->belongsToMany(Client::class, 'client_responsibles')
@@ -88,12 +109,12 @@ class OrganizationMember extends Model
             ->withTimestamps();
     }
 
-    public function assignedTasks(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function assignedTasks(): HasMany
     {
         return $this->hasMany(Task::class, 'assigned_to_member_id');
     }
 
-    public function assignedDeadlines(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function assignedDeadlines(): HasMany
     {
         return $this->hasMany(Deadline::class, 'assigned_to_member_id');
     }

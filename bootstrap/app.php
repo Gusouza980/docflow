@@ -73,7 +73,9 @@ return Application::configure(basePath: dirname(__DIR__))
                 ], 403);
             }
 
-            return back()->with('error', $exception->getMessage());
+            return redirect()
+                ->route('organizations.plan.show')
+                ->with('error', $exception->getMessage());
         });
     })
     ->withSchedule(function (Schedule $schedule): void {
