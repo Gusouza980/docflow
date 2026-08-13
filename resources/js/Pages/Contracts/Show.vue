@@ -70,10 +70,10 @@ function cancel() {
             </Card>
 
             <div class="grid gap-4 lg:grid-cols-2">
-                <Card title="Escopo">
-                    <p class="text-xs font-semibold uppercase text-slate-500">Incluído</p>
+                <Card title="Limites do contrato">
+                    <p class="text-xs font-semibold uppercase text-slate-500">O que está incluso</p>
                     <p class="mt-1 whitespace-pre-wrap text-sm text-slate-700">{{ contract.scope_included || '—' }}</p>
-                    <p class="mt-4 text-xs font-semibold uppercase text-slate-500">Excluído</p>
+                    <p class="mt-4 text-xs font-semibold uppercase text-slate-500">O que não está incluso</p>
                     <p class="mt-1 whitespace-pre-wrap text-sm text-slate-700">{{ contract.scope_excluded || '—' }}</p>
                 </Card>
 

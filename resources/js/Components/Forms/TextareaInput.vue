@@ -6,6 +6,7 @@ defineProps({
     label: { type: String, required: true },
     modelValue: { type: String, default: '' },
     rows: { type: Number, default: 4 },
+    placeholder: { type: String, default: '' },
     hint: { type: String, default: null },
     error: { type: String, default: null },
 });
@@ -19,6 +20,7 @@ defineEmits(['update:modelValue']);
             :id="id"
             :rows="rows"
             :value="modelValue"
+            :placeholder="placeholder"
             :aria-describedby="describedBy"
             :aria-invalid="Boolean(error)"
             class="min-h-24 resize-y rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-normal text-slate-900 shadow-sm transition placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300"
