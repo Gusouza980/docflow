@@ -28,7 +28,7 @@ Fechar o **loop de pagamento externo** do Docflow (Asaas) e abrir os primeiros m
 |--------|------|------------------|--------|
 | [Sprint 17](../sprint-17-asaas-billing-gateway/TASKS.md) | Gateway Asaas + webhooks reais | 4–6 dias | ✅ |
 | [Sprint 18](../sprint-18-crm-onboarding/TASKS.md) | CRM (leads/funil) + onboarding (Profissional+) | 6–8 dias | ✅ |
-| [Sprint 19](../sprint-19-servicos-contratos/TASKS.md) | Serviços e contratos | 5–7 dias | ⬜ |
+| [Sprint 19](../sprint-19-servicos-contratos/TASKS.md) | Serviços e contratos | 5–7 dias | ✅ |
 | [Sprint 20](../sprint-20-automacoes-simples/TASKS.md) | Automações simples + logs | 5–7 dias | ⬜ |
 
 **Total:** ~3–5 semanas (1 dev).

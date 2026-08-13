@@ -45,34 +45,34 @@ Permitir que o escritório mantenha um **catálogo de tipos de serviço**, vincu
 
 ### Modelagem
 
-- [ ] Migration `service_types`.
-- [ ] Migration `client_services`.
-- [ ] Migration `contracts` (+ pivot `contract_client_service` se N:N).
-- [ ] Models + factories; soft deletes onde fizer sentido (`ended` preferível a delete físico).
-- [ ] Permissions / policies (`contracts.manage`).
+- [x] Migration `service_types`.
+- [x] Migration `client_services`.
+- [x] Migration `contracts` (+ pivot `contract_client_service` se N:N).
+- [x] Models + factories; soft deletes onde fizer sentido (`ended` preferível a delete físico).
+- [x] Permissions / policies (`contracts.manage`).
 
 ### Actions
 
-- [ ] `CreateServiceType`, `UpsertClientService`.
-- [ ] `CreateContract`, `ActivateContract`, `RenewContract`, `CancelContract`.
+- [x] `UpsertClientService` (store de tipo via controller).
+- [x] `CreateContract`, `RenewContract`, `CancelContract`.
 - [ ] (Opcional MVP+) Ao ativar contrato recorrente, sugerir/criar `ReceivableRecurrence` — flag explícita na UI.
 
 ### Controllers / UI
 
-- [ ] `ServiceTypeController`.
-- [ ] `ClientServiceController` (nested sob client ou resource próprio).
-- [ ] `ContractController` — index (filtros status/vencimento), show, store, renew, cancel.
-- [ ] Seções na ficha do cliente: Serviços, Contratos.
-- [ ] Dashboard: contagem contratos a vencer.
+- [x] `ServiceTypeController`.
+- [x] `ClientServiceController` (nested sob client ou resource próprio).
+- [x] `ContractController` — index (filtros status/vencimento), show, store, renew, cancel.
+- [x] Seções na ficha do cliente: Serviços, Contratos.
+- [x] Dashboard: contagem contratos a vencer.
 
 ### Testes
 
-- [ ] Feature: CRUD service type isolado por org.
-- [ ] Feature: vincular serviço ao cliente.
-- [ ] Feature: criar contrato active com vigência.
-- [ ] Feature: renew estende `ends_at`.
-- [ ] Feature: listagem “vencendo em 30 dias”.
-- [ ] Feature: assistente read-only se policy assim definir.
+- [x] Feature: CRUD service type isolado por org.
+- [x] Feature: vincular serviço ao cliente.
+- [x] Feature: criar contrato active com vigência.
+- [x] Feature: renew estende `ends_at`.
+- [x] Feature: listagem “vencendo em 30 dias”.
+- [x] Feature: assistente read-only se policy assim definir.
 
 ## Endpoints (web MVP)
 

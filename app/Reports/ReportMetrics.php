@@ -4,6 +4,7 @@ namespace App\Reports;
 
 use App\Models\Client;
 use App\Models\ClientMessage;
+use App\Models\Contract;
 use App\Models\DocumentRequestItem;
 use App\Models\OrganizationMember;
 use App\Models\Payable;
@@ -344,6 +345,24 @@ class ReportMetrics
                     label: "{$dueSoonReceivables} cobrança(s) vence(m) em 7 dias",
                     count: $dueSoonReceivables,
                     href: route('finance.index', ['status' => Receivable::STATUS_OPEN], absolute: false),
+                );
+            }
+        }
+
+        if ($membership->role !== OrganizationMember::ROLE_READONLY) {
+            $expiringContracts = Contract::query()
+                ->whereBelongsTo($membership->organization)
+                ->whereIn('client_id', $this->clientQuery($membership)->select('id'))
+                ->expiringWithinDays(30)
+                ->count();
+
+            if ($expiringContracts > 0) {
+                $alerts[] = $this->alert(
+                    type: 'contracts_expiring_soon',
+                    severity: 'warning',
+                    label: "{$expiringContracts} contrato(s) vence(m) em 30 dias",
+                    count: $expiringContracts,
+                    href: route('contracts.index', ['expiring_soon' => 1], absolute: false),
                 );
             }
         }

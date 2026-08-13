@@ -51,6 +51,7 @@ const kpiCards = computed(() => {
         { key: 'due_soon_documents', label: 'Docs a vencer (7d)', value: props.metrics.due_soon_documents ?? 0, href: '/document-requests', tone: props.metrics.due_soon_documents > 0 ? 'warning' : null },
         { key: 'open_tickets', label: 'Chamados abertos', value: props.metrics.open_tickets ?? 0, href: '/reports' },
         { key: 'active_clients', label: 'Clientes ativos', value: props.metrics.active_clients ?? 0, href: '/clients?status=active' },
+        { key: 'expiring_contracts', label: 'Contratos a vencer (30d)', value: props.metrics.expiring_contracts ?? 0, href: '/contracts?expiring_soon=1', tone: (props.metrics.expiring_contracts ?? 0) > 0 ? 'warning' : null },
     ];
 
     if (props.can_access_finance) {
@@ -65,7 +66,7 @@ const kpiCards = computed(() => {
 });
 
 const hasOperationalData = computed(() => {
-    const numericKeys = ['open_tasks', 'overdue_tasks', 'completed_tasks', 'pending_documents', 'overdue_documents', 'due_soon_documents', 'open_tickets', 'active_clients'];
+    const numericKeys = ['open_tasks', 'overdue_tasks', 'completed_tasks', 'pending_documents', 'overdue_documents', 'due_soon_documents', 'open_tickets', 'active_clients', 'expiring_contracts'];
     const hasMetrics = numericKeys.some((key) => (props.metrics[key] ?? 0) > 0);
     const hasFinance = props.can_access_finance && (
         (props.metrics.open_receivables_cents ?? 0) > 0

@@ -46,6 +46,8 @@ let pollTimer = null;
 const hubTabs = computed(() => [
     { value: 'overview', label: 'Visão geral' },
     ...(page.props.auth?.permissions?.can_access_crm ? [{ value: 'commercial', label: 'Comercial' }] : []),
+    { value: 'services', label: 'Serviços' },
+    { value: 'contracts', label: 'Contratos' },
     { value: 'communication', label: 'Comunicação' },
     { value: 'documents', label: 'Documentos' },
     { value: 'requests', label: 'Solicitações' },
@@ -53,6 +55,29 @@ const hubTabs = computed(() => [
     { value: 'portal', label: 'Portal' },
     { value: 'activity', label: 'Atividade' },
 ]);
+
+const serviceForm = useForm({
+    service_type_id: '',
+    status: 'active',
+    starts_at: '',
+    ends_at: '',
+    notes: '',
+});
+
+function submitService() {
+    serviceForm.post(`/clients/${props.client.id}/services`, {
+        preserveScroll: true,
+        onSuccess: () => serviceForm.reset('notes', 'ends_at'),
+    });
+}
+
+const money = (cents) => {
+    if (cents === null || cents === undefined) {
+        return '—';
+    }
+
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(cents) / 100);
+};
 
 const documentColumns = [{ key: 'title', label: 'Documento' }, { key: 'status', label: 'Status' }, { key: 'expires_at', label: 'Vencimento' }];
 const requestColumns = [{ key: 'title', label: 'Solicitação' }, { key: 'status', label: 'Status' }, { key: 'due_at', label: 'Prazo' }];
@@ -563,6 +588,65 @@ function copyPortalUrl() {
                             </div>
                         </div>
                         <p v-else class="text-sm text-slate-500">Nenhum lead convertido vinculado a este cliente.</p>
+                    </Card>
+                </div>
+
+                <div v-else-if="activeTab === 'services'" class="grid gap-4">
+                    <Card title="Serviços do cliente">
+                        <ul v-if="hub.services?.length" class="mb-4 grid gap-2">
+                            <li v-for="service in hub.services" :key="service.id" class="rounded-lg border border-slate-200 px-3 py-2">
+                                <p class="font-semibold text-slate-950">{{ service.service_type_name }}</p>
+                                <p class="mt-1 text-xs text-slate-500">
+                                    {{ service.status_label }} · {{ service.starts_at || '—' }} → {{ service.ends_at || 'em aberto' }}
+                                    <span v-if="service.assignee_name"> · {{ service.assignee_name }}</span>
+                                </p>
+                                <p v-if="service.notes" class="mt-1 text-sm text-slate-600">{{ service.notes }}</p>
+                            </li>
+                        </ul>
+                        <p v-else class="mb-4 text-sm text-slate-500">Nenhum serviço vinculado.</p>
+
+                        <form v-if="can.update" class="grid gap-3 border-t border-slate-200 pt-4" @submit.prevent="submitService">
+                            <p class="text-sm font-semibold text-slate-900">Vincular serviço</p>
+                            <SelectInput
+                                id="client-service-type"
+                                v-model="serviceForm.service_type_id"
+                                label="Tipo de serviço"
+                                :options="options.service_types"
+                                required
+                                :error="serviceForm.errors.service_type_id"
+                            />
+                            <SelectInput
+                                id="client-service-status"
+                                v-model="serviceForm.status"
+                                label="Status"
+                                :options="options.service_statuses"
+                                :error="serviceForm.errors.status"
+                            />
+                            <TextInput id="client-service-starts" v-model="serviceForm.starts_at" type="date" label="Início" :error="serviceForm.errors.starts_at" />
+                            <TextInput id="client-service-ends" v-model="serviceForm.ends_at" type="date" label="Término" :error="serviceForm.errors.ends_at" />
+                            <TextareaInput id="client-service-notes" v-model="serviceForm.notes" label="Notas" :error="serviceForm.errors.notes" />
+                            <div class="flex justify-end">
+                                <Button type="submit" size="sm" :disabled="serviceForm.processing">Salvar serviço</Button>
+                            </div>
+                        </form>
+                    </Card>
+                </div>
+
+                <div v-else-if="activeTab === 'contracts'" class="grid gap-4">
+                    <Card title="Contratos do cliente">
+                        <ul v-if="hub.contracts?.length" class="grid gap-2">
+                            <li v-for="contract in hub.contracts" :key="contract.id" class="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 px-3 py-2">
+                                <div>
+                                    <p class="font-semibold text-slate-950">{{ contract.code }}</p>
+                                    <p class="mt-1 text-xs text-slate-500">
+                                        {{ contract.status_label }} · {{ money(contract.amount_cents) }} · {{ contract.billing_interval_label }}
+                                        · {{ contract.starts_at || '—' }} → {{ contract.ends_at || 'sem término' }}
+                                    </p>
+                                </div>
+                                <Link :href="contract.href" class="text-sm font-semibold text-slate-800 underline">Abrir</Link>
+                            </li>
+                        </ul>
+                        <p v-else class="text-sm text-slate-500">Nenhum contrato. Crie em <Link href="/contracts" class="underline">Contratos</Link>.</p>
                     </Card>
                 </div>
 

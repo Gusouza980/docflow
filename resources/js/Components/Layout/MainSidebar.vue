@@ -20,6 +20,10 @@ const items = computed(() => [
         ] : []),
     ] : []),
     { key: 'clients', label: 'Clientes', icon: '◌', href: '/clients' },
+    ...(page.props.auth?.permissions?.can_manage_organization ? [
+        { key: 'service-types', label: 'Serviços', icon: '⬡', href: '/service-types' },
+    ] : []),
+    { key: 'contracts', label: 'Contratos', icon: '☰', href: '/contracts' },
     { key: 'documents', label: 'Documentos', icon: '□', href: '/documents' },
     { key: 'document-requests', label: 'Solicitações', icon: '▤', href: '/document-requests' },
     { key: 'tasks', label: 'Tarefas', icon: '✓', href: '/tasks' },
