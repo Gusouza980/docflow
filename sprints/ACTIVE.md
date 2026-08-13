@@ -1,32 +1,32 @@
 # Sprint ativa
 
-**Status:** Horizonte 2 concluído (MVP)  
-**Última sync dos TASKS:** 2026-08-09  
-**Branch de referência:** `main` (`da378bc`)
+**Status:** Horizonte 3 planejado — próxima execução **Sprint 17**  
+**Última sync:** 2026-08-09  
+**Branch de docs:** `docs/horizonte-3-comercial-operacao` (empilhada sobre sync H2)
 
 ## Concluído
 
 | Sprint | Foco | Estado |
 |--------|------|--------|
-| 13 | Platform admin + gestão de tenants | [x] |
-| 14 | Planos e engine de limites | [x] |
-| 15 | Assinaturas, trial e enforcement | [x] |
-| 16 | Billing, faturas e self-service | [x] MVP |
+| 13–16 | Horizonte 2 (platform + planos + assinaturas + billing MVP) | [x] |
 
-Detalhes: checkboxes em cada `TASKS.md` das sprints 13–16.
+## Em foco
 
-## Pendências / stretch
+| Sprint | Foco | Estado |
+|--------|------|--------|
+| [17](sprint-17-asaas-billing-gateway/TASKS.md) | Gateway Asaas (billing SaaS) | ⬜ próxima |
+| [18](sprint-18-crm-onboarding/TASKS.md) | CRM + onboarding | ⬜ |
+| [19](sprint-19-servicos-contratos/TASKS.md) | Serviços e contratos | ⬜ |
+| [20](sprint-20-automacoes-simples/TASKS.md) | Automações simples | ⬜ |
 
-- Sprint 16 opcional: `AsaasBillingGateway` (config `ASAAS_*` já prevista; implementação externa não feita).
-- Reemitir fatura no platform admin (void + mark-paid existem; reemissão dedicada não).
+Plano: [Horizonte 3 — Comercial e operação](horizonte-03-comercial-operacao/README.md).
 
-## Próximo
+## Stretch ainda aberto (H2)
 
-Horizonte 3 ainda **sem docs de sprint**. Candidatos naturais:
-
-1. Gateway Asaas (fechar loop de pagamento externo da Sprint 16).
-2. CRM / contratos / automações (fora do Horizonte 2).
+- `AsaasBillingGateway` → escopo da Sprint 17.
+- Reemitir fatura no platform admin (pode ir na 17 se sobrar tempo).
 
 ## Nota
 
-Os `TASKS.md` das sprints 09–12 (Horizonte 1) ainda podem estar com checkboxes abertos no markdown, embora o código correspondente já esteja no `main` (`989dae8`). Sincronizar sob demanda.
+- Sprint 08 monólito está **superseded** pelo Horizonte 3 (ver nota no `TASKS.md` da 08).
+- TASKS 09–12 (H1) podem ainda ter checkboxes abertos no markdown; código já no `main`.

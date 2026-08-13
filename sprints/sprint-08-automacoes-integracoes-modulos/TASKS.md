@@ -1,5 +1,7 @@
 # Sprint 08 — Automações, Integrações e Módulos Evolutivos
 
+> **Superseded (2026-08-09):** este monólito foi decomposto no [Horizonte 3](../horizonte-03-comercial-operacao/README.md) (Sprints 17–20). Verticais, KB, LGPD avançada e IA ficam para horizontes futuros. Não implementar este arquivo como está.
+
 ## Objetivo
 
 Implementar a evolução modular do produto: CRM e onboarding completo, serviços e contratos, automações simples, integrações externas preparadas, base de conhecimento, módulos verticais de advocacia, contabilidade, consultorias/BPO, LGPD avançada e inteligência assistida em modo controlado.
