@@ -2,6 +2,7 @@
 
 namespace App\Reports;
 
+use App\Models\AutomationLog;
 use App\Models\Client;
 use App\Models\ClientMessage;
 use App\Models\Contract;
@@ -208,6 +209,15 @@ class ReportMetrics
         return app(PlanLimitChecker::class)->hasFeature($membership->organization, 'crm');
     }
 
+    public function canAccessAutomations(OrganizationMember $membership): bool
+    {
+        if ((! $membership->isAdmin() && ! $membership->isManager()) || ! Plan::query()->exists()) {
+            return false;
+        }
+
+        return app(PlanLimitChecker::class)->hasFeature($membership->organization, 'automations');
+    }
+
     /**
      * @param  array<string, mixed>  $filters
      * @return array<string, mixed>
@@ -361,6 +371,40 @@ class ReportMetrics
 
     /**
      * @param  array<string, mixed>  $filters
+     * @return array<string, mixed>|null
+     */
+    public function docflowRoiSummary(OrganizationMember $membership, array $filters = []): ?array
+    {
+        if (! $this->canAccessAutomations($membership)) {
+            return null;
+        }
+
+        [$start, $end] = $this->period($filters);
+        $previousFilters = $this->previousPeriodFilters($filters);
+        [$previousStart, $previousEnd] = $this->period($previousFilters);
+
+        $current = $this->automationRoiTotals($membership, $start, $end);
+        $previous = $this->automationRoiTotals($membership, $previousStart, $previousEnd);
+
+        return [
+            'runs' => $current['runs'],
+            'estimated_minutes_saved' => $current['minutes'],
+            'estimated_hours_saved' => round($current['minutes'] / 60, 1),
+            'runs_delta' => $current['runs'] - $previous['runs'],
+            'estimated_minutes_saved_delta' => $current['minutes'] - $previous['minutes'],
+            'is_estimate' => true,
+            'href' => route('automations.index', absolute: false),
+            'previous_period' => [
+                'start' => $previousStart->toDateString(),
+                'end' => $previousEnd->toDateString(),
+                'runs' => $previous['runs'],
+                'estimated_minutes_saved' => $previous['minutes'],
+            ],
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
      * @return array<string, mixed>
      */
     public function previousPeriodFilters(array $filters): array
@@ -446,6 +490,22 @@ class ReportMetrics
         }
 
         return round((($current - $previous) / $previous) * 100, 1);
+    }
+
+    /**
+     * @return array{runs: int, minutes: int}
+     */
+    private function automationRoiTotals(OrganizationMember $membership, Carbon $start, Carbon $end): array
+    {
+        $query = AutomationLog::query()
+            ->whereBelongsTo($membership->organization)
+            ->where('status', AutomationLog::STATUS_SUCCEEDED)
+            ->whereBetween('ran_at', [$start, $end]);
+
+        return [
+            'runs' => (clone $query)->count(),
+            'minutes' => (int) (clone $query)->sum('estimated_minutes_saved'),
+        ];
     }
 
     /**

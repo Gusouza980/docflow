@@ -32,10 +32,12 @@ class BuildsDashboardPayload
         $overview = $this->reportMetrics->overview($membership, $filters);
         $canAccessFinance = $this->reportMetrics->canAccessFinance($membership);
         $canAccessCrm = $this->reportMetrics->canAccessCrm($membership);
+        $canAccessAutomations = $this->reportMetrics->canAccessAutomations($membership);
         $clientQuery = $this->reportMetrics->clientQuery($membership);
         $value = $this->reportMetrics->valueSummary($membership, $filters);
         $contractsRevenue = $this->reportMetrics->contractsRevenueSummary($membership);
         $commercial = $this->reportMetrics->commercialSummary($membership, $filters);
+        $docflowRoi = $this->reportMetrics->docflowRoiSummary($membership, $filters);
 
         $metrics = [
             'active_clients' => (clone $clientQuery)->where('status', Client::STATUS_ACTIVE)->count(),
@@ -69,11 +71,13 @@ class BuildsDashboardPayload
         return [
             'can_access_finance' => $canAccessFinance,
             'can_access_crm' => $canAccessCrm,
+            'can_access_automations' => $canAccessAutomations,
             'period' => $overview['period'],
             'filters' => $filters,
             'value' => $value,
             'contracts_revenue' => $contractsRevenue,
             'commercial' => $commercial,
+            'docflow_roi' => $docflowRoi,
             'metrics' => $metrics,
             'alerts' => $overview['alerts'],
             'structuralPendencies' => (clone $clientQuery)

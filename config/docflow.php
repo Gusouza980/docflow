@@ -41,4 +41,17 @@ return [
         'crm' => 'CRM e onboarding',
     ],
 
+    /*
+    | Minutes a person would typically spend doing the same work by hand.
+    | Used only as a labeled estimate — never presented as measured time.
+    */
+    'automation_roi' => [
+        'minutes_saved_per_action' => [
+            'create_tasks_from_template' => 8,
+            'create_document_request' => 6,
+            'notify_organization_members' => 3,
+            'default' => 5,
+        ],
+    ],
+
 ];
