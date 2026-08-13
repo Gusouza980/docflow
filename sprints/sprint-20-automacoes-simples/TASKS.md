@@ -56,42 +56,42 @@ Entregar engine mínima de **automation rules** (gatilho → condições → aç
 
 ### Modelagem
 
-- [ ] Migration `automation_rules`.
-- [ ] Migration `automation_logs` (unique `organization_id + dedupe_key` ou `rule_id + dedupe_key`).
-- [ ] Models + factories.
-- [ ] Enums/constants `AutomationTrigger`, `AutomationAction` em `App\Enums` ou config.
+- [x] Migration `automation_rules`.
+- [x] Migration `automation_logs` (unique `organization_id + dedupe_key` ou `rule_id + dedupe_key`).
+- [x] Models + factories.
+- [x] Enums/constants `AutomationTrigger`, `AutomationAction` em `App\Enums` ou config.
 
 ### Engine
 
-- [ ] `App\Automations\AutomationRunner` — resolve regras ativas do trigger, avalia conditions, executa actions.
-- [ ] `App\Automations\Actions\*` uma classe por action.
-- [ ] Dispatch async via job `RunAutomationRule` quando o trigger for síncrono em request.
-- [ ] Commands scheduler para triggers temporais (`automations:dispatch-expiring-documents`, etc.) **ou** um único `automations:dispatch-due`.
+- [x] `App\Automations\AutomationRunner` — resolve regras ativas do trigger, avalia conditions, executa actions.
+- [x] `App\Automations\Actions\*` uma classe por action.
+- [x] Dispatch async via job `RunAutomationRule` quando o trigger for síncrono em request.
+- [x] Commands scheduler para triggers temporais (`automations:dispatch-expiring-documents`, etc.) **ou** um único `automations:dispatch-due`.
 
 ### Enforcement de plano
 
-- [ ] `PlanLimitChecker::assertFeature($org, 'automations')` ao criar/ativar regra e antes de runner (fail closed).
-- [ ] UI esconde ou explica upgrade se feature ausente.
+- [x] `PlanLimitChecker::assertFeature($org, 'automations')` ao criar/ativar regra e antes de runner (fail closed).
+- [x] UI esconde ou explica upgrade se feature ausente.
 
 ### Integração nos fluxos
 
-- [ ] Hook em `CreateOrganization`/`ClientController@store` / `ConvertLeadToClient` → `client.created`.
-- [ ] Hook stage lead → `lead.stage_changed`.
-- [ ] Scheduler para documentos/contratos/receivables.
+- [x] Hook em `ClientController@store` / `ConvertLeadToClient` → `client.created`.
+- [x] Hook stage lead → `lead.stage_changed`.
+- [x] Scheduler para documentos/contratos/receivables.
 
 ### Controllers / UI
 
-- [ ] `AutomationRuleController` — index, store (presets), pause, resume, show logs.
-- [ ] Páginas `Automations/Index.vue`, `Show.vue`.
-- [ ] Link sidebar (admin/manager).
+- [x] `AutomationRuleController` — index, store (presets), pause, resume, show logs.
+- [x] Páginas `Automations/Index.vue`, `Show.vue`.
+- [x] Link sidebar (admin/manager).
 
 ### Testes
 
-- [ ] Unit: runner aplica action e grava log.
-- [ ] Feature: segunda execução mesma dedupe_key não duplica tasks.
-- [ ] Feature: plano sem `automations` → 403/422 ao ativar.
-- [ ] Feature: `client.created` dispara preset de onboarding (tasks).
-- [ ] Feature: isolamento tenant.
+- [x] Unit: runner aplica action e grava log.
+- [x] Feature: segunda execução mesma dedupe_key não duplica tasks.
+- [x] Feature: plano sem `automations` → 403/422 ao ativar.
+- [x] Feature: `client.created` dispara preset de onboarding (tasks).
+- [x] Feature: isolamento tenant.
 
 ## Endpoints (web MVP)
 

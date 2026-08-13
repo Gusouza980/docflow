@@ -2,6 +2,8 @@
 
 namespace App\Actions\Crm;
 
+use App\Automations\AutomationRunner;
+use App\Models\AutomationRule;
 use App\Models\Client;
 use App\Models\ClientContact;
 use App\Models\Lead;
@@ -26,6 +28,8 @@ class ConvertLeadToClient
                 throw new InvalidArgumentException('Este lead já foi convertido e não possui cliente vinculado.');
             }
 
+            $wasCreated = false;
+
             if ($lockedLead->client_id !== null) {
                 $client = $lockedLead->client()->firstOrFail();
             } else {
@@ -44,6 +48,7 @@ class ConvertLeadToClient
                         ? 'Convertido do CRM. Interesse: '.$lockedLead->service_interest
                         : 'Convertido do CRM.',
                 ]);
+                $wasCreated = true;
 
                 if ($lockedLead->email || $lockedLead->phone) {
                     ClientContact::query()->create([
@@ -83,7 +88,23 @@ class ConvertLeadToClient
                 );
             }
 
-            return $client->fresh();
+            $freshClient = $client->fresh();
+
+            if ($wasCreated) {
+                DB::afterCommit(function () use ($freshClient, $actor): void {
+                    app(AutomationRunner::class)->dispatch(
+                        organization: $freshClient->organization,
+                        trigger: AutomationRule::TRIGGER_CLIENT_CREATED,
+                        subject: $freshClient,
+                        context: [
+                            'assigned_to_member_id' => $actor->id,
+                            'source' => 'lead_conversion',
+                        ],
+                    );
+                });
+            }
+
+            return $freshClient;
         });
     }
 }

@@ -3,12 +3,14 @@
 namespace App\Http\Controllers\Web;
 
 use App\Actions\Organizations\RecordAuditLog;
+use App\Automations\AutomationRunner;
 use App\Enums\ClientPriority;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Web\StoreClientRequest;
 use App\Http\Requests\Web\UpdateClientRequest;
 use App\Http\Requests\Web\UpdateClientStatusRequest;
 use App\Models\AuditLog;
+use App\Models\AutomationRule;
 use App\Models\Client;
 use App\Models\ClientPortalAccess;
 use App\Models\ClientService;
@@ -117,6 +119,16 @@ class ClientController extends Controller
         });
 
         $auditLog->execute('web.client.created', $request->user(), $membership->organization, $client, request: $request);
+
+        app(AutomationRunner::class)->dispatch(
+            organization: $membership->organization,
+            trigger: AutomationRule::TRIGGER_CLIENT_CREATED,
+            subject: $client,
+            context: [
+                'assigned_to_member_id' => $client->primary_responsible_member_id,
+                'source' => 'web_store',
+            ],
+        );
 
         return redirect()->route('clients.show', $client)->with('status', 'Cliente cadastrado.');
     }

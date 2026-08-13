@@ -2,6 +2,8 @@
 
 namespace App\Actions\Crm;
 
+use App\Automations\AutomationRunner;
+use App\Models\AutomationRule;
 use App\Models\Lead;
 use InvalidArgumentException;
 
@@ -25,11 +27,28 @@ class UpdateLeadStage
             throw new InvalidArgumentException('Motivo de perda é obrigatório.');
         }
 
+        $previousStage = $lead->stage;
+
         $lead->update([
             'stage' => $stage,
             'lost_reason' => $stage === Lead::STAGE_LOST ? $lostReason : null,
         ]);
 
-        return $lead->fresh();
+        $fresh = $lead->fresh();
+
+        if ($previousStage !== $stage && $fresh->organization) {
+            app(AutomationRunner::class)->dispatch(
+                organization: $fresh->organization,
+                trigger: AutomationRule::TRIGGER_LEAD_STAGE_CHANGED,
+                subject: $fresh,
+                context: [
+                    'stage' => $stage,
+                    'previous_stage' => $previousStage,
+                ],
+                dedupeSuffix: $stage,
+            );
+        }
+
+        return $fresh;
     }
 }

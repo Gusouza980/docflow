@@ -24,6 +24,9 @@ const items = computed(() => [
         { key: 'service-types', label: 'Serviços', icon: '⬡', href: '/service-types' },
     ] : []),
     { key: 'contracts', label: 'Contratos', icon: '☰', href: '/contracts' },
+    ...(page.props.auth?.permissions?.can_access_automations ? [
+        { key: 'automations', label: 'Automações', icon: '⚡', href: '/automations' },
+    ] : []),
     { key: 'documents', label: 'Documentos', icon: '□', href: '/documents' },
     { key: 'document-requests', label: 'Solicitações', icon: '▤', href: '/document-requests' },
     { key: 'tasks', label: 'Tarefas', icon: '✓', href: '/tasks' },

@@ -114,4 +114,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('billing:notify-trial-ending')
             ->dailyAt('09:00')
             ->withoutOverlapping();
+
+        $schedule->command('automations:dispatch-due')
+            ->dailyAt('07:30')
+            ->withoutOverlapping();
     })->create();

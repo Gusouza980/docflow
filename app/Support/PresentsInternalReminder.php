@@ -6,8 +6,11 @@ use App\Models\CalendarEvent;
 use App\Models\Client;
 use App\Models\ClientMessage;
 use App\Models\ClientProfileUpdateRequest;
+use App\Models\Contract;
+use App\Models\Document;
 use App\Models\DocumentRequestItem;
 use App\Models\InternalReminder;
+use App\Models\Receivable;
 use App\Models\Task;
 use App\Models\Ticket;
 use App\Models\TicketMessage;
@@ -55,12 +58,61 @@ class PresentsInternalReminder
             InternalReminder::TYPE_PORTAL_TICKET_OPENED => $this->portalTicketOpened($remindable),
             InternalReminder::TYPE_PORTAL_PROFILE_UPDATE => $this->portalProfileUpdate($remindable),
             InternalReminder::TYPE_CLIENT_DELINQUENT => $this->clientDelinquent($remindable),
+            InternalReminder::TYPE_AUTOMATION => $this->automation($reminder, $remindable),
             default => [
                 'title' => 'Notificação',
                 'body' => 'Há uma atualização que requer sua atenção.',
                 'url' => route('dashboard'),
             ],
         };
+    }
+
+    /**
+     * @return array{title: string, body: string, url: string|null}
+     */
+    private function automation(InternalReminder $reminder, mixed $remindable): array
+    {
+        $body = filled($reminder->body)
+            ? (string) $reminder->body
+            : 'Uma regra de automação gerou esta notificação.';
+
+        if ($remindable instanceof Client) {
+            return [
+                'title' => 'Automação',
+                'body' => $body,
+                'url' => route('clients.show', $remindable),
+            ];
+        }
+
+        if ($remindable instanceof Contract) {
+            return [
+                'title' => 'Automação',
+                'body' => $body,
+                'url' => route('contracts.show', $remindable),
+            ];
+        }
+
+        if ($remindable instanceof Document) {
+            return [
+                'title' => 'Automação',
+                'body' => $body,
+                'url' => route('documents.show', $remindable),
+            ];
+        }
+
+        if ($remindable instanceof Receivable) {
+            return [
+                'title' => 'Automação',
+                'body' => $body,
+                'url' => route('finance.index'),
+            ];
+        }
+
+        return [
+            'title' => 'Automação',
+            'body' => $body,
+            'url' => route('automations.index'),
+        ];
     }
 
     /**

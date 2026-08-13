@@ -1,8 +1,8 @@
 # Sprint ativa
 
-**Status:** Sprint 19 implementada — próxima **Sprint 20**  
+**Status:** Sprint 20 implementada — Horizonte 3 completo no código  
 **Última sync:** 2026-08-09  
-**Branch:** `feat/sprint-19-servicos-contratos`
+**Branch:** `feat/sprint-20-automacoes-simples`
 
 ## Concluído
 
@@ -12,17 +12,15 @@
 | [17](sprint-17-asaas-billing-gateway/TASKS.md) | Gateway Asaas | [x] |
 | [18](sprint-18-crm-onboarding/TASKS.md) | CRM + onboarding (Profissional+) | [x] |
 | [19](sprint-19-servicos-contratos/TASKS.md) | Serviços e contratos | [x] |
+| [20](sprint-20-automacoes-simples/TASKS.md) | Automações simples | [x] |
 
 ## Em foco
 
-| Sprint | Foco | Estado |
-|--------|------|--------|
-| [20](sprint-20-automacoes-simples/TASKS.md) | Automações simples | ⬜ próxima |
+Horizonte 3 fechado na stack de PRs. Próximo: merge da stack ou Horizonte 4.
 
 Plano: [Horizonte 3](horizonte-03-comercial-operacao/README.md).
 
 ## Notas
 
-- Feature `crm`: `false` no Essencial; `true` em Profissional e Escritório.
-- Catálogo de serviços (admin/manager); contratos para equipe (renew/cancel admin/manager).
-- Dashboard: card/alerta de contratos a vencer em 30 dias.
+- Feature `crm` e `automations`: Profissional+.
+- Automações: presets + logs idempotentes + scheduler `automations:dispatch-due`.
