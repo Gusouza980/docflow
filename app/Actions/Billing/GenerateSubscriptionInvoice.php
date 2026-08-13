@@ -4,11 +4,13 @@ namespace App\Actions\Billing;
 
 use App\Actions\Notifications\NotifyOrganizationBillingAdmins;
 use App\Contracts\Billing\BillingGateway;
+use App\Exceptions\AsaasApiException;
 use App\Models\Subscription;
 use App\Models\SubscriptionInvoice;
 use App\Notifications\SubscriptionInvoiceIssuedNotification;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class GenerateSubscriptionInvoice
 {
@@ -17,9 +19,11 @@ class GenerateSubscriptionInvoice
         private NotifyOrganizationBillingAdmins $notifyOrganizationBillingAdmins,
     ) {}
 
-    public function execute(Subscription $subscription): ?SubscriptionInvoice
+    public function execute(Subscription $subscription, ?bool &$created = null): ?SubscriptionInvoice
     {
-        return DB::transaction(function () use ($subscription): ?SubscriptionInvoice {
+        $created = false;
+
+        $invoice = DB::transaction(function () use ($subscription, &$created): ?SubscriptionInvoice {
             $subscription->loadMissing(['plan', 'organization']);
 
             if ($subscription->plan === null) {
@@ -55,12 +59,6 @@ class GenerateSubscriptionInvoice
                 'due_at' => $periodStart->copy()->addDays($dueDays),
             ]);
 
-            $providerInvoiceId = $this->billingGateway->createInvoice($invoice);
-
-            if ($providerInvoiceId !== null) {
-                $invoice->update(['provider_invoice_id' => $providerInvoiceId]);
-            }
-
             if ($subscription->status === Subscription::STATUS_TRIALING) {
                 $subscription->update([
                     'current_period_start' => $periodStart,
@@ -68,13 +66,49 @@ class GenerateSubscriptionInvoice
                 ]);
             }
 
-            $this->notifyOrganizationBillingAdmins->execute(
-                $subscription->organization,
-                new SubscriptionInvoiceIssuedNotification($invoice),
-            );
+            $created = true;
 
             return $invoice->fresh();
         });
+
+        if ($invoice === null) {
+            return null;
+        }
+
+        if ($invoice->provider_invoice_id === null) {
+            $this->syncProviderInvoice($invoice);
+        }
+
+        if ($created) {
+            $invoice->loadMissing('subscription.organization');
+
+            $this->notifyOrganizationBillingAdmins->execute(
+                $invoice->subscription->organization,
+                new SubscriptionInvoiceIssuedNotification($invoice),
+            );
+        }
+
+        return $invoice->fresh();
+    }
+
+    private function syncProviderInvoice(SubscriptionInvoice $invoice): void
+    {
+        try {
+            $providerInvoiceId = $this->billingGateway->createInvoice(
+                $invoice->fresh(['subscription.plan', 'subscription.organization']),
+            );
+
+            if ($providerInvoiceId !== null) {
+                $invoice->update(['provider_invoice_id' => $providerInvoiceId]);
+            }
+        } catch (AsaasApiException $exception) {
+            Log::warning('Failed to sync subscription invoice with billing gateway', [
+                'invoice_id' => $invoice->id,
+                'organization_id' => $invoice->organization_id,
+                'status' => $exception->status,
+                'message' => $exception->getMessage(),
+            ]);
+        }
     }
 
     /**

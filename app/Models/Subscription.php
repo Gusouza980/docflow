@@ -25,6 +25,8 @@ class Subscription extends Model
 
     public const BILLING_PROVIDER_MANUAL = 'manual';
 
+    public const BILLING_PROVIDER_ASAAS = 'asaas';
+
     protected $fillable = [
         'organization_id',
         'plan_id',

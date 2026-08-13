@@ -24,11 +24,15 @@ class CreateTrialSubscription
             $trialDays = (int) config('docflow.subscription.default_trial_days', 14);
             $trialEndsAt = now()->addDays($trialDays);
 
+            $billingProvider = config('docflow.billing.driver') === 'asaas'
+                ? Subscription::BILLING_PROVIDER_ASAAS
+                : Subscription::BILLING_PROVIDER_MANUAL;
+
             $subscription = Subscription::query()->create([
                 'organization_id' => $organization->id,
                 'plan_id' => $plan->id,
                 'status' => Subscription::STATUS_TRIALING,
-                'billing_provider' => Subscription::BILLING_PROVIDER_MANUAL,
+                'billing_provider' => $billingProvider,
                 'trial_ends_at' => $trialEndsAt,
                 'current_period_start' => now(),
                 'current_period_end' => $trialEndsAt,
