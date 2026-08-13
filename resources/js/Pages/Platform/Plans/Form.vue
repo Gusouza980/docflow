@@ -30,13 +30,12 @@ const form = useForm({
         max_storage_mb: props.plan?.limits?.max_storage_mb ?? 2048,
         max_portal_accesses: props.plan?.limits?.max_portal_accesses ?? 10,
     },
-    features: {
-        portal: props.plan?.features?.portal ?? false,
-        finance_advanced: props.plan?.features?.finance_advanced ?? false,
-        reports_scheduling: props.plan?.features?.reports_scheduling ?? false,
-        audit: props.plan?.features?.audit ?? false,
-        automations: props.plan?.features?.automations ?? false,
-    },
+    features: Object.fromEntries(
+        (props.featureKeys.length
+            ? props.featureKeys
+            : ['portal', 'finance_advanced', 'reports_scheduling', 'audit', 'automations', 'crm']
+        ).map((key) => [key, Boolean(props.plan?.features?.[key])]),
+    ),
     is_public: props.plan?.is_public ?? true,
     is_active: props.plan?.is_active ?? true,
     sort_order: props.plan?.sort_order ?? 1,

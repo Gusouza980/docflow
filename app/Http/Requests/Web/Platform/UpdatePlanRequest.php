@@ -39,6 +39,7 @@ class UpdatePlanRequest extends FormRequest
             'features.reports_scheduling' => ['boolean'],
             'features.audit' => ['boolean'],
             'features.automations' => ['boolean'],
+            'features.crm' => ['boolean'],
             'is_public' => ['boolean'],
             'is_active' => ['boolean'],
             'sort_order' => ['integer', 'min:0', 'max:255'],

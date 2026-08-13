@@ -81,7 +81,7 @@ class ResolvesOrganizationPlan
     public function effectiveFeatures(Organization $organization): array
     {
         $plan = $this->planFor($organization);
-        $features = $plan->features ?? [];
+        $features = app(NormalizesPlanFeatures::class)->backfillMissing($plan->features, $plan->slug);
         $override = $this->activeOverrideFor($organization);
 
         if ($override?->features) {

@@ -6,12 +6,17 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Web\Platform\StorePlanRequest;
 use App\Http\Requests\Web\Platform\UpdatePlanRequest;
 use App\Models\Plan;
+use App\Support\Billing\NormalizesPlanFeatures;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class PlanController extends Controller
 {
+    public function __construct(
+        private NormalizesPlanFeatures $normalizesPlanFeatures,
+    ) {}
+
     public function index(): Response
     {
         $plans = Plan::query()
@@ -36,7 +41,13 @@ class PlanController extends Controller
 
     public function store(StorePlanRequest $request): RedirectResponse
     {
-        $plan = Plan::create($request->validated());
+        $data = $request->validated();
+        $data['features'] = $this->normalizesPlanFeatures->normalize(
+            $data['features'] ?? [],
+            $data['slug'] ?? null,
+        );
+
+        $plan = Plan::create($data);
 
         return redirect()
             ->route('platform.plans.edit', $plan)
@@ -54,7 +65,13 @@ class PlanController extends Controller
 
     public function update(UpdatePlanRequest $request, Plan $plan): RedirectResponse
     {
-        $plan->update($request->validated());
+        $data = $request->validated();
+        $data['features'] = $this->normalizesPlanFeatures->normalize(
+            $data['features'] ?? [],
+            $data['slug'] ?? $plan->slug,
+        );
+
+        $plan->update($data);
 
         return redirect()
             ->route('platform.plans.edit', $plan)
@@ -75,7 +92,7 @@ class PlanController extends Controller
             'billing_interval' => $plan->billing_interval,
             'trial_days' => $plan->trial_days,
             'limits' => $plan->limits ?? [],
-            'features' => $plan->features ?? [],
+            'features' => $this->normalizesPlanFeatures->normalize($plan->features, $plan->slug),
             'is_public' => $plan->is_public,
             'is_active' => $plan->is_active,
             'sort_order' => $plan->sort_order,

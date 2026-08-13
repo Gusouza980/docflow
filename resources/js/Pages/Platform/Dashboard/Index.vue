@@ -32,6 +32,9 @@ const money = (cents) => new Intl.NumberFormat('pt-BR', { style: 'currency', cur
 
             <p class="text-sm text-slate-600">
                 Visão global dos tenants cadastrados no Docflow. Use o menu Organizações para suspender, reativar ou registrar notas internas.
+                Consulte o
+                <Link href="/platform/guides" class="font-medium text-violet-700 hover:underline">guia de uso</Link>
+                para fluxos, limites e portal do cliente.
             </p>
 
             <div class="grid gap-4 sm:grid-cols-3 lg:grid-cols-6">

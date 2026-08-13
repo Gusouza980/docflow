@@ -15,6 +15,7 @@ const items = [
     { key: 'organizations', label: 'Organizações', icon: '◫', href: '/platform/organizations' },
     { key: 'plans', label: 'Planos', icon: '◈', href: '/platform/plans' },
     { key: 'invoices', label: 'Faturas', icon: '$', href: '/platform/invoices' },
+    { key: 'guides', label: 'Guia de uso', icon: '?', href: '/platform/guides' },
 ];
 </script>
 
