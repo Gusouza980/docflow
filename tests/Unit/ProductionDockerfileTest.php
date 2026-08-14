@@ -23,6 +23,9 @@ class ProductionDockerfileTest extends TestCase
         $this->assertStringContainsString('npm run build', $dockerfile);
         $this->assertStringContainsString('HEALTHCHECK', $dockerfile);
         $this->assertStringContainsString('/up', $dockerfile);
+        $this->assertStringContainsString('install-php-extensions', $dockerfile);
+        $this->assertStringContainsString('redis', $dockerfile);
+        $this->assertStringNotContainsString('pecl install', $dockerfile);
         $this->assertStringNotContainsString('COPY .env', $dockerfile);
     }
 

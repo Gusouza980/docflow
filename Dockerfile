@@ -37,32 +37,25 @@ ENV APP_ENV=production \
     LOG_CHANNEL=stderr \
     PHP_OPCACHE_VALIDATE_TIMESTAMPS=0
 
+# redis here is the PHP client extension (phpredis), not a Redis server.
+# Point REDIS_HOST at the EasyPanel Redis service.
+COPY --from=mlocati/php-extension-installer:2 /usr/bin/install-php-extensions /usr/local/bin/
+
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         curl \
-        git \
-        libfreetype6-dev \
-        libicu-dev \
-        libjpeg62-turbo-dev \
-        libonig-dev \
-        libpng-dev \
-        libzip-dev \
         nginx \
         supervisor \
-        unzip \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install \
+    && install-php-extensions \
         bcmath \
         exif \
         gd \
         intl \
         pcntl \
         pdo_mysql \
+        redis \
         zip \
-    && pecl install redis \
-    && docker-php-ext-enable redis \
-    && apt-get purge -y --auto-remove git \
-    && rm -rf /var/lib/apt/lists/* /tmp/pear
+    && rm -rf /var/lib/apt/lists/*
 
 COPY docker/php/php.ini /usr/local/etc/php/conf.d/zz-production.ini
 COPY docker/php/www.conf /usr/local/etc/php-fpm.d/zz-app.conf
