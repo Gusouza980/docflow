@@ -1,0 +1,61 @@
+services:
+    app:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        image: docflow:production
+        ports:
+            - '${APP_PORT:-80}:80'
+        env_file:
+            - .env
+        environment:
+            APP_ENV: production
+            APP_DEBUG: 'false'
+            LOG_CHANNEL: stderr
+            RUN_MIGRATIONS: '${RUN_MIGRATIONS:-true}'
+        volumes:
+            - app-storage:/var/www/html/storage
+        networks:
+            - docflow
+        depends_on:
+            mysql:
+                condition: service_healthy
+            redis:
+                condition: service_healthy
+        restart: unless-stopped
+    mysql:
+        image: mysql:8.4
+        environment:
+            MYSQL_DATABASE: '${DB_DATABASE}'
+            MYSQL_USER: '${DB_USERNAME}'
+            MYSQL_PASSWORD: '${DB_PASSWORD}'
+            MYSQL_ROOT_PASSWORD: '${DB_PASSWORD}'
+        volumes:
+            - prod-mysql:/var/lib/mysql
+        networks:
+            - docflow
+        healthcheck:
+            test: ['CMD', 'mysqladmin', 'ping', '-p${DB_PASSWORD}']
+            retries: 5
+            timeout: 5s
+        restart: unless-stopped
+    redis:
+        image: redis:alpine
+        volumes:
+            - prod-redis:/data
+        networks:
+            - docflow
+        healthcheck:
+            test: ['CMD', 'redis-cli', 'ping']
+            retries: 5
+            timeout: 5s
+        restart: unless-stopped
+
+networks:
+    docflow:
+        driver: bridge
+
+volumes:
+    app-storage:
+    prod-mysql:
+    prod-redis:
