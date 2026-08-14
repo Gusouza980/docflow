@@ -5,6 +5,8 @@ namespace App\Actions\Finance;
 use App\Billing\TenantAsaasPaymentGateway;
 use App\Models\Receivable;
 use App\Models\ReceivableCharge;
+use Illuminate\Contracts\Cache\LockTimeoutException;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -16,30 +18,29 @@ class CreateReceivableAsaasCharge
 
     public function execute(Receivable $receivable, string $billingType = ReceivableCharge::TYPE_PIX): ReceivableCharge
     {
-        if (! in_array($receivable->status, [Receivable::STATUS_OPEN, Receivable::STATUS_PARTIAL], true)) {
-            throw new InvalidArgumentException('Só é possível gerar Pix para cobranças em aberto.');
-        }
-
         if (! in_array($billingType, [ReceivableCharge::TYPE_PIX, ReceivableCharge::TYPE_BOLETO], true)) {
             throw new InvalidArgumentException('Escolha Pix ou boleto.');
         }
 
-        $receivable->loadMissing(['client.contacts', 'organization.paymentGateway']);
+        try {
+            return Cache::lock('receivable-charge:'.$receivable->id, 30)
+                ->block(10, fn (): ReceivableCharge => $this->createLocked($receivable, $billingType));
+        } catch (LockTimeoutException) {
+            throw new InvalidArgumentException('Já estamos gerando o Pix desta cobrança. Tente de novo em instantes.');
+        }
+    }
 
-        $existing = DB::transaction(function () use ($receivable): ?ReceivableCharge {
-            $locked = Receivable::query()->lockForUpdate()->findOrFail($receivable->id);
+    private function createLocked(Receivable $receivable, string $billingType): ReceivableCharge
+    {
+        $receivable = $receivable->fresh(['charge', 'client.contacts', 'organization.paymentGateway'])
+            ?? throw new InvalidArgumentException('Cobrança não encontrada.');
 
-            if (! in_array($locked->status, [Receivable::STATUS_OPEN, Receivable::STATUS_PARTIAL], true)) {
-                throw new InvalidArgumentException('Só é possível gerar Pix para cobranças em aberto.');
-            }
+        if (! in_array($receivable->status, [Receivable::STATUS_OPEN, Receivable::STATUS_PARTIAL], true)) {
+            throw new InvalidArgumentException('Só é possível gerar Pix para cobranças em aberto.');
+        }
 
-            $charge = ReceivableCharge::query()->where('receivable_id', $locked->id)->lockForUpdate()->first();
-
-            return $charge?->isPending() ? $charge : null;
-        });
-
-        if ($existing) {
-            return $existing;
+        if ($receivable->charge?->isPending()) {
+            return $receivable->charge;
         }
 
         $gateway = $receivable->organization->paymentGateway;
