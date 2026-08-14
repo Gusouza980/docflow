@@ -20,7 +20,9 @@ fi
 
 php artisan package:discover --ansi --no-interaction
 php artisan storage:link --force --no-interaction
-php artisan optimize --no-interaction
+php artisan config:cache --no-interaction
+php artisan event:cache --no-interaction
+php artisan view:cache --no-interaction
 
 if [ "${RUN_MIGRATIONS:-false}" = "true" ]; then
     php artisan migrate --force --no-interaction

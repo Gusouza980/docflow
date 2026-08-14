@@ -61,7 +61,11 @@ class ProductionDockerfileTest extends TestCase
         $entrypoint = $this->fileContents('docker/entrypoint.sh');
 
         $this->assertStringContainsString('APP_KEY', $entrypoint);
-        $this->assertStringContainsString('php artisan optimize', $entrypoint);
+        $this->assertStringContainsString('php artisan config:cache', $entrypoint);
+        $this->assertStringContainsString('php artisan event:cache', $entrypoint);
+        $this->assertStringContainsString('php artisan view:cache', $entrypoint);
+        $this->assertStringNotContainsString('php artisan optimize', $entrypoint);
+        $this->assertStringNotContainsString('route:cache', $entrypoint);
         $this->assertStringContainsString('RUN_MIGRATIONS', $entrypoint);
         $this->assertStringContainsString('supervisord', $entrypoint);
     }
