@@ -258,6 +258,9 @@ class ClientMessageDeliveryTest extends TestCase
             dedupeSuffix: $receivable->due_at?->toDateString(),
         );
 
+        $message = ClientMessage::query()->where('client_id', $client->id)->first();
+        $this->assertNotNull($message);
+        $this->assertSame('Cobrança de '.$client->display_name, $message->subject);
         $this->assertSame(1, ClientMessage::query()->where('client_id', $client->id)->count());
         $this->assertSame(1, AutomationLog::query()->where('organization_id', $organization->id)->count());
         $this->assertDatabaseHas('automation_logs', [

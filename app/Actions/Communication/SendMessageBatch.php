@@ -3,6 +3,7 @@
 namespace App\Actions\Communication;
 
 use App\Models\Client;
+use App\Models\ClientMessage;
 use App\Models\MessageBatch;
 use App\Models\MessageTemplate;
 use App\Models\Organization;
@@ -37,7 +38,7 @@ class SendMessageBatch
             $clientIds,
         );
 
-        return DB::transaction(function () use ($organization, $user, $template, $filter, $preview): MessageBatch {
+        $batch = DB::transaction(function () use ($organization, $user, $template, $filter, $preview): MessageBatch {
             $batch = MessageBatch::query()->create([
                 'organization_id' => $organization->id,
                 'created_by_user_id' => $user->id,
@@ -48,7 +49,9 @@ class SendMessageBatch
             ]);
 
             foreach ($preview['ready'] as $row) {
-                $client = Client::query()->findOrFail($row['client_id']);
+                $client = Client::query()
+                    ->where('organization_id', $organization->id)
+                    ->findOrFail($row['client_id']);
                 $receivable = $filter === MessageBatch::FILTER_OVERDUE
                     ? $this->oldestOverdueReceivable($client)
                     : null;
@@ -62,11 +65,27 @@ class SendMessageBatch
                     sentBy: $user,
                     batch: $batch,
                     variables: $this->destination->variablesFor($client, $receivable),
+                    deliverNow: false,
                 );
             }
 
             return $batch;
         });
+
+        if (config('queue.default') === 'sync') {
+            foreach ($batch->messages()->where('status', ClientMessage::STATUS_QUEUED)->get() as $message) {
+                try {
+                    $this->deliverOutboundClientMessage->process($message);
+                } catch (\Throwable $exception) {
+                    $message->update([
+                        'status' => ClientMessage::STATUS_FAILED,
+                        'failure_reason' => $exception->getMessage(),
+                    ]);
+                }
+            }
+        }
+
+        return $batch->fresh() ?? $batch;
     }
 
     private function oldestOverdueReceivable(Client $client): ?Receivable

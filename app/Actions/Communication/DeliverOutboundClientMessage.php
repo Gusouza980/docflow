@@ -35,8 +35,10 @@ class DeliverOutboundClientMessage
         ?User $sentBy = null,
         ?MessageBatch $batch = null,
         array $variables = [],
+        bool $deliverNow = true,
     ): ClientMessage {
-        $renderedSubject = $subject ?? $template?->renderSubject($variables);
+        $rawSubject = $subject ?? $template?->subject;
+        $renderedSubject = filled($rawSubject) ? $this->renderText((string) $rawSubject, $variables) : null;
         $renderedBody = $body !== ''
             ? $this->renderText($body, $variables)
             : (string) $template?->renderBody($variables);
@@ -44,7 +46,11 @@ class DeliverOutboundClientMessage
         $initialStatus = $this->initialStatus($channel);
         $skipReason = $this->destination->skipReason($client, $channel, $template?->purpose ?? 'general');
 
-        if ($skipReason !== null && in_array($channel, [MessageTemplate::CHANNEL_EMAIL, MessageTemplate::CHANNEL_WHATSAPP], true)) {
+        if ($skipReason !== null && in_array($channel, [
+            MessageTemplate::CHANNEL_EMAIL,
+            MessageTemplate::CHANNEL_WHATSAPP,
+            MessageTemplate::CHANNEL_PORTAL,
+        ], true)) {
             $initialStatus = ClientMessage::STATUS_FAILED;
         }
 
@@ -64,8 +70,17 @@ class DeliverOutboundClientMessage
         ]);
 
         if ($message->status === ClientMessage::STATUS_QUEUED) {
-            if (config('queue.default') === 'sync') {
-                $this->process($message);
+            if ($deliverNow && config('queue.default') === 'sync') {
+                try {
+                    $this->process($message);
+                } catch (Throwable $exception) {
+                    $message->update([
+                        'status' => ClientMessage::STATUS_FAILED,
+                        'failure_reason' => $exception->getMessage(),
+                    ]);
+                }
+            } elseif (! $deliverNow && config('queue.default') === 'sync') {
+                // Caller delivers after the surrounding transaction commits.
             } else {
                 DeliverClientMessageJob::dispatch($message->id)->afterCommit();
             }
@@ -80,28 +95,34 @@ class DeliverOutboundClientMessage
             return;
         }
 
-        $message->loadMissing('client');
+        $message->loadMissing(['client', 'template']);
 
-        try {
-            match ($message->channel) {
-                MessageTemplate::CHANNEL_EMAIL => $this->sendEmail($message),
-                MessageTemplate::CHANNEL_PORTAL => $this->sendPortal($message),
-                default => null,
-            };
+        $reason = $this->destination->skipReason(
+            $message->client,
+            $message->channel,
+            $message->template?->purpose ?? 'general',
+        );
 
-            $message->update([
-                'status' => ClientMessage::STATUS_SENT,
-                'failure_reason' => null,
-                'sent_at' => $message->sent_at ?? now(),
-            ]);
-        } catch (Throwable $exception) {
+        if ($reason !== null) {
             $message->update([
                 'status' => ClientMessage::STATUS_FAILED,
-                'failure_reason' => $exception->getMessage(),
+                'failure_reason' => $reason,
             ]);
 
-            throw $exception;
+            return;
         }
+
+        match ($message->channel) {
+            MessageTemplate::CHANNEL_EMAIL => $this->sendEmail($message),
+            MessageTemplate::CHANNEL_PORTAL => $this->sendPortal($message),
+            default => null,
+        };
+
+        $message->update([
+            'status' => ClientMessage::STATUS_SENT,
+            'failure_reason' => null,
+            'sent_at' => $message->sent_at ?? now(),
+        ]);
     }
 
     public function markWhatsAppOpened(ClientMessage $message): void

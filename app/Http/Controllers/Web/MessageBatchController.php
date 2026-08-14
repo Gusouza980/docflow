@@ -17,6 +17,7 @@ use App\Support\DisplayFormat;
 use App\Support\WebOrganizationContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
@@ -76,6 +77,13 @@ class MessageBatchController extends Controller
                     ]),
                 'clients' => Client::query()
                     ->where('organization_id', $membership->organization_id)
+                    ->when(! $membership->isAdmin() && ! $membership->isManager(), function ($query) use ($membership): void {
+                        $query->where(function ($query) use ($membership): void {
+                            $query->where('access_policy', Client::ACCESS_ALL_MEMBERS)
+                                ->orWhereHas('responsibles', fn ($query) => $query->whereKey($membership->id))
+                                ->orWhereHas('accessMembers', fn ($query) => $query->whereKey($membership->id));
+                        });
+                    })
                     ->orderBy('display_name')
                     ->get(['id', 'display_name'])
                     ->map(fn (Client $client): array => [
@@ -158,6 +166,7 @@ class MessageBatchController extends Controller
                 'created_at' => DisplayFormat::dateTime($batch->created_at),
             ],
             'messages' => $batch->messages
+                ->filter(fn (ClientMessage $message): bool => Gate::allows('view', $message->client))
                 ->map(fn (ClientMessage $message): array => [
                     'id' => $message->id,
                     'client_id' => $message->client_id,
