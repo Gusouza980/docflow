@@ -95,6 +95,10 @@ class ContractController extends Controller
         Gate::authorize('create', Contract::class);
 
         $data = $request->validated();
+        $data['created_by_user_id'] = $request->user()->id;
+        $data['create_receivable_recurrence'] = $membership->isAdmin() || $membership->isManager()
+            ? (bool) ($data['create_receivable_recurrence'] ?? false)
+            : false;
         $client = Client::query()->findOrFail($data['client_id']);
         abort_unless($client->organization_id === $membership->organization_id, HttpResponse::HTTP_NOT_FOUND);
         Gate::authorize('update', $client);
@@ -126,7 +130,7 @@ class ContractController extends Controller
         abort_unless($contract->organization_id === $membership->organization_id, HttpResponse::HTTP_NOT_FOUND);
         Gate::authorize('view', $contract);
 
-        $contract->load(['client', 'clientServices.serviceType']);
+        $contract->load(['client', 'clientServices.serviceType', 'receivableRecurrence']);
 
         return Inertia::render('Contracts/Show', [
             'contract' => [
@@ -136,6 +140,16 @@ class ContractController extends Controller
                 'auto_renew' => $contract->auto_renew,
                 'canceled_at' => DisplayFormat::dateTime($contract->canceled_at),
                 'cancel_reason' => $contract->cancel_reason,
+                'receivable_recurrence' => $contract->receivableRecurrence
+                    ? [
+                        'id' => $contract->receivableRecurrence->id,
+                        'is_active' => $contract->receivableRecurrence->is_active,
+                        'amount_cents' => $contract->receivableRecurrence->amount_cents,
+                        'frequency' => $contract->receivableRecurrence->frequency,
+                        'end_date' => DisplayFormat::date($contract->receivableRecurrence->end_date),
+                        'href' => route('finance.index', absolute: false),
+                    ]
+                    : null,
                 'services' => $contract->clientServices->map(fn (ClientService $service): array => [
                     'id' => $service->id,
                     'name' => $service->serviceType?->name,
@@ -162,11 +176,15 @@ class ContractController extends Controller
         Gate::authorize('manage', $contract);
 
         $endsAt = $request->validated('ends_at');
+        $createRecurrence = ($membership->isAdmin() || $membership->isManager())
+            && (bool) ($request->validated('create_receivable_recurrence') ?? false);
 
         try {
             $contract = $renewContract->execute(
                 $contract,
                 $endsAt ? Carbon::parse($endsAt) : null,
+                $createRecurrence,
+                $request->user()->id,
             );
         } catch (InvalidArgumentException $exception) {
             return back()->with('error', $exception->getMessage());

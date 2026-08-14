@@ -21,5 +21,5 @@ Sprint 22 fecha essa base: minutos padrão por tipo de ação × execuções rea
 
 ## Fora (ainda)
 
-- Verticais jurídico/contábil, KB, WhatsApp, IA (rascunho antigo do H3 stretch).
+- Verticais jurídico/contábil, KB, WhatsApp, IA — [Horizonte 5](../horizonte-05-rotina-diaria/README.md) fecha a rotina genérica antes.
 - Benchmark entre tenants.

@@ -62,6 +62,7 @@ class StoreContractRequest extends FormRequest
                 'integer',
                 Rule::exists('client_services', 'id')->where('organization_id', $organizationId),
             ],
+            'create_receivable_recurrence' => ['sometimes', 'boolean'],
         ];
     }
 }

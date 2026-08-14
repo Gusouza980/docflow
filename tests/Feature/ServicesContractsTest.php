@@ -8,6 +8,7 @@ use App\Models\Contract;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\Plan;
+use App\Models\ReceivableRecurrence;
 use App\Models\ServiceType;
 use App\Models\User;
 use Database\Seeders\PlanSeeder;
@@ -114,6 +115,192 @@ class ServicesContractsTest extends TestCase
         $this->assertSame(Contract::STATUS_ACTIVE, $contract->status);
         $this->assertSame(250000, $contract->amount_cents);
         $this->assertNotNull($contract->ends_at);
+        $this->assertNull($contract->receivableRecurrence);
+    }
+
+    public function test_active_monthly_contract_with_flag_creates_receivable_recurrence(): void
+    {
+        [$user, $organization, $member] = $this->createContext();
+        $client = Client::factory()->create([
+            'organization_id' => $organization->id,
+            'primary_responsible_member_id' => $member->id,
+        ]);
+
+        $this->actingAs($user)
+            ->withSession(['active_organization_id' => $organization->id])
+            ->post('/contracts', [
+                'client_id' => $client->id,
+                'code' => 'CTR-REC-1',
+                'status' => Contract::STATUS_ACTIVE,
+                'amount_cents' => '1.200,00',
+                'billing_interval' => Contract::BILLING_MONTH,
+                'starts_at' => now()->toDateString(),
+                'ends_at' => now()->addYear()->toDateString(),
+                'create_receivable_recurrence' => true,
+            ])
+            ->assertRedirect();
+
+        $contract = Contract::query()->where('code', 'CTR-REC-1')->firstOrFail();
+        $recurrence = ReceivableRecurrence::query()->where('contract_id', $contract->id)->first();
+
+        $this->assertNotNull($recurrence);
+        $this->assertSame($client->id, $recurrence->client_id);
+        $this->assertSame($organization->id, $recurrence->organization_id);
+        $this->assertSame(120000, $recurrence->amount_cents);
+        $this->assertSame(ReceivableRecurrence::FREQUENCY_MONTHLY, $recurrence->frequency);
+        $this->assertTrue($recurrence->is_active);
+        $this->assertSame(1, ReceivableRecurrence::query()->where('contract_id', $contract->id)->count());
+    }
+
+    public function test_once_contract_with_flag_does_not_create_recurrence(): void
+    {
+        [$user, $organization, $member] = $this->createContext();
+        $client = Client::factory()->create([
+            'organization_id' => $organization->id,
+            'primary_responsible_member_id' => $member->id,
+        ]);
+
+        $this->actingAs($user)
+            ->withSession(['active_organization_id' => $organization->id])
+            ->post('/contracts', [
+                'client_id' => $client->id,
+                'code' => 'CTR-ONCE',
+                'status' => Contract::STATUS_ACTIVE,
+                'amount_cents' => '3.000,00',
+                'billing_interval' => Contract::BILLING_ONCE,
+                'starts_at' => now()->toDateString(),
+                'create_receivable_recurrence' => true,
+            ])
+            ->assertRedirect();
+
+        $contract = Contract::query()->where('code', 'CTR-ONCE')->firstOrFail();
+        $this->assertNull($contract->receivableRecurrence);
+    }
+
+    public function test_renew_extends_existing_recurrence_end_date(): void
+    {
+        [$user, $organization, $member] = $this->createContext();
+        $client = Client::factory()->create([
+            'organization_id' => $organization->id,
+            'primary_responsible_member_id' => $member->id,
+        ]);
+        $endsAt = now()->addMonth()->startOfDay();
+        $contract = Contract::factory()->create([
+            'organization_id' => $organization->id,
+            'client_id' => $client->id,
+            'status' => Contract::STATUS_ACTIVE,
+            'amount_cents' => 200000,
+            'billing_interval' => Contract::BILLING_MONTH,
+            'ends_at' => $endsAt->toDateString(),
+        ]);
+        $recurrence = ReceivableRecurrence::factory()->create([
+            'organization_id' => $organization->id,
+            'client_id' => $client->id,
+            'contract_id' => $contract->id,
+            'created_by_user_id' => $user->id,
+            'amount_cents' => 200000,
+            'end_date' => $endsAt->toDateString(),
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($user)
+            ->withSession(['active_organization_id' => $organization->id])
+            ->post("/contracts/{$contract->id}/renew")
+            ->assertRedirect();
+
+        $this->assertTrue($recurrence->fresh()->end_date->gt($endsAt));
+        $this->assertTrue($recurrence->fresh()->is_active);
+        $this->assertSame(1, ReceivableRecurrence::query()->where('contract_id', $contract->id)->count());
+    }
+
+    public function test_renew_with_flag_creates_missing_recurrence(): void
+    {
+        [$user, $organization, $member] = $this->createContext();
+        $client = Client::factory()->create([
+            'organization_id' => $organization->id,
+            'primary_responsible_member_id' => $member->id,
+        ]);
+        $contract = Contract::factory()->create([
+            'organization_id' => $organization->id,
+            'client_id' => $client->id,
+            'code' => 'CTR-RENEW-REC',
+            'status' => Contract::STATUS_ACTIVE,
+            'amount_cents' => 90000,
+            'billing_interval' => Contract::BILLING_MONTH,
+            'ends_at' => now()->addMonth()->toDateString(),
+        ]);
+
+        $this->actingAs($user)
+            ->withSession(['active_organization_id' => $organization->id])
+            ->post("/contracts/{$contract->id}/renew", [
+                'create_receivable_recurrence' => true,
+            ])
+            ->assertRedirect();
+
+        $recurrence = ReceivableRecurrence::query()->where('contract_id', $contract->id)->first();
+        $this->assertNotNull($recurrence);
+        $this->assertSame(90000, $recurrence->amount_cents);
+        $this->assertTrue($recurrence->is_active);
+    }
+
+    public function test_cancel_pauses_linked_recurrence(): void
+    {
+        [$user, $organization, $member] = $this->createContext();
+        $client = Client::factory()->create([
+            'organization_id' => $organization->id,
+            'primary_responsible_member_id' => $member->id,
+        ]);
+        $contract = Contract::factory()->create([
+            'organization_id' => $organization->id,
+            'client_id' => $client->id,
+            'status' => Contract::STATUS_ACTIVE,
+            'amount_cents' => 150000,
+            'billing_interval' => Contract::BILLING_MONTH,
+            'ends_at' => now()->addMonth()->toDateString(),
+        ]);
+        $recurrence = ReceivableRecurrence::factory()->create([
+            'organization_id' => $organization->id,
+            'client_id' => $client->id,
+            'contract_id' => $contract->id,
+            'created_by_user_id' => $user->id,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs($user)
+            ->withSession(['active_organization_id' => $organization->id])
+            ->post("/contracts/{$contract->id}/cancel", [
+                'cancel_reason' => 'Cliente pediu encerramento',
+            ])
+            ->assertRedirect();
+
+        $this->assertFalse($recurrence->fresh()->is_active);
+        $this->assertSame(Contract::STATUS_CANCELED, $contract->fresh()->status);
+    }
+
+    public function test_assistant_flag_does_not_create_recurrence(): void
+    {
+        [$user, $organization, $member] = $this->createContext(OrganizationMember::ROLE_ASSISTANT);
+        $client = Client::factory()->create([
+            'organization_id' => $organization->id,
+            'primary_responsible_member_id' => $member->id,
+            'access_policy' => Client::ACCESS_ALL_MEMBERS,
+        ]);
+
+        $this->actingAs($user)
+            ->withSession(['active_organization_id' => $organization->id])
+            ->post('/contracts', [
+                'client_id' => $client->id,
+                'code' => 'CTR-ASSIST',
+                'status' => Contract::STATUS_ACTIVE,
+                'amount_cents' => '800,00',
+                'billing_interval' => Contract::BILLING_MONTH,
+                'starts_at' => now()->toDateString(),
+                'create_receivable_recurrence' => true,
+            ])
+            ->assertRedirect();
+
+        $contract = Contract::query()->where('code', 'CTR-ASSIST')->firstOrFail();
+        $this->assertNull($contract->receivableRecurrence);
     }
 
     public function test_renew_extends_ends_at(): void

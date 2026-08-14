@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Contract extends Model
 {
@@ -124,6 +125,11 @@ class Contract extends Model
     public function clientServices(): BelongsToMany
     {
         return $this->belongsToMany(ClientService::class, 'contract_client_service')->withTimestamps();
+    }
+
+    public function receivableRecurrence(): HasOne
+    {
+        return $this->hasOne(ReceivableRecurrence::class);
     }
 
     /**

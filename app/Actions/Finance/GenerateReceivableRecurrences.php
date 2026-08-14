@@ -85,7 +85,9 @@ class GenerateReceivableRecurrences
 
     private function nextDueDate(ReceivableRecurrence $recurrence): Carbon
     {
-        $next = $recurrence->next_due_date->copy()->addMonthNoOverflow();
+        $next = $recurrence->frequency === ReceivableRecurrence::FREQUENCY_YEARLY
+            ? $recurrence->next_due_date->copy()->addYear()
+            : $recurrence->next_due_date->copy()->addMonthNoOverflow();
         $day = min($recurrence->billing_day, $next->daysInMonth);
 
         return $next->day($day);

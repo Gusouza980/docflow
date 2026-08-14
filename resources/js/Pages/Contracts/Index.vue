@@ -10,6 +10,7 @@ import Badge from '../../Components/UI/Badge.vue';
 import TextInput from '../../Components/Forms/TextInput.vue';
 import CurrencyInput from '../../Components/Forms/CurrencyInput.vue';
 import SelectInput from '../../Components/Forms/SelectInput.vue';
+import CheckboxInput from '../../Components/Forms/CheckboxInput.vue';
 import TextareaInput from '../../Components/Forms/TextareaInput.vue';
 import { formatBrlCurrency } from '../../lib/money';
 
@@ -47,6 +48,7 @@ const createForm = useForm({
     auto_renew: false,
     scope_included: '',
     scope_excluded: '',
+    create_receivable_recurrence: false,
 });
 
 const money = formatBrlCurrency;
@@ -142,6 +144,17 @@ const statusTone = (status) => {
                 <SelectInput id="contract-interval" v-model="createForm.billing_interval" label="Recorrência" :options="options.billing_intervals" :error="createForm.errors.billing_interval" />
                 <TextInput id="contract-starts" v-model="createForm.starts_at" type="date" label="Início" required :error="createForm.errors.starts_at" />
                 <TextInput id="contract-ends" v-model="createForm.ends_at" type="date" label="Término" :error="createForm.errors.ends_at" />
+                <CheckboxInput
+                    v-if="can.manage && ['month', 'year'].includes(createForm.billing_interval) && createForm.status === 'active'"
+                    v-model="createForm.create_receivable_recurrence"
+                    label="Gerar mensalidade no financeiro"
+                />
+                <p
+                    v-if="can.manage && ['month', 'year'].includes(createForm.billing_interval) && createForm.status === 'active'"
+                    class="text-xs text-slate-500"
+                >
+                    Cria uma cobrança recorrente ligada a este contrato. Pode pausar depois no financeiro ou ao cancelar o contrato.
+                </p>
                 <TextareaInput
                     id="contract-scope-in"
                     v-model="createForm.scope_included"

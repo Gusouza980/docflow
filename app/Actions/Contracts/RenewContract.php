@@ -8,8 +8,16 @@ use InvalidArgumentException;
 
 class RenewContract
 {
-    public function execute(Contract $contract, ?Carbon $newEndsAt = null): Contract
-    {
+    public function __construct(
+        private SyncContractReceivableRecurrence $syncContractReceivableRecurrence,
+    ) {}
+
+    public function execute(
+        Contract $contract,
+        ?Carbon $newEndsAt = null,
+        bool $createReceivableRecurrence = false,
+        ?int $createdByUserId = null,
+    ): Contract {
         if (! in_array($contract->status, [Contract::STATUS_ACTIVE, Contract::STATUS_EXPIRED], true)) {
             throw new InvalidArgumentException('Somente contratos ativos ou expirados podem ser renovados.');
         }
@@ -41,6 +49,16 @@ class RenewContract
             'cancel_reason' => null,
         ]);
 
-        return $contract->fresh(['client', 'clientServices.serviceType']);
+        $contract = $contract->fresh(['client', 'clientServices.serviceType']);
+
+        if ($createdByUserId !== null) {
+            $this->syncContractReceivableRecurrence->syncOnRenew(
+                $contract,
+                $createdByUserId,
+                $createReceivableRecurrence,
+            );
+        }
+
+        return $contract->fresh(['client', 'clientServices.serviceType', 'receivableRecurrence']);
     }
 }

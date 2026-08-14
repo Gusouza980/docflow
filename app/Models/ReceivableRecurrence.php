@@ -15,9 +15,12 @@ class ReceivableRecurrence extends Model
 
     public const FREQUENCY_MONTHLY = 'monthly';
 
+    public const FREQUENCY_YEARLY = 'yearly';
+
     protected $fillable = [
         'organization_id',
         'client_id',
+        'contract_id',
         'financial_category_id',
         'created_by_user_id',
         'description',
@@ -57,6 +60,11 @@ class ReceivableRecurrence extends Model
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);
+    }
+
+    public function contract(): BelongsTo
+    {
+        return $this->belongsTo(Contract::class);
     }
 
     public function category(): BelongsTo

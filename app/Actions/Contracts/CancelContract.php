@@ -7,6 +7,10 @@ use InvalidArgumentException;
 
 class CancelContract
 {
+    public function __construct(
+        private SyncContractReceivableRecurrence $syncContractReceivableRecurrence,
+    ) {}
+
     public function execute(Contract $contract, ?string $reason = null): Contract
     {
         if ($contract->status === Contract::STATUS_CANCELED) {
@@ -19,6 +23,8 @@ class CancelContract
             'cancel_reason' => $reason,
         ]);
 
-        return $contract->fresh(['client', 'clientServices.serviceType']);
+        $this->syncContractReceivableRecurrence->pauseForContract($contract);
+
+        return $contract->fresh(['client', 'clientServices.serviceType', 'receivableRecurrence']);
     }
 }
