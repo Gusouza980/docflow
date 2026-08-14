@@ -3,6 +3,7 @@
 namespace App\Actions\Contracts;
 
 use App\Models\Contract;
+use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
 class CancelContract
@@ -17,14 +18,16 @@ class CancelContract
             throw new InvalidArgumentException('Contrato já está cancelado.');
         }
 
-        $contract->update([
-            'status' => Contract::STATUS_CANCELED,
-            'canceled_at' => now(),
-            'cancel_reason' => $reason,
-        ]);
+        return DB::transaction(function () use ($contract, $reason): Contract {
+            $contract->update([
+                'status' => Contract::STATUS_CANCELED,
+                'canceled_at' => now(),
+                'cancel_reason' => $reason,
+            ]);
 
-        $this->syncContractReceivableRecurrence->pauseForContract($contract);
+            $this->syncContractReceivableRecurrence->pauseForContract($contract);
 
-        return $contract->fresh(['client', 'clientServices.serviceType', 'receivableRecurrence']);
+            return $contract->fresh(['client', 'clientServices.serviceType', 'receivableRecurrence']);
+        });
     }
 }

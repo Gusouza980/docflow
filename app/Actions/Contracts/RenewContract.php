@@ -4,6 +4,7 @@ namespace App\Actions\Contracts;
 
 use App\Models\Contract;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
 class RenewContract
@@ -42,23 +43,25 @@ class RenewContract
             throw new InvalidArgumentException('A nova vigência deve ser posterior ao término atual.');
         }
 
-        $contract->update([
-            'ends_at' => $base->toDateString(),
-            'status' => Contract::STATUS_ACTIVE,
-            'canceled_at' => null,
-            'cancel_reason' => null,
-        ]);
+        return DB::transaction(function () use ($contract, $base, $createdByUserId, $createReceivableRecurrence): Contract {
+            $contract->update([
+                'ends_at' => $base->toDateString(),
+                'status' => Contract::STATUS_ACTIVE,
+                'canceled_at' => null,
+                'cancel_reason' => null,
+            ]);
 
-        $contract = $contract->fresh(['client', 'clientServices.serviceType']);
+            $contract = $contract->fresh(['client', 'clientServices.serviceType']);
 
-        if ($createdByUserId !== null) {
-            $this->syncContractReceivableRecurrence->syncOnRenew(
-                $contract,
-                $createdByUserId,
-                $createReceivableRecurrence,
-            );
-        }
+            if ($createdByUserId !== null) {
+                $this->syncContractReceivableRecurrence->syncOnRenew(
+                    $contract,
+                    $createdByUserId,
+                    $createReceivableRecurrence,
+                );
+            }
 
-        return $contract->fresh(['client', 'clientServices.serviceType', 'receivableRecurrence']);
+            return $contract->fresh(['client', 'clientServices.serviceType', 'receivableRecurrence']);
+        });
     }
 }
