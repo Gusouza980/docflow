@@ -20,14 +20,12 @@ class CreateOrganization
     public function execute(User $owner, array $data): Organization
     {
         return DB::transaction(function () use ($owner, $data): Organization {
-            $defaultPlan = Plan::query()
-                ->where('slug', config('docflow.default_plan_slug', 'essencial'))
-                ->where('is_active', true)
-                ->first();
+            $plan = $this->resolvePlan($data['plan_id'] ?? null);
+            unset($data['plan_id']);
 
             $organization = Organization::create([
                 ...$data,
-                'plan_id' => $defaultPlan?->id,
+                'plan_id' => $plan?->id,
             ]);
 
             OrganizationMember::create([
@@ -44,9 +42,28 @@ class CreateOrganization
             $owner->assignRole($role);
             $owner->unsetRelation('roles')->unsetRelation('permissions');
 
-            $this->createTrialSubscription->execute($organization, $defaultPlan);
+            $this->createTrialSubscription->execute($organization, $plan);
 
             return $organization;
         });
+    }
+
+    private function resolvePlan(mixed $planId): ?Plan
+    {
+        if ($planId) {
+            $selectedPlan = Plan::query()
+                ->whereKey($planId)
+                ->where('is_active', true)
+                ->first();
+
+            if ($selectedPlan) {
+                return $selectedPlan;
+            }
+        }
+
+        return Plan::query()
+            ->where('slug', config('docflow.default_plan_slug', 'essencial'))
+            ->where('is_active', true)
+            ->first();
     }
 }

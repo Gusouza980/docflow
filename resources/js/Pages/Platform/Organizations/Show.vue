@@ -116,6 +116,9 @@ function runSubscriptionAction(action) {
     <PlatformLayout :title="organization.name" active-nav="organizations" :breadcrumbs="[{ label: 'Organizações', href: '/platform/organizations' }, { label: organization.name }]">
         <div class="grid gap-4">
             <Alert v-if="page.props.flash?.status" tone="success">{{ page.props.flash.status }}</Alert>
+            <Alert v-if="page.props.flash?.reset_url" tone="info">
+                Link para definir senha (copie se o e-mail não chegar): {{ page.props.flash.reset_url }}
+            </Alert>
 
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <div class="flex items-center gap-3">

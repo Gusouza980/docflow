@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers\Web\Platform;
 
+use App\Actions\Platform\ProvisionTenant;
 use App\Actions\Platform\ReactivateOrganization;
 use App\Actions\Platform\RecordPlatformAuditLog;
 use App\Actions\Platform\SuspendOrganization;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Web\Platform\ProvisionTenantRequest;
 use App\Http\Requests\Web\Platform\SuspendOrganizationRequest;
 use App\Http\Requests\Web\Platform\UpdateOrganizationPlatformNotesRequest;
 use App\Models\Organization;
@@ -19,6 +21,7 @@ use App\Support\DisplayFormat;
 use App\Support\PlatformOrganizationMetrics;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -76,7 +79,24 @@ class OrganizationController extends Controller
                 ['value' => Organization::STATUS_ACTIVE, 'label' => 'Ativas'],
                 ['value' => Organization::STATUS_SUSPENDED, 'label' => 'Suspensas'],
             ],
+            'planOptions' => $this->activePlanOptions(),
         ]);
+    }
+
+    public function store(
+        ProvisionTenantRequest $request,
+        ProvisionTenant $provisionTenant,
+    ): RedirectResponse {
+        $result = $provisionTenant->execute(
+            platformAdmin: $request->user(),
+            data: $request->validated(),
+            request: $request,
+        );
+
+        return redirect()
+            ->route('platform.organizations.show', $result['organization'])
+            ->with('status', "Cliente {$result['user']->email} provisionado. Enviamos o link para definir a senha.")
+            ->with('reset_url', $result['reset_url']);
     }
 
     public function show(
@@ -141,10 +161,7 @@ class OrganizationController extends Controller
                 'created_at' => DisplayFormat::dateTime($organization->created_at),
             ],
             'planSummary' => $planLimitChecker->usageSummary($organization),
-            'planOptions' => Plan::query()->where('is_active', true)->orderBy('sort_order')->get(['id', 'name', 'slug'])->map(fn (Plan $plan): array => [
-                'value' => $plan->id,
-                'label' => $plan->name,
-            ]),
+            'planOptions' => $this->activePlanOptions(),
             'activeOverride' => ($activeOverride = $resolvesOrganizationPlan->activeOverrideFor($organization))
                 ? [
                     'id' => $activeOverride->id,
@@ -229,5 +246,20 @@ class OrganizationController extends Controller
         return redirect()
             ->route('platform.organizations.show', $organization)
             ->with('status', 'Organização reativada.');
+    }
+
+    /**
+     * @return Collection<int, array{value: int, label: string}>
+     */
+    private function activePlanOptions(): Collection
+    {
+        return Plan::query()
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->get(['id', 'name'])
+            ->map(fn (Plan $plan): array => [
+                'value' => $plan->id,
+                'label' => $plan->name,
+            ]);
     }
 }

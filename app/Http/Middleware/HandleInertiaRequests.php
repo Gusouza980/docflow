@@ -105,6 +105,7 @@ class HandleInertiaRequests extends Middleware
                 'error' => fn () => $request->session()->get('error'),
                 'portal_url' => fn () => $request->session()->get('portal_url'),
                 'whatsapp_url' => fn () => $request->session()->get('whatsapp_url'),
+                'reset_url' => fn () => $request->session()->get('reset_url'),
             ],
             'portalAuth' => [
                 'access' => auth('portal')->user() ? [
