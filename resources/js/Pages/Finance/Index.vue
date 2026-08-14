@@ -25,6 +25,7 @@ const props = defineProps({
     categories: { type: Array, default: () => [] },
     filters: { type: Object, default: () => ({}) },
     options: { type: Object, required: true },
+    payment_gateway: { type: Object, default: () => ({ connected: false, can_manage: false }) },
 });
 
 const page = usePage();
@@ -36,6 +37,8 @@ const paymentModalOpen = ref(false);
 const cancelModalOpen = ref(false);
 const renegotiateModalOpen = ref(false);
 const reminderModalOpen = ref(false);
+const chargeModalOpen = ref(false);
+const chargeTarget = ref(null);
 const paymentTarget = ref(null);
 const paymentType = ref('receivable');
 const withEmpty = (items, label = 'Todos') => [{ value: '', label }, ...items];
@@ -227,6 +230,23 @@ function submitReminder() {
         onSuccess: () => reminderModalOpen.value = false,
     });
 }
+
+function generateCharge(receivable, billingType = 'PIX') {
+    useForm({ billing_type: billingType }).post(`/finance/receivables/${receivable.id}/charge`, { preserveScroll: true });
+}
+
+function openCharge(receivable) {
+    chargeTarget.value = receivable;
+    chargeModalOpen.value = true;
+}
+
+async function copyText(value) {
+    if (!value || !navigator.clipboard) {
+        return;
+    }
+
+    await navigator.clipboard.writeText(value);
+}
 </script>
 
 <template>
@@ -235,6 +255,19 @@ function submitReminder() {
         <div class="grid gap-4">
             <Alert v-if="page.props.flash?.status" tone="success">{{ page.props.flash.status }}</Alert>
             <Alert v-if="page.props.flash?.error" tone="danger">{{ page.props.flash.error }}</Alert>
+
+            <div
+                class="rounded-lg border px-4 py-3 text-sm"
+                :class="payment_gateway.connected ? 'border-emerald-200 bg-emerald-50 text-emerald-900' : 'border-amber-200 bg-amber-50 text-amber-950'"
+            >
+                <p v-if="payment_gateway.connected" class="font-medium">Pix no portal está ativo. Gere a cobrança na linha e o cliente paga sozinho.</p>
+                <p v-else-if="payment_gateway.can_manage">
+                    Conecte o Asaas do escritório em
+                    <a href="/organizations" class="font-semibold underline">Organizações</a>
+                    para o cliente pagar no portal.
+                </p>
+                <p v-else>Peça ao administrador para conectar o Asaas em Organizações. Enquanto isso, use as instruções de texto e a baixa manual.</p>
+            </div>
 
             <div class="grid gap-4 md:grid-cols-4">
                 <Card title="A receber"><p class="text-2xl font-semibold text-slate-950">{{ money(metrics.open_receivables_cents) }}</p></Card>
@@ -268,11 +301,11 @@ function submitReminder() {
 
             <DataTable :columns="receivableColumns" :rows="receivables.data" empty-title="Nenhuma cobrança encontrada">
                 <template #toolbar><div class="border-b border-slate-200 px-4 py-3"><h2 class="text-sm font-semibold text-slate-950">Contas a receber</h2></div></template>
-                <template #cell-description="{ row }"><div class="min-w-64"><p class="font-semibold text-slate-950">{{ row.description }}</p><p class="mt-1 text-xs text-slate-500">{{ row.client.name }} · {{ row.category?.name ?? 'Sem categoria' }}</p><Badge v-if="row.reminders_count" tone="warning" class="mt-1">{{ row.reminders_count }} lembrete(s)</Badge></div></template>
+                <template #cell-description="{ row }"><div class="min-w-64"><p class="font-semibold text-slate-950">{{ row.description }}</p><p class="mt-1 text-xs text-slate-500">{{ row.client.name }} · {{ row.category?.name ?? 'Sem categoria' }}</p><Badge v-if="row.charge?.status === 'pending'" tone="primary" class="mt-1">Aguardando pagamento</Badge><Badge v-if="row.reminders_count" tone="warning" class="mt-1">{{ row.reminders_count }} lembrete(s)</Badge></div></template>
                 <template #cell-status="{ row }"><StatusPill :status="row.status" /></template>
                 <template #cell-amount="{ row }"><span>{{ money(row.balance_cents) }}</span><span class="block text-xs text-slate-500">de {{ money(row.amount_cents) }}</span></template>
                 <template #cell-due_at="{ row }"><span :class="row.is_overdue ? 'font-semibold text-red-700' : ''"><DisplayDate :value="row.due_at" fallback="Sem prazo" /></span></template>
-                <template #cell-actions="{ row }"><div class="flex flex-wrap justify-end gap-2"><Button v-if="row.can_renegotiate" size="sm" variant="secondary" @click="openRenegotiate(row)">Renegociar</Button><Button v-if="row.is_overdue" size="sm" variant="secondary" @click="openReminder(row)">Lembrete</Button><Button v-if="!['paid', 'cancelled', 'renegotiated'].includes(row.status)" size="sm" variant="secondary" @click="openPayment('receivable', row)">Baixar</Button><Button v-if="!['paid', 'cancelled', 'renegotiated'].includes(row.status)" size="sm" variant="danger" @click="openCancel(row)">Cancelar</Button></div></template>
+                <template #cell-actions="{ row }"><div class="flex flex-wrap justify-end gap-2"><Button v-if="row.charge" size="sm" variant="secondary" @click="openCharge(row)">Ver Pix</Button><Button v-else-if="payment_gateway.connected && row.can_charge" size="sm" @click="generateCharge(row)">Gerar Pix</Button><Button v-if="row.can_renegotiate" size="sm" variant="secondary" @click="openRenegotiate(row)">Renegociar</Button><Button v-if="row.is_overdue" size="sm" variant="secondary" @click="openReminder(row)">Lembrete</Button><Button v-if="!['paid', 'cancelled', 'renegotiated'].includes(row.status)" size="sm" variant="secondary" @click="openPayment('receivable', row)">Baixar</Button><Button v-if="!['paid', 'cancelled', 'renegotiated'].includes(row.status)" size="sm" variant="danger" @click="openCancel(row)">Cancelar</Button></div></template>
             </DataTable>
             <Pagination :current-page="receivables.meta.current_page" :total-pages="receivables.meta.last_page" :per-page="receivables.meta.per_page" />
 
@@ -381,6 +414,25 @@ function submitReminder() {
             <template #footer>
                 <Button variant="secondary" @click="reminderModalOpen = false">Cancelar</Button>
                 <Button type="submit" form="reminder-form" :loading="reminderForm.processing">Registrar lembrete</Button>
+            </template>
+        </Modal>
+
+        <Modal v-if="chargeModalOpen && chargeTarget?.charge" open title="Pagamento no portal" @close="chargeModalOpen = false">
+            <div class="grid gap-4">
+                <p class="text-sm text-slate-600">O cliente vê o mesmo Pix em Cobranças no portal. Você também pode copiar e enviar.</p>
+                <img
+                    v-if="chargeTarget.charge.pix_encoded_image"
+                    :src="`data:image/png;base64,${chargeTarget.charge.pix_encoded_image}`"
+                    alt="QR Code Pix"
+                    class="mx-auto h-44 w-44 rounded-lg border border-slate-200 bg-white p-2"
+                />
+                <p v-if="chargeTarget.charge.pix_payload" class="break-all rounded-lg bg-slate-50 p-3 font-mono text-xs text-slate-700">{{ chargeTarget.charge.pix_payload }}</p>
+                <p v-if="chargeTarget.charge.identification_field" class="text-sm text-slate-700">Linha digitável: {{ chargeTarget.charge.identification_field }}</p>
+            </div>
+            <template #footer>
+                <Button v-if="chargeTarget.charge.pix_payload" variant="secondary" @click="copyText(chargeTarget.charge.pix_payload)">Copiar Pix</Button>
+                <Button v-if="chargeTarget.charge.invoice_url || chargeTarget.charge.bank_slip_url" variant="secondary" @click="window.open(chargeTarget.charge.invoice_url || chargeTarget.charge.bank_slip_url, '_blank')">Abrir link</Button>
+                <Button @click="chargeModalOpen = false">Fechar</Button>
             </template>
         </Modal>
     </AppLayout>

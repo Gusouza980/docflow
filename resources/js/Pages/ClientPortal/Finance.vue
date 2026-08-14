@@ -17,12 +17,23 @@ const props = defineProps({
 
 const selectedReceivable = ref(null);
 const detailOpen = ref(false);
+const copied = ref(false);
 
 const money = (cents) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format((cents ?? 0) / 100);
 
 function openDetail(receivable) {
     selectedReceivable.value = receivable;
     detailOpen.value = true;
+    copied.value = false;
+}
+
+async function copyPix(payload) {
+    if (!payload || !navigator.clipboard) {
+        return;
+    }
+
+    await navigator.clipboard.writeText(payload);
+    copied.value = true;
 }
 
 function openPaymentUrl(url) {
@@ -53,7 +64,7 @@ const sortedReceivables = computed(() => [...props.receivables].sort((left, righ
     <Head title="Cobranças · Portal" />
     <ClientPortalLayout title="Cobranças" active-nav="more">
         <div class="grid gap-4">
-            <p class="text-sm text-slate-600">Consulte cobranças liberadas pelo escritório e siga as instruções de pagamento abaixo.</p>
+            <p class="text-sm text-slate-600">Pague com Pix ou boleto quando o escritório gerar a cobrança. Sem link, use as instruções abaixo.</p>
 
             <div class="grid gap-3 sm:grid-cols-3">
                 <Card title="Total em aberto"><p class="text-2xl font-semibold text-slate-950">{{ money(summary.open_balance_cents) }}</p></Card>
@@ -87,7 +98,8 @@ const sortedReceivables = computed(() => [...props.receivables].sort((left, righ
                             <p class="text-2xl font-semibold" :class="receivable.is_overdue ? 'text-red-700' : 'text-slate-950'">{{ money(receivable.balance_cents) }}</p>
                             <p class="mt-1 text-sm text-slate-500">Total: {{ money(receivable.amount_cents) }} · Pago: {{ money(receivable.paid_amount_cents) }}</p>
                         </div>
-                        <Button size="sm" variant="secondary" @click="openDetail(receivable)">Ver cobrança</Button>
+                        <Button v-if="receivable.can_pay" size="sm" @click="openDetail(receivable)">Pagar agora</Button>
+                        <Button v-else size="sm" variant="secondary" @click="openDetail(receivable)">Ver cobrança</Button>
                     </div>
                 </article>
             </div>
@@ -104,11 +116,31 @@ const sortedReceivables = computed(() => [...props.receivables].sort((left, righ
                 <div class="flex justify-between gap-3"><dt class="text-slate-500">Saldo em aberto</dt><dd class="font-semibold text-slate-950">{{ money(selectedReceivable.balance_cents) }}</dd></div>
                 <div v-if="selectedReceivable.payment_reference" class="flex justify-between gap-3"><dt class="text-slate-500">Referência</dt><dd class="font-medium text-slate-950">{{ selectedReceivable.payment_reference }}</dd></div>
                 <div v-if="selectedReceivable.notes" class="grid gap-1"><dt class="text-slate-500">Observações</dt><dd class="text-slate-700">{{ selectedReceivable.notes }}</dd></div>
+                <div v-if="selectedReceivable.charge && selectedReceivable.can_pay" class="grid gap-3 rounded-lg border border-violet-100 bg-violet-50/60 p-3">
+                    <p class="font-medium text-slate-800">Pagar agora</p>
+                    <img
+                        v-if="selectedReceivable.charge.pix_encoded_image"
+                        :src="`data:image/png;base64,${selectedReceivable.charge.pix_encoded_image}`"
+                        alt="QR Code Pix"
+                        class="mx-auto h-44 w-44 rounded-lg border border-slate-200 bg-white p-2"
+                    />
+                    <p v-if="selectedReceivable.charge.pix_payload" class="break-all font-mono text-xs text-slate-700">{{ selectedReceivable.charge.pix_payload }}</p>
+                    <p v-if="selectedReceivable.charge.identification_field" class="text-sm text-slate-700">Boleto: {{ selectedReceivable.charge.identification_field }}</p>
+                </div>
                 <div v-if="payment_instructions" class="grid gap-1 rounded-lg bg-slate-50 p-3"><dt class="font-medium text-slate-700">Como pagar</dt><dd class="whitespace-pre-wrap text-slate-700">{{ payment_instructions }}</dd></div>
             </dl>
             <template #footer>
-                <Button v-if="selectedReceivable.payment_url" variant="secondary" @click="openPaymentUrl(selectedReceivable.payment_url)">Abrir link de pagamento</Button>
-                <Button @click="detailOpen = false">Fechar</Button>
+                <Button v-if="selectedReceivable.charge?.pix_payload && selectedReceivable.can_pay" @click="copyPix(selectedReceivable.charge.pix_payload)">
+                    {{ copied ? 'Código copiado' : 'Copiar código Pix' }}
+                </Button>
+                <Button
+                    v-if="selectedReceivable.charge?.bank_slip_url || selectedReceivable.payment_url"
+                    variant="secondary"
+                    @click="openPaymentUrl(selectedReceivable.charge?.bank_slip_url || selectedReceivable.payment_url)"
+                >
+                    {{ selectedReceivable.charge?.bank_slip_url ? 'Abrir boleto' : 'Abrir link de pagamento' }}
+                </Button>
+                <Button variant="secondary" @click="detailOpen = false">Fechar</Button>
             </template>
         </Modal>
     </ClientPortalLayout>

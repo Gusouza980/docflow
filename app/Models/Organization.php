@@ -133,6 +133,11 @@ class Organization extends Model
         return $this->hasMany(SubscriptionInvoice::class);
     }
 
+    public function paymentGateway(): HasOne
+    {
+        return $this->hasOne(OrganizationPaymentGateway::class);
+    }
+
     public function isOperational(): bool
     {
         return $this->status === self::STATUS_ACTIVE;

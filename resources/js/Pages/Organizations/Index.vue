@@ -44,6 +44,33 @@ const editForm = useForm({
     payment_instructions: '',
 });
 
+const gatewayForm = useForm({
+    api_key: '',
+    webhook_token: '',
+});
+
+const activeOrganization = computed(() => props.organizations.find((organization) => organization.active));
+
+async function copyWebhookUrl() {
+    const url = activeOrganization.value?.payment_gateway?.webhook_url;
+    if (!url || !navigator.clipboard) {
+        return;
+    }
+
+    await navigator.clipboard.writeText(url);
+}
+
+function savePaymentGateway() {
+    if (!activeOrganization.value) {
+        return;
+    }
+
+    gatewayForm.put(`/organizations/${activeOrganization.value.id}/payment-gateway`, {
+        preserveScroll: true,
+        onSuccess: () => gatewayForm.reset(),
+    });
+}
+
 const selectedOrganization = computed(() => props.organizations.find((organization) => organization.id === editingOrganizationId.value));
 
 watch(selectedOrganization, (organization) => {
@@ -164,6 +191,54 @@ function updateOrganization() {
                     </div>
                 </template>
             </DataTable>
+
+            <div
+                v-if="activeOrganization?.can_update"
+                class="rounded-lg border border-slate-200 bg-white p-5"
+            >
+                <div class="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                        <h2 class="text-base font-semibold text-slate-950">Cobrança no portal (Asaas)</h2>
+                        <p class="mt-1 max-w-2xl text-sm leading-6 text-slate-600">
+                            Use a chave da <strong>conta Asaas do escritório</strong>, não a do Docflow.
+                            Depois, gere o Pix em Financeiro — o cliente paga em Cobranças no portal.
+                        </p>
+                    </div>
+                    <span
+                        class="rounded-full px-2.5 py-1 text-xs font-semibold"
+                        :class="activeOrganization.payment_gateway?.connected ? 'bg-emerald-50 text-emerald-800' : 'bg-slate-100 text-slate-600'"
+                    >
+                        {{ activeOrganization.payment_gateway?.connected ? 'Conectado' : 'Não conectado' }}
+                    </span>
+                </div>
+                <form class="mt-4 grid gap-4 md:grid-cols-2" @submit.prevent="savePaymentGateway">
+                    <TextInput
+                        id="asaas-api-key"
+                        v-model="gatewayForm.api_key"
+                        label="Chave de API"
+                        :placeholder="activeOrganization.payment_gateway?.masked_api_key || '$aact_...'"
+                        :error="gatewayForm.errors.api_key"
+                    />
+                    <TextInput
+                        id="asaas-webhook-token"
+                        v-model="gatewayForm.webhook_token"
+                        label="Token do webhook"
+                        placeholder="O mesmo token configurado no Asaas"
+                        :error="gatewayForm.errors.webhook_token"
+                    />
+                    <div class="md:col-span-2">
+                        <p class="text-xs font-medium uppercase tracking-wide text-slate-500">URL do webhook</p>
+                        <div class="mt-1 flex flex-wrap items-center gap-2">
+                            <code class="break-all text-xs text-violet-700">{{ activeOrganization.payment_gateway?.webhook_url }}</code>
+                            <Button type="button" size="sm" variant="secondary" @click="copyWebhookUrl">Copiar URL</Button>
+                        </div>
+                        <p class="mt-2 text-xs text-slate-500">No Asaas, cadastre esta URL e o token acima. Eventos: pagamento confirmado / recebido.</p>
+                    </div>
+                    <div>
+                        <Button type="submit" :loading="gatewayForm.processing">Salvar Asaas</Button>
+                    </div>
+                </form>
+            </div>
         </div>
 
         <Modal open title="Nova organização" description="Crie um novo workspace e torne-o ativo para sua sessão." @close="closeCreateModal" v-if="createModalOpen">

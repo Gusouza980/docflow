@@ -47,6 +47,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->validateCsrfTokens(except: [
             'webhooks/billing/*',
+            'webhooks/tenant/asaas/*',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

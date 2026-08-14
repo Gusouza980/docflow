@@ -47,6 +47,7 @@ class Client extends Model
         'type',
         'display_name',
         'document_number',
+        'asaas_customer_id',
         'status',
         'priority',
         'risk_level',

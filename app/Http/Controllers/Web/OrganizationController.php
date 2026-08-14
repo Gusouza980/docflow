@@ -27,6 +27,7 @@ class OrganizationController extends Controller
             ->whereHas('members', fn ($query) => $query
                 ->whereBelongsTo($request->user())
                 ->where('status', OrganizationMember::STATUS_ACTIVE))
+            ->with('paymentGateway')
             ->withCount([
                 'members',
                 'invitations as pending_invitations_count' => fn ($query) => $query->where('status', OrganizationInvitation::STATUS_PENDING),
@@ -46,6 +47,17 @@ class OrganizationController extends Controller
                 'pending_invitations_count' => $organization->pending_invitations_count,
                 'active' => $activeMembership?->organization_id === $organization->id,
                 'can_update' => $request->user()->can('update', $organization),
+                'payment_gateway' => $organization->paymentGateway
+                    ? [
+                        'connected' => $organization->paymentGateway->isReady(),
+                        'masked_api_key' => $organization->paymentGateway->maskedApiKey(),
+                        'webhook_url' => url('/webhooks/tenant/asaas/'.$organization->id),
+                    ]
+                    : [
+                        'connected' => false,
+                        'masked_api_key' => null,
+                        'webhook_url' => url('/webhooks/tenant/asaas/'.$organization->id),
+                    ],
             ]);
 
         return Inertia::render('Organizations/Index', [

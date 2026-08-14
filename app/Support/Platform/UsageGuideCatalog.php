@@ -437,7 +437,8 @@ class UsageGuideCatalog
                 [
                     'heading' => 'Página',
                     'pages' => [
-                        ['path' => '/finance', 'name' => 'Financeiro', 'notes' => 'Receivables, recorrências, payments, payables, categorias'],
+                        ['path' => '/finance', 'name' => 'Financeiro', 'notes' => 'Receivables, recorrências, Pix/boleto, payments, payables'],
+                        ['path' => '/organizations', 'name' => 'Organizações', 'notes' => 'Admin conecta o Asaas do escritório'],
                         ['path' => '/contracts/{id}', 'name' => 'Contrato', 'notes' => 'Pode gerar/pausar a recorrência ligada'],
                     ],
                 ],
@@ -447,6 +448,9 @@ class UsageGuideCatalog
                         'Criar cobrança avulsa (receivable) vinculada a cliente.',
                         'Ou cadastrar recorrência em `/finance`, ou marcar “Gerar mensalidade no financeiro” no contrato mensal/anual ativo.',
                         'O scheduler `finance:generate-recurring-receivables` materializa as faturas no vencimento — o cadastro da recorrência não emite a primeira na hora.',
+                        'Admin conecta o Asaas do escritório em `/organizations` (chave + token de webhook). Não usar a chave SaaS do Docflow.',
+                        'Em `/finance`, clique em “Gerar Pix” na cobrança aberta (ação explícita).',
+                        'O cliente paga no portal; o webhook marca a cobrança como paga. Baixa manual continua como fallback.',
                         'Registrar pagamento total ou parcial.',
                         'Status parcial mantém saldo em aberto nos indicadores.',
                         'Criar despesa (payable) e marcar como paga.',
@@ -466,6 +470,20 @@ class UsageGuideCatalog
                         'Recorrência do escritório não é fatura SaaS (`/platform/invoices` / Asaas da assinatura Docflow).',
                         'Contrato único (`once`) ou valor zero não gera recorrência, mesmo com a flag.',
                         'Uma recorrência por contrato (`contract_id` único); não duplica ao salvar de novo.',
+                    ],
+                ],
+                [
+                    'heading' => 'Pix e boleto no portal',
+                    'steps' => [
+                        'Só admin salva a credencial Asaas (criptografada). Financeiro/gestor só gera a cobrança.',
+                        'Cliente precisa de CPF/CNPJ cadastrado. Sem documento, o sistema recusa com mensagem clara.',
+                        'Uma charge por receivable; gerar de novo reusa a pendente (não duplica no Asaas).',
+                        'Webhook: `POST /webhooks/tenant/asaas/{organization}` — separado de `/webhooks/billing/asaas`.',
+                    ],
+                    'rules' => [
+                        'Dinheiro cai na conta Asaas do tenant, não na do Docflow.',
+                        'O scheduler de recorrência não emite Pix sozinho — só cria a `Receivable`.',
+                        'Sem Asaas conectado, o portal segue só com `payment_instructions`.',
                     ],
                 ],
                 [
@@ -698,7 +716,7 @@ class UsageGuideCatalog
                         'Envia documentos pedidos → equipe aprova/recusa.',
                         'Abre chamado ou mensagem → equipe responde internamente.',
                         'Confirma reunião / atualiza perfil quando habilitado.',
-                        'Consulta cobranças e relatórios mensais liberados.',
+                        'Consulta cobranças: se houver Pix gerado, usa “Pagar agora” (QR + copiar código). Sem charge, segue as instruções de texto.',
                         'Escritório pode revogar o token encerrando o acesso.',
                     ],
                 ],
