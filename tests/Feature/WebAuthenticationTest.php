@@ -37,6 +37,32 @@ class WebAuthenticationTest extends TestCase
         $this->assertAuthenticatedAs($user);
     }
 
+    public function test_login_redirect_uses_https_when_forwarded_by_a_tls_proxy(): void
+    {
+        User::factory()->create([
+            'email' => 'web-user@example.com',
+            'password' => 'password',
+        ]);
+
+        $response = $this->from('https://app.example.test/login')
+            ->withServerVariables([
+                'HTTPS' => 'off',
+                'SERVER_PORT' => '80',
+                'HTTP_HOST' => 'app.example.test',
+                'HTTP_X_FORWARDED_PROTO' => 'https',
+                'HTTP_X_FORWARDED_PORT' => '443',
+                'HTTP_X_FORWARDED_FOR' => '203.0.113.10',
+            ])
+            ->post('/login', [
+                'email' => 'web-user@example.com',
+                'password' => 'password',
+            ]);
+
+        $response->assertRedirect();
+        $this->assertSame('https', parse_url((string) $response->headers->get('Location'), PHP_URL_SCHEME));
+        $this->assertSame('/dashboard', parse_url((string) $response->headers->get('Location'), PHP_URL_PATH));
+    }
+
     public function test_platform_admin_is_redirected_to_platform_after_login(): void
     {
         $admin = User::factory()->create([
