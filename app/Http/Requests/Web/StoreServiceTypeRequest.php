@@ -19,6 +19,18 @@ class StoreServiceTypeRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $this->prepareMoneyFields();
+
+        $raw = $this->input('monthly_document_items');
+
+        if (is_string($raw)) {
+            $this->merge([
+                'monthly_document_items' => collect(preg_split('/\R/', $raw) ?: [])
+                    ->map(fn (string $line): string => trim($line))
+                    ->filter()
+                    ->values()
+                    ->all(),
+            ]);
+        }
     }
 
     /**
@@ -40,6 +52,8 @@ class StoreServiceTypeRequest extends FormRequest
             'is_active' => ['nullable', 'boolean'],
             'default_amount_cents' => ['nullable', 'integer', 'min:0'],
             'default_billing_interval' => ['nullable', 'string', Rule::in(ServiceType::billingIntervals())],
+            'monthly_document_items' => ['nullable', 'array', 'max:20'],
+            'monthly_document_items.*' => ['required', 'string', 'max:255'],
         ];
     }
 }

@@ -26,6 +26,7 @@ class ServiceType extends Model
         'is_active',
         'default_amount_cents',
         'default_billing_interval',
+        'monthly_document_items',
     ];
 
     protected $attributes = [
@@ -37,6 +38,7 @@ class ServiceType extends Model
         return [
             'is_active' => 'boolean',
             'default_amount_cents' => 'integer',
+            'monthly_document_items' => 'array',
         ];
     }
 

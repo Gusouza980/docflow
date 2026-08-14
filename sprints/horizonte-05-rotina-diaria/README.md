@@ -28,7 +28,7 @@ Fechar os buracos do **dia a dia genérico** antes de abrir verticais: contrato 
 | [Sprint 23](../sprint-23-contrato-gera-cobranca/TASKS.md) | Contrato gera cobrança recorrente | 2–3 dias | ✅ |
 | [Sprint 24](../sprint-24-cliente-paga-cobranca/TASKS.md) | Cliente paga (Pix/boleto do tenant) | 5–7 dias | ✅ |
 | [Sprint 25](../sprint-25-comunicacao-real/TASKS.md) | Envio em lote + template + wa.me | 4–6 dias | ✅ |
-| [Sprint 26](../sprint-26-meu-dia-ciclo-mensal/TASKS.md) | Fila “Meu dia” + pacote documental | 4–6 dias | ⬜ |
+| [Sprint 26](../sprint-26-meu-dia-ciclo-mensal/TASKS.md) | Fila “Meu dia” + pacote documental | 4–6 dias | ✅ |
 
 **Total:** ~3–4 semanas (1 dev).
 

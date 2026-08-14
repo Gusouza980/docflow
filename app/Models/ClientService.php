@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ClientService extends Model
 {
@@ -89,5 +90,10 @@ class ClientService extends Model
     public function contracts(): BelongsToMany
     {
         return $this->belongsToMany(Contract::class, 'contract_client_service')->withTimestamps();
+    }
+
+    public function documentRequests(): HasMany
+    {
+        return $this->hasMany(DocumentRequest::class);
     }
 }

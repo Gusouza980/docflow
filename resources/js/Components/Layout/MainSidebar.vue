@@ -11,6 +11,7 @@ const page = usePage();
 
 const items = computed(() => [
     { key: 'dashboard', label: 'Dashboard', icon: '▦', href: '/dashboard' },
+    { key: 'my-day', label: 'Meu dia', icon: '☀', href: '/my-day' },
     { key: 'organizations', label: 'Organizações', icon: '◫', href: '/organizations' },
     { key: 'team', label: 'Equipe', icon: '◎', href: '/team' },
     ...(page.props.auth?.permissions?.can_access_crm ? [

@@ -114,6 +114,7 @@ class UsageGuideCatalog
                     'heading' => 'Mapa rápido de páginas internas',
                     'pages' => [
                         ['path' => '/dashboard', 'name' => 'Dashboard', 'notes' => 'Resultado do período + alertas operacionais'],
+                        ['path' => '/my-day', 'name' => 'Meu dia', 'notes' => 'Fila do membro: tarefas, docs, cobranças, chamados'],
                         ['path' => '/organizations', 'name' => 'Organizações', 'notes' => 'Troca e gestão da org ativa'],
                         ['path' => '/team', 'name' => 'Equipe', 'notes' => 'Membros, convites e papéis'],
                         ['path' => '/leads', 'name' => 'CRM', 'notes' => 'Feature `crm`'],
@@ -363,6 +364,16 @@ class UsageGuideCatalog
                     'pages' => [
                         ['path' => '/documents', 'name' => 'Documentos', 'notes' => 'Upload, versão, validade, visibilidade'],
                         ['path' => '/document-requests', 'name' => 'Solicitações', 'notes' => 'Itens, prazos, aprovação/recusa'],
+                        ['path' => '/service-types', 'name' => 'Tipos de serviço', 'notes' => 'Pacote “pedir todo mês”'],
+                    ],
+                ],
+                [
+                    'heading' => 'Pacote documental mensal',
+                    'bullets' => [
+                        'No tipo de serviço, liste os títulos a pedir todo mês (um por linha).',
+                        'O comando diário `documents:generate-monthly-packages` cria a solicitação no 1º do mês (e nos dias seguintes, se ainda não existir).',
+                        'Só entra serviço ativo cujo tipo está ativo e tem pacote não vazio.',
+                        'A chave `(client_service_id, billing_period)` impede duplicar o mês.',
                     ],
                 ],
                 [
@@ -403,6 +414,7 @@ class UsageGuideCatalog
                 [
                     'heading' => 'Páginas',
                     'pages' => [
+                        ['path' => '/my-day', 'name' => 'Meu dia', 'notes' => 'Fila pessoal do membro'],
                         ['path' => '/tasks', 'name' => 'Tarefas', 'notes' => 'Status, responsável, checklist'],
                         ['path' => '/task-templates', 'name' => 'Modelos', 'notes' => 'Base para onboarding e automações'],
                         ['path' => '/deadlines', 'name' => 'Prazos', 'notes' => 'Revisão obrigatória em alguns fluxos'],
@@ -414,7 +426,8 @@ class UsageGuideCatalog
                     'bullets' => [
                         'Criar tarefa avulsa ou a partir de modelo.',
                         'Concluir só com checklist obrigatório completo.',
-                        'Prazo atrasado aparece no dashboard e alertas.',
+                        'Prazo atrasado aparece no dashboard, no Meu dia e nos alertas.',
+                        'Começar o dia em `/my-day`: tarefas e chamados atribuídos; documentos e cobranças dos clientes visíveis.',
                         'Após reunião, registrar notas e gerar tarefas derivadas.',
                         'Automações podem criar tarefas de template no `client.created`.',
                     ],
@@ -573,7 +586,7 @@ class UsageGuideCatalog
                 [
                     'heading' => 'Fluxo',
                     'steps' => [
-                        'Cadastrar tipos de serviço com defaults (valor/recorrência).',
+                        'Cadastrar tipos de serviço com defaults (valor/recorrência) e, se couber, o pacote “pedir todo mês”.',
                         'Vincular serviços ao cliente.',
                         'Criar contrato com código, valor, intervalo (`month|year|once`), vigência e escopo.',
                         'Associar serviços ao contrato quando fizer sentido.',
@@ -608,6 +621,14 @@ class UsageGuideCatalog
                         'Listagens respeitam `clientQuery` (cliente restrito).',
                         'MRR: mensal = valor; anual = valor/12; único não entra no MRR.',
                         'Contratos a vencer alimentam alerta e automação `contract.expiring`.',
+                    ],
+                ],
+                [
+                    'heading' => 'Pacote documental mensal',
+                    'bullets' => [
+                        'Campo “Pedir todo mês” no tipo de serviço (lista de títulos).',
+                        'Clientes com o serviço ativo recebem uma solicitação por mês via `documents:generate-monthly-packages`.',
+                        'Segunda execução no mesmo mês não duplica (`billing_period` = 1º do mês).',
                     ],
                 ],
             ],
@@ -786,7 +807,8 @@ class UsageGuideCatalog
                 [
                     'heading' => 'Rotina diária sugerida',
                     'steps' => [
-                        'Abrir dashboard e tratar alertas vermelhos.',
+                        'Abrir `/my-day` e tratar atrasados (tarefas, docs, cobranças, chamados).',
+                        'Abrir dashboard e tratar alertas vermelhos da organização.',
                         'Olhar valor em risco de contratos e cobranças vencidas.',
                         'Executar tarefas/documentos do dia.',
                         'Responder portal (mensagens/chamados).',

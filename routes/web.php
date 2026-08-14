@@ -32,6 +32,7 @@ use App\Http\Controllers\Web\InternalNotificationController;
 use App\Http\Controllers\Web\LeadController;
 use App\Http\Controllers\Web\MessageBatchController;
 use App\Http\Controllers\Web\MessageTemplateController;
+use App\Http\Controllers\Web\MyDayController;
 use App\Http\Controllers\Web\OnboardingTemplateController;
 use App\Http\Controllers\Web\OrganizationBillingController;
 use App\Http\Controllers\Web\OrganizationController;
@@ -182,6 +183,7 @@ Route::middleware('auth')->group(function (): void {
 
     Route::middleware('org.accessible')->group(function (): void {
         Route::get('/dashboard', DashboardController::class)->name('dashboard');
+        Route::get('/my-day', MyDayController::class)->name('my-day');
         Route::get('/notifications', [InternalNotificationController::class, 'index'])->name('notifications.index');
         Route::get('/notifications/unread-count', [InternalNotificationController::class, 'unreadCount'])->name('notifications.unread-count');
         Route::patch('/notifications/{reminder}/read', [InternalNotificationController::class, 'markRead'])->name('notifications.read');

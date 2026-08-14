@@ -119,4 +119,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $schedule->command('automations:dispatch-due')
             ->dailyAt('07:30')
             ->withoutOverlapping();
+
+        $schedule->command('documents:generate-monthly-packages')
+            ->dailyAt('07:45')
+            ->withoutOverlapping();
     })->create();

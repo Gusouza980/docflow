@@ -38,6 +38,8 @@ class ServiceTypeController extends Controller
                 'default_amount_cents' => $type->default_amount_cents,
                 'default_billing_interval' => $type->default_billing_interval,
                 'default_billing_interval_label' => ServiceType::billingIntervalLabels()[$type->default_billing_interval] ?? null,
+                'monthly_document_items' => $type->monthly_document_items ?? [],
+                'monthly_document_items_text' => implode("\n", $type->monthly_document_items ?? []),
             ]);
 
         return Inertia::render('ServiceTypes/Index', [
@@ -71,6 +73,7 @@ class ServiceTypeController extends Controller
             'is_active' => $data['is_active'] ?? true,
             'default_amount_cents' => $data['default_amount_cents'] ?? null,
             'default_billing_interval' => $data['default_billing_interval'] ?? null,
+            'monthly_document_items' => $data['monthly_document_items'] ?? [],
         ]);
 
         $auditLog->execute('web.service_type.created', $request->user(), $membership->organization, $type, request: $request);
@@ -97,6 +100,7 @@ class ServiceTypeController extends Controller
             'is_active' => $data['is_active'] ?? $serviceType->is_active,
             'default_amount_cents' => $data['default_amount_cents'] ?? null,
             'default_billing_interval' => $data['default_billing_interval'] ?? null,
+            'monthly_document_items' => $data['monthly_document_items'] ?? [],
         ]);
 
         $auditLog->execute('web.service_type.updated', $request->user(), $membership->organization, $serviceType, request: $request);
