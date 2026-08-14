@@ -19,9 +19,12 @@ use App\Models\Ticket;
 use App\Models\TicketMessage;
 use App\Models\TicketMessageAttachment;
 use App\Models\TicketPortalRead;
+use App\Support\Communication\WhatsAppLink;
 
 class BuildsClientPortalDashboard
 {
+    public function __construct(private WhatsAppLink $whatsAppLink) {}
+
     /**
      * @return array<string, mixed>
      */
@@ -419,7 +422,8 @@ class BuildsClientPortalDashboard
             ->where(function ($query) use ($access): void {
                 $query->where(function ($query): void {
                     $query->where('direction', ClientMessage::DIRECTION_OUTBOUND)
-                        ->where('channel', 'portal');
+                        ->where('channel', 'portal')
+                        ->where('status', ClientMessage::STATUS_SENT);
                 })->orWhere('client_portal_access_id', $access->id);
             })
             ->when($sinceId, fn ($query) => $query->where('id', '>', $sinceId))
@@ -436,6 +440,8 @@ class BuildsClientPortalDashboard
      */
     public function messagesForClient(Client $client, ?int $sinceId = null): array
     {
+        $client->loadMissing('contacts');
+
         return $client->messages()
             ->with(['sentBy', 'portalAccess'])
             ->when($sinceId, fn ($query) => $query->where('id', '>', $sinceId))
@@ -446,6 +452,7 @@ class BuildsClientPortalDashboard
                 'id' => $message->id,
                 'direction' => $message->direction,
                 'channel' => $message->channel,
+                'status' => $message->status,
                 'subject' => $message->subject,
                 'body' => $message->body,
                 'created_at' => $message->created_at?->toISOString(),
@@ -454,6 +461,12 @@ class BuildsClientPortalDashboard
                     : ($message->external_name ?? $message->portalAccess?->name ?? 'Cliente'),
                 'can_open_ticket' => $message->direction === ClientMessage::DIRECTION_INBOUND
                     && ! $message->ticket_id,
+                'whatsapp_url' => $message->channel === 'whatsapp'
+                    ? $this->whatsAppLink->forClient($client, $message->body)
+                    : null,
+                'can_open_whatsapp' => $message->channel === 'whatsapp'
+                    && $message->direction === ClientMessage::DIRECTION_OUTBOUND
+                    && $message->status === ClientMessage::STATUS_REGISTERED,
             ])
             ->values()
             ->all();

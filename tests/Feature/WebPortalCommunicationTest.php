@@ -82,6 +82,12 @@ class WebPortalCommunicationTest extends TestCase
             'purpose' => 'billing',
             'body' => 'Olá {{client_name}}',
         ]);
+        ClientContact::factory()->create([
+            'organization_id' => $organization->id,
+            'client_id' => $client->id,
+            'email' => 'contato@example.com',
+            'is_primary' => true,
+        ]);
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])

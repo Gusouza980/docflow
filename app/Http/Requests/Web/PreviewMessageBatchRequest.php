@@ -2,11 +2,11 @@
 
 namespace App\Http\Requests\Web;
 
-use App\Automations\AutomationPresets;
+use App\Models\MessageBatch;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class StoreAutomationRuleRequest extends FormRequest
+class PreviewMessageBatchRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -19,11 +19,10 @@ class StoreAutomationRuleRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'preset_key' => ['required', 'string', Rule::in(array_keys(AutomationPresets::all()))],
-            'name' => ['nullable', 'string', 'max:255'],
-            'task_template_id' => ['nullable', 'integer', 'exists:task_templates,id'],
+            'filter' => ['nullable', 'string', Rule::in(MessageBatch::filters())],
             'message_template_id' => ['nullable', 'integer', 'exists:message_templates,id'],
-            'is_active' => ['nullable', 'boolean'],
+            'client_ids' => ['nullable', 'array', 'max:100'],
+            'client_ids.*' => ['integer'],
         ];
     }
 }

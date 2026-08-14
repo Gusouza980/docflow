@@ -29,6 +29,8 @@ class AutomationRule extends Model
 
     public const ACTION_NOTIFY_ORGANIZATION_MEMBERS = 'notify_organization_members';
 
+    public const ACTION_SEND_MESSAGE_TEMPLATE = 'send_message_template';
+
     protected $fillable = [
         'organization_id',
         'name',

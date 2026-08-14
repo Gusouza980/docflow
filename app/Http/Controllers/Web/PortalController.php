@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Web;
 
-use App\Actions\Notifications\NotifyPortalClient;
+use App\Actions\Communication\DeliverOutboundClientMessage;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Web\StorePortalAccessRequest;
 use App\Http\Requests\Web\StorePortalMessageRequest;
@@ -15,6 +15,7 @@ use App\Models\MessageTemplate;
 use App\Models\OrganizationMember;
 use App\Models\Ticket;
 use App\Support\Billing\PlanLimitChecker;
+use App\Support\Communication\ClientMessageDestination;
 use App\Support\DisplayFormat;
 use App\Support\WebOrganizationContext;
 use Illuminate\Http\RedirectResponse;
@@ -27,7 +28,10 @@ use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 class PortalController extends Controller
 {
-    public function __construct(private NotifyPortalClient $notifyPortalClient) {}
+    public function __construct(
+        private DeliverOutboundClientMessage $deliverOutboundClientMessage,
+        private ClientMessageDestination $destination,
+    ) {}
 
     public function index(Request $request, WebOrganizationContext $webOrganizationContext): Response|RedirectResponse
     {
@@ -149,27 +153,32 @@ class PortalController extends Controller
             ? MessageTemplate::whereBelongsTo($membership->organization)->findOrFail($data['message_template_id'])
             : null;
 
-        if (! $this->hasConsent($client, $data['channel'], $template?->purpose ?? 'general')) {
-            return redirect()->route('portal.index')->with('error', 'Consentimento ativo é obrigatório para este canal.');
+        $purpose = $template?->purpose ?? 'general';
+        $reason = $this->destination->skipReason($client, $data['channel'], $purpose);
+
+        if ($reason !== null) {
+            return redirect()->route('portal.index')->with('error', match ($reason) {
+                'Sem consentimento para este canal' => 'Consentimento ativo é obrigatório para este canal.',
+                'Sem e-mail no contato' => 'Cadastre um e-mail no contato do cliente.',
+                'Sem WhatsApp no contato' => 'Cadastre o WhatsApp no contato do cliente.',
+                default => $reason,
+            });
         }
 
-        $message = DB::transaction(function () use ($request, $membership, $data, $client, $template): ClientMessage {
-            $message = ClientMessage::create([
-                'organization_id' => $membership->organization_id,
-                'client_id' => $client->id,
-                'message_template_id' => $template?->id,
-                'sent_by_user_id' => $request->user()->id,
-                'channel' => $data['channel'],
-                'direction' => ClientMessage::DIRECTION_OUTBOUND,
-                'status' => ClientMessage::STATUS_SENT,
-                'subject' => $data['subject'] ?? $template?->subject,
-                'body' => $data['body'] ?? $template?->renderBody(['client_name' => $client->display_name]),
-                'sent_at' => now(),
-            ]);
+        $message = DB::transaction(function () use ($request, $data, $client, $template): ClientMessage {
+            $message = $this->deliverOutboundClientMessage->queue(
+                client: $client,
+                channel: $data['channel'],
+                body: $data['body'] ?? '',
+                subject: $data['subject'] ?? $template?->subject,
+                template: $template,
+                sentBy: $request->user(),
+                variables: $this->destination->variablesFor($client),
+            );
 
             if ($request->boolean('create_ticket')) {
                 $ticket = Ticket::create([
-                    'organization_id' => $membership->organization_id,
+                    'organization_id' => $client->organization_id,
                     'client_id' => $client->id,
                     'opened_by_user_id' => $request->user()->id,
                     'source_message_id' => $message->id,
@@ -183,16 +192,9 @@ class PortalController extends Controller
             return $message;
         });
 
-        if ($data['channel'] === 'portal') {
-            $this->notifyPortalClient->execute(
-                $client,
-                'Nova mensagem do escritório',
-                str($message->body)->limit(200)->toString(),
-                route('client-portal.messages', absolute: true),
-            );
-        }
-
-        return redirect()->route('portal.index')->with('status', 'Mensagem registrada.');
+        return redirect()->route('portal.index')->with('status', $message->channel === MessageTemplate::CHANNEL_WHATSAPP
+            ? 'Mensagem pronta. Abra o WhatsApp para enviar.'
+            : 'Mensagem enviada.');
     }
 
     public function storeTicket(StorePortalTicketRequest $request, WebOrganizationContext $webOrganizationContext): RedirectResponse
@@ -225,16 +227,6 @@ class PortalController extends Controller
     private function client(int|string $clientId, OrganizationMember $membership): Client
     {
         return Client::query()->whereBelongsTo($membership->organization)->findOrFail($clientId);
-    }
-
-    private function hasConsent(Client $client, string $channel, string $purpose): bool
-    {
-        return CommunicationConsent::query()
-            ->whereBelongsTo($client)
-            ->where('channel', $channel)
-            ->whereIn('purpose', [$purpose, 'general'])
-            ->where('status', CommunicationConsent::STATUS_GRANTED)
-            ->exists();
     }
 
     private function accessSummary(ClientPortalAccess $access): array
