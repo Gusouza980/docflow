@@ -10,6 +10,10 @@ use InvalidArgumentException;
 
 class CreateContract
 {
+    public function __construct(
+        private SyncContractReceivableRecurrence $syncContractReceivableRecurrence,
+    ) {}
+
     /**
      * @param  array{
      *     code: string,
@@ -21,7 +25,9 @@ class CreateContract
      *     auto_renew?: bool,
      *     scope_included?: ?string,
      *     scope_excluded?: ?string,
-     *     client_service_ids?: list<int>
+     *     client_service_ids?: list<int>,
+     *     create_receivable_recurrence?: bool,
+     *     created_by_user_id?: int
      * }  $data
      */
     public function execute(Client $client, array $data): Contract
@@ -58,7 +64,11 @@ class CreateContract
                 $contract->clientServices()->sync($validIds);
             }
 
-            return $contract->fresh(['client', 'clientServices.serviceType']);
+            if (($data['create_receivable_recurrence'] ?? false) === true && isset($data['created_by_user_id'])) {
+                $this->syncContractReceivableRecurrence->createFromContract($contract, (int) $data['created_by_user_id']);
+            }
+
+            return $contract->fresh(['client', 'clientServices.serviceType', 'receivableRecurrence']);
         });
     }
 }

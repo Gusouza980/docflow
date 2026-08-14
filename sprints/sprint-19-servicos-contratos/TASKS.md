@@ -55,7 +55,7 @@ Permitir que o escritório mantenha um **catálogo de tipos de serviço**, vincu
 
 - [x] `UpsertClientService` (store de tipo via controller).
 - [x] `CreateContract`, `RenewContract`, `CancelContract`.
-- [ ] (Opcional MVP+) Ao ativar contrato recorrente, sugerir/criar `ReceivableRecurrence` — flag explícita na UI.
+- [x] (Opcional MVP+) Ao ativar contrato recorrente, sugerir/criar `ReceivableRecurrence` — movido para [Sprint 23](../sprint-23-contrato-gera-cobranca/TASKS.md).
 
 ### Controllers / UI
 

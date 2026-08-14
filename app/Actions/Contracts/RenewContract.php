@@ -4,12 +4,21 @@ namespace App\Actions\Contracts;
 
 use App\Models\Contract;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
 class RenewContract
 {
-    public function execute(Contract $contract, ?Carbon $newEndsAt = null): Contract
-    {
+    public function __construct(
+        private SyncContractReceivableRecurrence $syncContractReceivableRecurrence,
+    ) {}
+
+    public function execute(
+        Contract $contract,
+        ?Carbon $newEndsAt = null,
+        bool $createReceivableRecurrence = false,
+        ?int $createdByUserId = null,
+    ): Contract {
         if (! in_array($contract->status, [Contract::STATUS_ACTIVE, Contract::STATUS_EXPIRED], true)) {
             throw new InvalidArgumentException('Somente contratos ativos ou expirados podem ser renovados.');
         }
@@ -34,13 +43,25 @@ class RenewContract
             throw new InvalidArgumentException('A nova vigência deve ser posterior ao término atual.');
         }
 
-        $contract->update([
-            'ends_at' => $base->toDateString(),
-            'status' => Contract::STATUS_ACTIVE,
-            'canceled_at' => null,
-            'cancel_reason' => null,
-        ]);
+        return DB::transaction(function () use ($contract, $base, $createdByUserId, $createReceivableRecurrence): Contract {
+            $contract->update([
+                'ends_at' => $base->toDateString(),
+                'status' => Contract::STATUS_ACTIVE,
+                'canceled_at' => null,
+                'cancel_reason' => null,
+            ]);
 
-        return $contract->fresh(['client', 'clientServices.serviceType']);
+            $contract = $contract->fresh(['client', 'clientServices.serviceType']);
+
+            if ($createdByUserId !== null) {
+                $this->syncContractReceivableRecurrence->syncOnRenew(
+                    $contract,
+                    $createdByUserId,
+                    $createReceivableRecurrence,
+                );
+            }
+
+            return $contract->fresh(['client', 'clientServices.serviceType', 'receivableRecurrence']);
+        });
     }
 }

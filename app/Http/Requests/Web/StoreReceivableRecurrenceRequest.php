@@ -45,7 +45,10 @@ class StoreReceivableRecurrenceRequest extends FormRequest
             'start_date' => ['required', 'date'],
             'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
             'next_due_date' => ['nullable', 'date', 'after_or_equal:start_date'],
-            'frequency' => ['required', 'string', Rule::in([ReceivableRecurrence::FREQUENCY_MONTHLY])],
+            'frequency' => ['required', 'string', Rule::in([
+                ReceivableRecurrence::FREQUENCY_MONTHLY,
+                ReceivableRecurrence::FREQUENCY_YEARLY,
+            ])],
             'is_active' => ['boolean'],
             'notes' => ['nullable', 'string'],
         ];

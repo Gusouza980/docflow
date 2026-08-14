@@ -6,6 +6,7 @@ import Card from '../../Components/UI/Card.vue';
 import Button from '../../Components/UI/Button.vue';
 import Badge from '../../Components/UI/Badge.vue';
 import TextInput from '../../Components/Forms/TextInput.vue';
+import CheckboxInput from '../../Components/Forms/CheckboxInput.vue';
 
 const props = defineProps({
     contract: { type: Object, required: true },
@@ -16,6 +17,7 @@ const page = usePage();
 
 const renewForm = useForm({
     ends_at: '',
+    create_receivable_recurrence: false,
 });
 
 const cancelForm = useForm({
@@ -87,11 +89,31 @@ function cancel() {
                 </Card>
             </div>
 
+            <Card title="Cobrança recorrente">
+                <div v-if="contract.receivable_recurrence" class="grid gap-1 text-sm text-slate-700">
+                    <p>
+                        {{ money(contract.receivable_recurrence.amount_cents) }}
+                        · {{ contract.receivable_recurrence.frequency === 'yearly' ? 'Anual' : 'Mensal' }}
+                        · {{ contract.receivable_recurrence.is_active ? 'Ativa' : 'Pausada' }}
+                    </p>
+                    <p v-if="contract.receivable_recurrence.end_date" class="text-xs text-slate-500">
+                        Até {{ contract.receivable_recurrence.end_date }}
+                    </p>
+                    <Link :href="contract.receivable_recurrence.href" class="mt-2 text-sm font-semibold underline">Abrir financeiro</Link>
+                </div>
+                <p v-else class="text-sm text-slate-500">Nenhuma mensalidade vinculada a este contrato.</p>
+            </Card>
+
             <Card v-if="can.manage && contract.status !== 'canceled'" title="Ações">
                 <div class="grid gap-4 lg:grid-cols-2">
                     <form class="grid gap-3" @submit.prevent="renew">
                         <p class="text-sm font-semibold text-slate-900">Renovar</p>
                         <TextInput id="renew-ends-at" v-model="renewForm.ends_at" type="date" label="Nova data de término (opcional)" :error="renewForm.errors.ends_at" />
+                        <CheckboxInput
+                            v-if="!contract.receivable_recurrence && ['month', 'year'].includes(contract.billing_interval)"
+                            v-model="renewForm.create_receivable_recurrence"
+                            label="Gerar mensalidade no financeiro"
+                        />
                         <Button type="submit" size="sm" :disabled="renewForm.processing">Renovar contrato</Button>
                     </form>
                     <form class="grid gap-3" @submit.prevent="cancel">

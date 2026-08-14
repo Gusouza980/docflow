@@ -18,6 +18,7 @@ class RenewContractRequest extends FormRequest
     {
         return [
             'ends_at' => ['nullable', 'date', 'after:today'],
+            'create_receivable_recurrence' => ['sometimes', 'boolean'],
         ];
     }
 }
