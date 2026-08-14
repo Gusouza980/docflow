@@ -49,7 +49,7 @@ class GenerateMonthlyDocumentPackages
         }
 
         return DB::transaction(function () use ($service, $billingPeriod, $items): ?DocumentRequest {
-            if (DocumentRequest::query()
+            if (DocumentRequest::withTrashed()
                 ->where('client_service_id', $service->id)
                 ->whereDate('billing_period', $billingPeriod)
                 ->exists()) {

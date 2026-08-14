@@ -56,7 +56,7 @@ class BuildsMyDayPayload
             ->where('organization_id', $membership->organization_id)
             ->where('assigned_to_member_id', $membership->id)
             ->whereNotIn('status', [Task::STATUS_COMPLETED, Task::STATUS_CANCELLED])
-            ->where(fn (Builder $query) => $this->visibleClients($query, $membership, 'client_id'))
+            ->where(fn (Builder $query) => $this->visibleClients($query, $membership, 'client_id', allowMissingClient: true))
             ->orderByRaw('case when due_at is not null and due_at < ? then 0 else 1 end', [now()->toDateString()])
             ->orderBy('due_at')
             ->limit(20)
@@ -155,7 +155,7 @@ class BuildsMyDayPayload
             ->all();
     }
 
-    private function visibleClients(Builder $query, OrganizationMember $membership, string $column): Builder
+    private function visibleClients(Builder $query, OrganizationMember $membership, string $column, bool $allowMissingClient = false): Builder
     {
         if ($membership->isAdmin() || $membership->isManager()) {
             return $query;
@@ -170,7 +170,13 @@ class BuildsMyDayPayload
             })
             ->pluck('id');
 
-        return $query->whereIn($column, $clientIds);
+        if (! $allowMissingClient) {
+            return $query->whereIn($column, $clientIds);
+        }
+
+        return $query->where(function (Builder $scoped) use ($column, $clientIds): void {
+            $scoped->whereIn($column, $clientIds)->orWhereNull($column);
+        });
     }
 
     /**

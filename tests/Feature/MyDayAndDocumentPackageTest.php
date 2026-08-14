@@ -290,6 +290,54 @@ class MyDayAndDocumentPackageTest extends TestCase
         $this->assertDatabaseCount('document_request_items', 2);
     }
 
+    public function test_my_day_includes_internal_task_without_client(): void
+    {
+        [$user, $organization, $member] = $this->createContext(OrganizationMember::ROLE_PROFESSIONAL);
+
+        Task::factory()->create([
+            'organization_id' => $organization->id,
+            'client_id' => null,
+            'assigned_to_member_id' => $member->id,
+            'created_by_user_id' => $user->id,
+            'title' => 'Organizar pasta interna',
+            'status' => Task::STATUS_PENDING,
+        ]);
+
+        $this->actingAs($user)
+            ->withSession(['active_organization_id' => $organization->id])
+            ->get('/my-day')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('counts.tasks', 1)
+                ->where('sections.0.items.0.title', 'Organizar pasta interna'));
+    }
+
+    public function test_monthly_package_skips_soft_deleted_request_for_the_same_month(): void
+    {
+        [, $organization, $member] = $this->createContext();
+        $client = $this->createClient($organization, $member);
+        $type = ServiceType::factory()->create([
+            'organization_id' => $organization->id,
+            'name' => 'Contabilidade',
+            'is_active' => true,
+            'monthly_document_items' => ['DAS'],
+        ]);
+        $service = ClientService::factory()->create([
+            'organization_id' => $organization->id,
+            'client_id' => $client->id,
+            'service_type_id' => $type->id,
+            'status' => ClientService::STATUS_ACTIVE,
+        ]);
+
+        $this->artisan('documents:generate-monthly-packages')->assertSuccessful();
+        DocumentRequest::query()->firstOrFail()->delete();
+
+        $this->artisan('documents:generate-monthly-packages')->assertSuccessful();
+
+        $this->assertSame(0, DocumentRequest::query()->count());
+        $this->assertSame(1, DocumentRequest::withTrashed()->count());
+    }
+
     public function test_monthly_package_skips_paused_service_and_empty_or_inactive_type(): void
     {
         [, $organization, $member] = $this->createContext();
