@@ -431,23 +431,41 @@ class UsageGuideCatalog
         return [
             'slug' => 'financeiro',
             'title' => 'Financeiro do escritório',
-            'summary' => 'Contas a receber/pagar, inadimplência e o que aparece no dashboard.',
+            'summary' => 'Cobranças, recorrências (manuais ou do contrato), pagamentos e o que aparece no dashboard.',
             'audience' => 'Financeiro / gestor',
             'sections' => [
                 [
                     'heading' => 'Página',
                     'pages' => [
-                        ['path' => '/finance', 'name' => 'Financeiro', 'notes' => 'Receivables, payments, payables, categorias'],
+                        ['path' => '/finance', 'name' => 'Financeiro', 'notes' => 'Receivables, recorrências, payments, payables, categorias'],
+                        ['path' => '/contracts/{id}', 'name' => 'Contrato', 'notes' => 'Pode gerar/pausar a recorrência ligada'],
                     ],
                 ],
                 [
                     'heading' => 'Fluxos',
                     'steps' => [
-                        'Criar cobrança (receivable) vinculada a cliente.',
+                        'Criar cobrança avulsa (receivable) vinculada a cliente.',
+                        'Ou cadastrar recorrência em `/finance`, ou marcar “Gerar mensalidade no financeiro” no contrato mensal/anual ativo.',
+                        'O scheduler `finance:generate-recurring-receivables` materializa as faturas no vencimento — o cadastro da recorrência não emite a primeira na hora.',
                         'Registrar pagamento total ou parcial.',
                         'Status parcial mantém saldo em aberto nos indicadores.',
                         'Criar despesa (payable) e marcar como paga.',
                         'Dashboard (roles financeiras): recebido no período, aberto, vencido, saldo líquido.',
+                    ],
+                ],
+                [
+                    'heading' => 'Recorrências',
+                    'steps' => [
+                        'Criar à mão em `/finance` (botão Recorrência) com cliente, valor e dia de vencimento.',
+                        'Contrato mensal/anual ativo: admin/gestor marca o checkbox no criar ou no renovar (se ainda não houver recorrência).',
+                        'Recorrência ligada ao contrato aparece no card do detalhe e na listagem de `/finance`.',
+                        'Cancelar o contrato pausa a recorrência (`is_active = false`); também dá para pausar no financeiro.',
+                        'Gerar agora na listagem ou esperar o scheduler diário.',
+                    ],
+                    'rules' => [
+                        'Recorrência do escritório não é fatura SaaS (`/platform/invoices` / Asaas da assinatura Docflow).',
+                        'Contrato único (`once`) ou valor zero não gera recorrência, mesmo com a flag.',
+                        'Uma recorrência por contrato (`contract_id` único); não duplica ao salvar de novo.',
                     ],
                 ],
                 [
@@ -521,7 +539,7 @@ class UsageGuideCatalog
         return [
             'slug' => 'servicos-contratos',
             'title' => 'Serviços e contratos',
-            'summary' => 'Catálogo de serviços, vínculo ao cliente, vigência, renovação e MRR.',
+            'summary' => 'Catálogo de serviços, vigência, renovação, MRR estimado e mensalidade no financeiro.',
             'audience' => 'Operação / comercial',
             'sections' => [
                 [
@@ -529,8 +547,9 @@ class UsageGuideCatalog
                     'pages' => [
                         ['path' => '/service-types', 'name' => 'Tipos de serviço', 'notes' => 'Catálogo da org (admin/manager)'],
                         ['path' => '/contracts', 'name' => 'Contratos', 'notes' => 'Listagem escopada por acesso a cliente'],
-                        ['path' => '/contracts/{id}', 'name' => 'Detalhe', 'notes' => 'Renovação / cancelamento'],
+                        ['path' => '/contracts/{id}', 'name' => 'Detalhe', 'notes' => 'Renovação, cancelamento e cobrança recorrente'],
                         ['path' => '/clients/{id}', 'name' => 'Hub cliente', 'notes' => 'Abas Serviços e Contratos'],
+                        ['path' => '/finance', 'name' => 'Financeiro', 'notes' => 'Recorrência gerada pelo contrato'],
                     ],
                 ],
                 [
@@ -540,8 +559,28 @@ class UsageGuideCatalog
                         'Vincular serviços ao cliente.',
                         'Criar contrato com código, valor, intervalo (`month|year|once`), vigência e escopo.',
                         'Associar serviços ao contrato quando fizer sentido.',
-                        'Renovar ou cancelar com motivo.',
-                        'Dashboard mostra MRR estimado e valor em risco (30 dias).',
+                        'Se mensal/anual e status ativo, admin/gestor pode marcar “Gerar mensalidade no financeiro”.',
+                        'Sem a flag, o contrato não cria cobrança — o escritório lança à mão em `/finance`.',
+                        'Renovar ou cancelar com motivo (cancelar pausa a recorrência ligada).',
+                        'Dashboard mostra MRR estimado (pelos contratos ativos) e valor em risco (30 dias).',
+                    ],
+                ],
+                [
+                    'heading' => 'Contrato e mensalidade',
+                    'steps' => [
+                        'O checkbox só aparece para admin/gestor, contrato ativo, intervalo mensal ou anual.',
+                        'Marcar cria uma recorrência ligada ao contrato (mesmo cliente e valor).',
+                        'Intervalo único (`once`) ignora a flag.',
+                        'O detalhe mostra o card “Cobrança recorrente” (ativa/pausada) com atalho para `/finance`.',
+                        'Renovar: se já existe recorrência, atualiza término/valor e reativa; se não existe e a flag estiver marcada, cria.',
+                        'Cancelar o contrato pausa a recorrência. Não apaga o histórico no financeiro.',
+                    ],
+                    'rules' => [
+                        'Uma recorrência por contrato; salvar de novo não duplica.',
+                        'A flag não altera o MRR do dashboard — MRR continua estimado pelos contratos ativos, mesmo sem mensalidade gerada.',
+                        'Recorrência do contrato é financeiro do escritório, não fatura SaaS em `/platform/invoices`.',
+                        'A primeira fatura nasce no scheduler `finance:generate-recurring-receivables`, não na hora do cadastro.',
+                        'Assistente/profissional não veem o checkbox; enviar a flag no POST não cria recorrência.',
                     ],
                 ],
                 [

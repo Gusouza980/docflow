@@ -90,6 +90,61 @@ class PlatformUsageGuideTest extends TestCase
         $this->assertContains('crm-onboarding', $slugs);
         $this->assertContains('automacoes', $slugs);
         $this->assertContains('platform-admin', $slugs);
+        $this->assertContains('servicos-contratos', $slugs);
+        $this->assertContains('financeiro', $slugs);
         $this->assertCount(14, $slugs);
+    }
+
+    public function test_contracts_guide_documents_receivable_recurrence(): void
+    {
+        $guide = app(UsageGuideCatalog::class)->find('servicos-contratos');
+        $headings = array_column($guide['sections'], 'heading');
+
+        $this->assertContains('Contrato e mensalidade', $headings);
+
+        $payload = json_encode($guide, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+        $this->assertIsString($payload);
+        $this->assertStringContainsString('Gerar mensalidade no financeiro', $payload);
+        $this->assertStringContainsString('finance:generate-recurring-receivables', $payload);
+        $this->assertStringContainsString('MRR continua estimado pelos contratos ativos', $payload);
+        $this->assertStringContainsString('/platform/invoices', $payload);
+    }
+
+    public function test_finance_guide_documents_contract_recurrence_and_saas_split(): void
+    {
+        $guide = app(UsageGuideCatalog::class)->find('financeiro');
+        $headings = array_column($guide['sections'], 'heading');
+
+        $this->assertContains('Recorrências', $headings);
+
+        $payload = json_encode($guide, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+        $this->assertIsString($payload);
+        $this->assertStringContainsString('Gerar mensalidade no financeiro', $payload);
+        $this->assertStringContainsString('finance:generate-recurring-receivables', $payload);
+        $this->assertStringContainsString('/platform/invoices', $payload);
+        $this->assertStringContainsString('contract_id', $payload);
+    }
+
+    public function test_platform_admin_can_view_contracts_and_finance_guides(): void
+    {
+        $admin = User::factory()->create(['is_platform_admin' => true]);
+
+        $this->actingAs($admin)
+            ->get('/platform/guides/servicos-contratos')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Platform/Guides/Show', false)
+                ->where('guide.slug', 'servicos-contratos')
+                ->has('guide.sections', 4));
+
+        $this->actingAs($admin)
+            ->get('/platform/guides/financeiro')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Platform/Guides/Show', false)
+                ->where('guide.slug', 'financeiro')
+                ->has('guide.sections', 4));
     }
 }
