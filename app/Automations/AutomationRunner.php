@@ -19,6 +19,7 @@ class AutomationRunner
 {
     public function __construct(
         private PlanLimitChecker $planLimitChecker,
+        private EstimatesAutomationMinutesSaved $estimatesAutomationMinutesSaved,
         private CreateTasksFromTemplateAction $createTasksFromTemplateAction,
         private CreateDocumentRequestAction $createDocumentRequestAction,
         private NotifyOrganizationMembersAction $notifyOrganizationMembersAction,
@@ -103,6 +104,7 @@ class AutomationRunner
             $log->update([
                 'status' => AutomationLog::STATUS_SUCCEEDED,
                 'result' => $results,
+                'estimated_minutes_saved' => $this->estimatesAutomationMinutesSaved->forActions($results),
                 'ran_at' => now(),
             ]);
         } catch (Throwable $exception) {
@@ -115,6 +117,7 @@ class AutomationRunner
             $log->update([
                 'status' => AutomationLog::STATUS_FAILED,
                 'result' => ['error' => $exception->getMessage()],
+                'estimated_minutes_saved' => 0,
                 'ran_at' => now(),
             ]);
         }

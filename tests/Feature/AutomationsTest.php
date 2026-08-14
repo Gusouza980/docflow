@@ -88,6 +88,7 @@ class AutomationsTest extends TestCase
         $this->assertDatabaseHas('automation_logs', [
             'organization_id' => $organization->id,
             'status' => AutomationLog::STATUS_SUCCEEDED,
+            'estimated_minutes_saved' => 8,
         ]);
     }
 

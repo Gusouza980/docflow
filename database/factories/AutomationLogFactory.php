@@ -26,7 +26,13 @@ class AutomationLogFactory extends Factory
             'subject_id' => Client::factory(),
             'dedupe_key' => fake()->unique()->uuid(),
             'status' => AutomationLog::STATUS_SUCCEEDED,
-            'result' => [],
+            'result' => [
+                [
+                    'type' => AutomationRule::ACTION_NOTIFY_ORGANIZATION_MEMBERS,
+                    'result' => ['notified_members' => 1],
+                ],
+            ],
+            'estimated_minutes_saved' => 3,
             'ran_at' => now(),
         ];
     }

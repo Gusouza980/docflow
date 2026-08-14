@@ -30,6 +30,7 @@ class AutomationLog extends Model
         'dedupe_key',
         'status',
         'result',
+        'estimated_minutes_saved',
         'ran_at',
     ];
 
@@ -37,6 +38,7 @@ class AutomationLog extends Model
     {
         return [
             'result' => 'array',
+            'estimated_minutes_saved' => 'integer',
             'ran_at' => 'datetime',
         ];
     }

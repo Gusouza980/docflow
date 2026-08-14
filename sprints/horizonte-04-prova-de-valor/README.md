@@ -10,11 +10,14 @@ Fazer o escritório **enxergar resultado** no Docflow: dinheiro que entrou, rece
 - Dados de financeiro, contratos e CRM (já no produto) sobem à primeira dobra.
 - Base para, depois, ROI do produto (automações / tempo) sem inventar números agora.
 
+Sprint 22 fecha essa base: minutos padrão por tipo de ação × execuções reais, rotulados como estimativa.
+
 ## Sprints
 
 | Sprint | Foco | Status |
 |--------|------|--------|
 | [Sprint 21](../sprint-21-dashboard-resultado-valor/TASKS.md) | Dashboard de resultado e valor | ✅ |
+| [Sprint 22](../sprint-22-roi-docflow/TASKS.md) | ROI Docflow (automações × horas) | ✅ |
 
 ## Fora (ainda)
 

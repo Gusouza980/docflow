@@ -15,10 +15,12 @@ const props = defineProps({
     value: { type: Object, default: () => ({}) },
     contracts_revenue: { type: Object, default: null },
     commercial: { type: Object, default: null },
+    docflow_roi: { type: Object, default: null },
     alerts: { type: Array, default: () => [] },
     structuralPendencies: { type: Array, default: () => [] },
     can_access_finance: { type: Boolean, default: false },
     can_access_crm: { type: Boolean, default: false },
+    can_access_automations: { type: Boolean, default: false },
     period: { type: Object, default: () => ({}) },
     filters: { type: Object, default: () => ({}) },
 });
@@ -44,6 +46,16 @@ const alertTones = {
 };
 
 const money = (cents) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format((cents ?? 0) / 100);
+
+const formatSavedTime = (minutes) => {
+    const value = Math.abs(minutes ?? 0);
+
+    if (value < 60) {
+        return `${value} min`;
+    }
+
+    return `${new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 }).format(value / 60)} h`;
+};
 
 const formatDelta = (delta, { money: asMoney = false } = {}) => {
     if (delta === null || delta === undefined) {
@@ -177,6 +189,35 @@ const secondaryCards = computed(() => {
     return cards;
 });
 
+const roiCards = computed(() => {
+    if (!props.docflow_roi || !props.can_access_automations) {
+        return [];
+    }
+
+    const minutesDelta = props.docflow_roi.estimated_minutes_saved_delta ?? 0;
+    const minutesPrefix = minutesDelta > 0 ? '+' : (minutesDelta < 0 ? '-' : '');
+
+    return [
+        {
+            key: 'hours',
+            label: 'Tempo economizado (est.)',
+            value: formatSavedTime(props.docflow_roi.estimated_minutes_saved),
+            href: props.docflow_roi.href || '/automations',
+            delta: minutesDelta ? `${minutesPrefix}${formatSavedTime(minutesDelta)}` : null,
+            subtitle: 'Estimativa por tipo de ação, não cronometragem',
+            tone: 'positive',
+        },
+        {
+            key: 'runs',
+            label: 'Automações no período',
+            value: props.docflow_roi.runs ?? 0,
+            href: props.docflow_roi.href || '/automations',
+            delta: formatDelta(props.docflow_roi.runs_delta),
+            subtitle: 'Execuções concluídas',
+        },
+    ];
+});
+
 const operationCards = computed(() => {
     const cards = [
         { key: 'open_tasks', label: 'Tarefas abertas', value: props.metrics.open_tasks ?? 0, href: '/tasks' },
@@ -211,14 +252,16 @@ const hasValueData = computed(() => {
             || (props.contracts_revenue?.mrr_cents ?? 0) > 0
             || (props.contracts_revenue?.at_risk_cents ?? 0) > 0
             || (props.commercial?.pipeline_cents ?? 0) > 0
-            || (props.commercial?.gained_cents ?? 0) > 0;
+            || (props.commercial?.gained_cents ?? 0) > 0
+            || (props.docflow_roi?.runs ?? 0) > 0;
     }
 
     return (props.value?.completed_tasks ?? 0) > 0
         || (props.value?.approved_documents ?? 0) > 0
         || (props.value?.active_clients ?? 0) > 0
         || (props.contracts_revenue?.mrr_cents ?? 0) > 0
-        || (props.commercial?.pipeline_cents ?? 0) > 0;
+        || (props.commercial?.pipeline_cents ?? 0) > 0
+        || (props.docflow_roi?.runs ?? 0) > 0;
 });
 
 const hasOperationalData = computed(() => {
@@ -324,6 +367,13 @@ function deltaClass(tone) {
                     >
                         Abrir lead
                     </Link>
+                    <Link
+                        v-if="can_access_automations"
+                        href="/automations"
+                        class="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:border-slate-400"
+                    >
+                        Ativar automação
+                    </Link>
                 </div>
             </div>
 
@@ -365,6 +415,36 @@ function deltaClass(tone) {
                         <p class="text-xs font-medium uppercase tracking-wide text-slate-500">{{ card.label }}</p>
                         <p class="mt-2 text-2xl font-semibold" :class="valueClass(card.tone)">{{ card.value }}</p>
                         <p v-if="card.subtitle" class="mt-1 text-xs text-slate-500">{{ card.subtitle }}</p>
+                    </Link>
+                </div>
+            </section>
+
+            <section v-if="can_access_automations && hasOperationalData" class="grid gap-3">
+                <div>
+                    <h2 class="text-sm font-semibold text-slate-900">Tempo economizado pelo Docflow</h2>
+                    <p class="text-xs text-slate-500">Estimativa com minutos padrão por tipo de ação — não é cronometragem real.</p>
+                </div>
+                <div v-if="(docflow_roi?.runs ?? 0) > 0" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                    <Link
+                        v-for="card in roiCards"
+                        :key="card.key"
+                        :href="card.href"
+                        class="block rounded-lg border border-slate-200 bg-white p-4 transition hover:border-blue-300 hover:shadow-sm"
+                    >
+                        <p class="text-xs font-medium uppercase tracking-wide text-slate-500">{{ card.label }}</p>
+                        <p class="mt-2 text-2xl font-semibold" :class="valueClass(card.tone)">{{ card.value }}</p>
+                        <p v-if="card.delta" class="mt-1 text-xs font-medium" :class="deltaClass(card.tone)">{{ card.delta }} vs período anterior</p>
+                        <p v-else-if="card.subtitle" class="mt-1 text-xs text-slate-500">{{ card.subtitle }}</p>
+                    </Link>
+                </div>
+                <div v-else class="rounded-lg border border-dashed border-slate-200 bg-slate-50 p-6">
+                    <p class="text-sm font-medium text-slate-700">Nenhuma automação rodou neste período</p>
+                    <p class="mt-1 text-sm text-slate-500">Ative uma regra para estimar o tempo que a equipe deixa de gastar à mão.</p>
+                    <Link
+                        href="/automations"
+                        class="mt-3 inline-flex rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800"
+                    >
+                        Ver automações
                     </Link>
                 </div>
             </section>

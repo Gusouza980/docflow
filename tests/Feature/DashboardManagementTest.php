@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\AutomationLog;
+use App\Models\AutomationRule;
 use App\Models\Client;
 use App\Models\Contract;
 use App\Models\DocumentCategory;
@@ -282,6 +284,142 @@ class DashboardManagementTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->where('can_access_crm', false)
                 ->where('commercial', null));
+    }
+
+    public function test_profissional_admin_sees_estimated_automation_time_saved(): void
+    {
+        $this->seed(PlanSeeder::class);
+        $this->travelTo('2026-08-15 12:00:00');
+
+        $planId = Plan::query()->where('slug', 'profissional')->value('id');
+        $organization = Organization::factory()->create(['plan_id' => $planId]);
+        $organization->subscription?->update(['plan_id' => $planId]);
+        [$user] = $this->createMember(OrganizationMember::ROLE_ADMIN, $organization);
+        $rule = AutomationRule::factory()->create(['organization_id' => $organization->id]);
+
+        AutomationLog::factory()->create([
+            'organization_id' => $organization->id,
+            'automation_rule_id' => $rule->id,
+            'status' => AutomationLog::STATUS_SUCCEEDED,
+            'estimated_minutes_saved' => 8,
+            'ran_at' => '2026-08-10 10:00:00',
+        ]);
+        AutomationLog::factory()->create([
+            'organization_id' => $organization->id,
+            'automation_rule_id' => $rule->id,
+            'status' => AutomationLog::STATUS_SUCCEEDED,
+            'estimated_minutes_saved' => 3,
+            'ran_at' => '2026-08-12 10:00:00',
+        ]);
+        AutomationLog::factory()->create([
+            'organization_id' => $organization->id,
+            'automation_rule_id' => $rule->id,
+            'status' => AutomationLog::STATUS_FAILED,
+            'estimated_minutes_saved' => 0,
+            'ran_at' => '2026-08-12 11:00:00',
+        ]);
+        AutomationLog::factory()->create([
+            'organization_id' => $organization->id,
+            'automation_rule_id' => $rule->id,
+            'status' => AutomationLog::STATUS_SUCCEEDED,
+            'estimated_minutes_saved' => 8,
+            'ran_at' => '2026-07-10 10:00:00',
+        ]);
+
+        $this->actingAs($user)
+            ->withSession(['active_organization_id' => $organization->id])
+            ->get('/dashboard?period=month')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('can_access_automations', true)
+                ->where('docflow_roi.runs', 2)
+                ->where('docflow_roi.estimated_minutes_saved', 11)
+                ->where('docflow_roi.estimated_hours_saved', 0.2)
+                ->where('docflow_roi.estimated_minutes_saved_delta', 3)
+                ->where('docflow_roi.is_estimate', true)
+                ->where('docflow_roi.href', '/automations'));
+    }
+
+    public function test_essencial_plan_does_not_receive_docflow_roi(): void
+    {
+        $this->seed(PlanSeeder::class);
+
+        $planId = Plan::query()->where('slug', 'essencial')->value('id');
+        $organization = Organization::factory()->create(['plan_id' => $planId]);
+        $organization->subscription?->update(['plan_id' => $planId]);
+        [$user] = $this->createMember(OrganizationMember::ROLE_ADMIN, $organization);
+
+        $this->actingAs($user)
+            ->withSession(['active_organization_id' => $organization->id])
+            ->get('/dashboard')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('can_access_automations', false)
+                ->where('docflow_roi', null));
+    }
+
+    public function test_assistant_and_finance_do_not_see_docflow_roi(): void
+    {
+        $this->seed(PlanSeeder::class);
+
+        $planId = Plan::query()->where('slug', 'profissional')->value('id');
+        $organization = Organization::factory()->create(['plan_id' => $planId]);
+        $organization->subscription?->update(['plan_id' => $planId]);
+
+        [$assistant] = $this->createMember(OrganizationMember::ROLE_ASSISTANT, $organization);
+        [$finance] = $this->createMember(OrganizationMember::ROLE_FINANCE, $organization);
+
+        $this->actingAs($assistant)
+            ->withSession(['active_organization_id' => $organization->id])
+            ->get('/dashboard')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('can_access_automations', false)
+                ->where('docflow_roi', null));
+
+        $this->actingAs($finance)
+            ->withSession(['active_organization_id' => $organization->id])
+            ->get('/dashboard')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('can_access_automations', false)
+                ->where('docflow_roi', null));
+    }
+
+    public function test_docflow_roi_does_not_include_other_organization_logs(): void
+    {
+        $this->seed(PlanSeeder::class);
+
+        $planId = Plan::query()->where('slug', 'profissional')->value('id');
+        $organization = Organization::factory()->create(['plan_id' => $planId]);
+        $organization->subscription?->update(['plan_id' => $planId]);
+        $otherOrganization = Organization::factory()->create(['plan_id' => $planId]);
+        $otherOrganization->subscription?->update(['plan_id' => $planId]);
+
+        [$user] = $this->createMember(OrganizationMember::ROLE_ADMIN, $organization);
+        $ownRule = AutomationRule::factory()->create(['organization_id' => $organization->id]);
+        $otherRule = AutomationRule::factory()->create(['organization_id' => $otherOrganization->id]);
+
+        AutomationLog::factory()->create([
+            'organization_id' => $organization->id,
+            'automation_rule_id' => $ownRule->id,
+            'estimated_minutes_saved' => 8,
+            'ran_at' => now(),
+        ]);
+        AutomationLog::factory()->create([
+            'organization_id' => $otherOrganization->id,
+            'automation_rule_id' => $otherRule->id,
+            'estimated_minutes_saved' => 90,
+            'ran_at' => now(),
+        ]);
+
+        $this->actingAs($user)
+            ->withSession(['active_organization_id' => $organization->id])
+            ->get('/dashboard')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('docflow_roi.runs', 1)
+                ->where('docflow_roi.estimated_minutes_saved', 8));
     }
 
     public function test_assistant_hero_is_operational_without_finance_cents(): void
