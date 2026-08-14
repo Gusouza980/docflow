@@ -18,7 +18,7 @@ class SaveOrganizationPaymentGatewayRequest extends FormRequest
     {
         return [
             'api_key' => ['nullable', 'string', 'max:500'],
-            'webhook_token' => ['nullable', 'string', 'max:500'],
+            'webhook_token' => ['nullable', 'string', 'min:32', 'max:500'],
             'is_enabled' => ['sometimes', 'boolean'],
         ];
     }

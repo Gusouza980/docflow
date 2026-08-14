@@ -110,4 +110,19 @@ class TenantAsaasPaymentGateway
             'identification_field' => isset($payment['identificationField']) ? (string) $payment['identificationField'] : null,
         ];
     }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function fetchConfirmedPayment(OrganizationPaymentGateway $gateway, string $paymentId): ?array
+    {
+        $payment = $this->clientFor($gateway)->get('/v3/payments/'.$paymentId);
+        $status = (string) ($payment['status'] ?? '');
+
+        if (! in_array($status, ['RECEIVED', 'CONFIRMED'], true)) {
+            return null;
+        }
+
+        return $payment;
+    }
 }

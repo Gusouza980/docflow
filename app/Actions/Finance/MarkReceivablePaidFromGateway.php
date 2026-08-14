@@ -19,6 +19,10 @@ class MarkReceivablePaidFromGateway
                 return $receivable->fresh(['charge']);
             }
 
+            if (! in_array($receivable->status, [Receivable::STATUS_OPEN, Receivable::STATUS_PARTIAL], true)) {
+                return $receivable->fresh(['charge']);
+            }
+
             $alreadyRecorded = $receivable->payments()
                 ->where('reference', $providerPaymentId)
                 ->exists();

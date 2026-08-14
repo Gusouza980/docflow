@@ -40,14 +40,14 @@ class TenantReceivablePaymentTest extends TestCase
             ->withSession(['active_organization_id' => $organization->id])
             ->put("/organizations/{$organization->id}/payment-gateway", [
                 'api_key' => 'tenant-asaas-key-9999',
-                'webhook_token' => 'tenant-webhook-9999',
+                'webhook_token' => 'tenant-webhook-token-9999-secure-xx',
             ])
             ->assertRedirect('/organizations');
 
         $gateway = $organization->fresh()->paymentGateway;
         $this->assertNotNull($gateway);
         $this->assertSame('tenant-asaas-key-9999', $gateway->api_key);
-        $this->assertSame('tenant-webhook-9999', $gateway->webhook_token);
+        $this->assertSame('tenant-webhook-token-9999-secure-xx', $gateway->webhook_token);
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
@@ -171,7 +171,7 @@ class TenantReceivablePaymentTest extends TestCase
             ->withSession(['active_organization_id' => $organization->id])
             ->put("/organizations/{$organization->id}/payment-gateway", [
                 'api_key' => 'stolen',
-                'webhook_token' => 'stolen',
+                'webhook_token' => 'stolen-token-that-is-long-enough-32',
             ])
             ->assertForbidden();
     }
@@ -222,6 +222,15 @@ class TenantReceivablePaymentTest extends TestCase
             'provider_payment_id' => 'pay_live',
         ]);
 
+        Http::fake([
+            'https://api-sandbox.asaas.com/v3/payments/pay_live' => Http::response([
+                'id' => 'pay_live',
+                'status' => 'RECEIVED',
+                'value' => 1500.00,
+                'externalReference' => 'receivable:'.$receivable->id,
+            ], 200),
+        ]);
+
         $payload = [
             'id' => 'evt_tenant_1',
             'event' => 'PAYMENT_RECEIVED',
@@ -233,11 +242,11 @@ class TenantReceivablePaymentTest extends TestCase
         ];
 
         $this->postJson("/webhooks/tenant/asaas/{$organization->id}", $payload, [
-            'asaas-access-token' => 'tenant-webhook-0001',
+            'asaas-access-token' => 'tenant-webhook-token-0001-secure-xx',
         ])->assertOk();
 
         $this->postJson("/webhooks/tenant/asaas/{$organization->id}", $payload, [
-            'asaas-access-token' => 'tenant-webhook-0001',
+            'asaas-access-token' => 'tenant-webhook-token-0001-secure-xx',
         ])->assertOk();
 
         $this->assertSame(Receivable::STATUS_PAID, $receivable->fresh()->status);
@@ -270,10 +279,54 @@ class TenantReceivablePaymentTest extends TestCase
             'event' => 'PAYMENT_RECEIVED',
             'payment' => ['id' => 'pay_saas_invoice', 'value' => 99, 'externalReference' => 'invoice:1'],
         ], [
-            'asaas-access-token' => 'tenant-webhook-0001',
+            'asaas-access-token' => 'tenant-webhook-token-0001-secure-xx',
         ])->assertOk();
 
         $this->assertSame(Receivable::STATUS_OPEN, $receivable->fresh()->status);
+        $this->assertDatabaseCount('payments', 0);
+    }
+
+    public function test_tenant_webhook_does_not_reopen_cancelled_receivable(): void
+    {
+        [$user, $organization, $member] = $this->createMember(OrganizationMember::ROLE_FINANCE);
+        $this->connectGateway($organization);
+        $client = $this->createClient($organization, $member);
+        $receivable = Receivable::factory()->create([
+            'organization_id' => $organization->id,
+            'client_id' => $client->id,
+            'created_by_user_id' => $user->id,
+            'amount_cents' => 150000,
+            'status' => Receivable::STATUS_CANCELLED,
+        ]);
+        ReceivableCharge::factory()->create([
+            'organization_id' => $organization->id,
+            'receivable_id' => $receivable->id,
+            'client_id' => $client->id,
+            'provider_payment_id' => 'pay_cancelled',
+        ]);
+
+        Http::fake([
+            'https://api-sandbox.asaas.com/v3/payments/pay_cancelled' => Http::response([
+                'id' => 'pay_cancelled',
+                'status' => 'RECEIVED',
+                'value' => 1500.00,
+                'externalReference' => 'receivable:'.$receivable->id,
+            ], 200),
+        ]);
+
+        $this->postJson("/webhooks/tenant/asaas/{$organization->id}", [
+            'id' => 'evt_cancelled',
+            'event' => 'PAYMENT_RECEIVED',
+            'payment' => [
+                'id' => 'pay_cancelled',
+                'value' => 1500.00,
+                'externalReference' => 'receivable:'.$receivable->id,
+            ],
+        ], [
+            'asaas-access-token' => 'tenant-webhook-token-0001-secure-xx',
+        ])->assertOk();
+
+        $this->assertSame(Receivable::STATUS_CANCELLED, $receivable->fresh()->status);
         $this->assertDatabaseCount('payments', 0);
     }
 
@@ -327,7 +380,7 @@ class TenantReceivablePaymentTest extends TestCase
         return OrganizationPaymentGateway::factory()->create([
             'organization_id' => $organization->id,
             'api_key' => 'tenant-asaas-key-0001',
-            'webhook_token' => 'tenant-webhook-0001',
+            'webhook_token' => 'tenant-webhook-token-0001-secure-xx',
         ]);
     }
 }

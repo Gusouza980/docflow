@@ -3,6 +3,8 @@
 namespace App\Jobs;
 
 use App\Actions\Finance\MarkReceivablePaidFromGateway;
+use App\Billing\TenantAsaasPaymentGateway;
+use App\Models\Organization;
 use App\Models\ReceivableCharge;
 use App\Models\TenantReceivableWebhookEvent;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -23,8 +25,10 @@ class ProcessTenantReceivableWebhook implements ShouldQueue
         public array $payload,
     ) {}
 
-    public function handle(MarkReceivablePaidFromGateway $markReceivablePaidFromGateway): void
-    {
+    public function handle(
+        MarkReceivablePaidFromGateway $markReceivablePaidFromGateway,
+        TenantAsaasPaymentGateway $tenantAsaasPaymentGateway,
+    ): void {
         $event = TenantReceivableWebhookEvent::query()->firstOrCreate(
             [
                 'organization_id' => $this->organizationId,
@@ -37,31 +41,22 @@ class ProcessTenantReceivableWebhook implements ShouldQueue
             return;
         }
 
-        DB::transaction(function () use ($event, $markReceivablePaidFromGateway): void {
-            $handled = $this->process($markReceivablePaidFromGateway);
-
-            if ($handled === false) {
-                throw new RuntimeException('Tenant receivable webhook could not be processed.');
-            }
-
-            $event->update(['processed_at' => now()]);
-        });
-    }
-
-    private function process(MarkReceivablePaidFromGateway $markReceivablePaidFromGateway): bool
-    {
         $eventName = (string) ($this->payload['event'] ?? '');
 
         if (! in_array($eventName, ['PAYMENT_RECEIVED', 'PAYMENT_CONFIRMED'], true)) {
-            return true;
+            $event->update(['processed_at' => now()]);
+
+            return;
         }
 
-        /** @var array<string, mixed> $payment */
-        $payment = is_array($this->payload['payment'] ?? null) ? $this->payload['payment'] : [];
-        $paymentId = (string) ($payment['id'] ?? '');
+        /** @var array<string, mixed> $notifiedPayment */
+        $notifiedPayment = is_array($this->payload['payment'] ?? null) ? $this->payload['payment'] : [];
+        $paymentId = (string) ($notifiedPayment['id'] ?? '');
 
         if ($paymentId === '') {
-            return true;
+            $event->update(['processed_at' => now()]);
+
+            return;
         }
 
         $charge = ReceivableCharge::query()
@@ -70,23 +65,43 @@ class ProcessTenantReceivableWebhook implements ShouldQueue
             ->first();
 
         if ($charge === null) {
-            return true;
+            $event->update(['processed_at' => now()]);
+
+            return;
         }
 
-        $externalReference = (string) ($payment['externalReference'] ?? '');
+        $organization = Organization::query()->with('paymentGateway')->find($this->organizationId);
+        $gateway = $organization?->paymentGateway;
+
+        if ($gateway === null || ! $gateway->isReady()) {
+            throw new RuntimeException('Tenant Asaas gateway is not ready.');
+        }
+
+        $confirmed = $tenantAsaasPaymentGateway->fetchConfirmedPayment($gateway, $paymentId);
+
+        if ($confirmed === null) {
+            throw new RuntimeException('Asaas payment is not confirmed yet.');
+        }
+
+        $externalReference = (string) ($confirmed['externalReference'] ?? '');
 
         if ($externalReference !== 'receivable:'.$charge->receivable_id) {
-            return true;
+            $event->update(['processed_at' => now()]);
+
+            return;
         }
 
-        $amountCents = (int) round(((float) ($payment['value'] ?? 0)) * 100);
+        $amountCents = (int) round(((float) ($confirmed['value'] ?? 0)) * 100);
 
         if ($amountCents < 1) {
-            return true;
+            $event->update(['processed_at' => now()]);
+
+            return;
         }
 
-        $markReceivablePaidFromGateway->execute($charge->receivable, $paymentId, $amountCents);
-
-        return true;
+        DB::transaction(function () use ($event, $markReceivablePaidFromGateway, $charge, $paymentId, $amountCents): void {
+            $markReceivablePaidFromGateway->execute($charge->receivable, $paymentId, $amountCents);
+            $event->update(['processed_at' => now()]);
+        });
     }
 }

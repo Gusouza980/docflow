@@ -84,7 +84,9 @@ Route::middleware('guest')->group(function (): void {
 Route::get('/invitations/{token}/accept', [InvitationAcceptanceController::class, 'show'])->name('web.invitations.accept.show');
 
 Route::post('/webhooks/billing/{provider}', [BillingWebhookController::class, 'store'])->name('webhooks.billing');
-Route::post('/webhooks/tenant/asaas/{organization}', [TenantAsaasWebhookController::class, 'store'])->name('webhooks.tenant.asaas');
+Route::post('/webhooks/tenant/asaas/{organization}', [TenantAsaasWebhookController::class, 'store'])
+    ->middleware('throttle:60,1')
+    ->name('webhooks.tenant.asaas');
 
 Route::middleware(['auth', 'platform.admin'])->prefix('platform')->name('platform.')->group(function (): void {
     Route::get('/', [PlatformDashboardController::class, 'index'])->name('dashboard');

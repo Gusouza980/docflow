@@ -24,11 +24,16 @@ class CreateReceivableAsaasCharge
             throw new InvalidArgumentException('Escolha Pix ou boleto.');
         }
 
-        $receivable->loadMissing(['charge', 'client.contacts', 'organization.paymentGateway']);
+        $receivable->loadMissing(['client.contacts', 'organization.paymentGateway']);
 
-        $existing = $receivable->charge;
+        $existing = DB::transaction(function () use ($receivable): ?ReceivableCharge {
+            $locked = Receivable::query()->lockForUpdate()->findOrFail($receivable->id);
+            $charge = ReceivableCharge::query()->where('receivable_id', $locked->id)->lockForUpdate()->first();
 
-        if ($existing && $existing->isPending()) {
+            return $charge?->isPending() ? $charge : null;
+        });
+
+        if ($existing) {
             return $existing;
         }
 
@@ -38,20 +43,27 @@ class CreateReceivableAsaasCharge
             throw new InvalidArgumentException('Conecte o Asaas da organização em Organizações para gerar o Pix.');
         }
 
-        return DB::transaction(function () use ($receivable, $billingType, $gateway): ReceivableCharge {
-            $customerId = $this->tenantAsaasPaymentGateway->ensureCustomer($gateway, $receivable->client);
-            $payment = $this->tenantAsaasPaymentGateway->createPayment(
-                $gateway,
-                $receivable,
-                $customerId,
-                $billingType,
-            );
+        $customerId = $this->tenantAsaasPaymentGateway->ensureCustomer($gateway, $receivable->client);
+        $payment = $this->tenantAsaasPaymentGateway->createPayment(
+            $gateway,
+            $receivable,
+            $customerId,
+            $billingType,
+        );
+
+        return DB::transaction(function () use ($receivable, $billingType, $gateway, $payment): ReceivableCharge {
+            $locked = Receivable::query()->lockForUpdate()->findOrFail($receivable->id);
+            $existing = ReceivableCharge::query()->where('receivable_id', $locked->id)->lockForUpdate()->first();
+
+            if ($existing?->isPending()) {
+                return $existing;
+            }
 
             $charge = ReceivableCharge::query()->updateOrCreate(
-                ['receivable_id' => $receivable->id],
+                ['receivable_id' => $locked->id],
                 [
-                    'organization_id' => $receivable->organization_id,
-                    'client_id' => $receivable->client_id,
+                    'organization_id' => $locked->organization_id,
+                    'client_id' => $locked->client_id,
                     'provider' => ReceivableCharge::PROVIDER_ASAAS,
                     'provider_payment_id' => $payment['provider_payment_id'],
                     'billing_type' => $billingType,
@@ -65,7 +77,7 @@ class CreateReceivableAsaasCharge
                 ],
             );
 
-            $receivable->update([
+            $locked->update([
                 'payment_url' => $payment['invoice_url'] ?? $payment['bank_slip_url'],
                 'payment_reference' => $payment['provider_payment_id'],
             ]);
