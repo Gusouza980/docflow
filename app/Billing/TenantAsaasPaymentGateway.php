@@ -125,4 +125,9 @@ class TenantAsaasPaymentGateway
 
         return $payment;
     }
+
+    public function deletePayment(OrganizationPaymentGateway $gateway, string $paymentId): void
+    {
+        $this->clientFor($gateway)->delete('/v3/payments/'.$paymentId);
+    }
 }

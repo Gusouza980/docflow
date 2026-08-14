@@ -3,6 +3,7 @@
 namespace App\Actions\Finance;
 
 use App\Billing\TenantAsaasPaymentGateway;
+use App\Models\OrganizationPaymentGateway;
 use App\Models\Receivable;
 use App\Models\ReceivableCharge;
 use Illuminate\Contracts\Cache\LockTimeoutException;
@@ -57,45 +58,65 @@ class CreateReceivableAsaasCharge
             $billingType,
         );
 
-        return DB::transaction(function () use ($receivable, $billingType, $gateway, $payment): ReceivableCharge {
-            $locked = Receivable::query()->lockForUpdate()->findOrFail($receivable->id);
+        try {
+            $charge = DB::transaction(function () use ($receivable, $billingType, $gateway, $payment): ReceivableCharge {
+                $locked = Receivable::query()->lockForUpdate()->findOrFail($receivable->id);
 
-            if (! in_array($locked->status, [Receivable::STATUS_OPEN, Receivable::STATUS_PARTIAL], true)) {
-                throw new InvalidArgumentException('Só é possível gerar Pix para cobranças em aberto.');
-            }
+                if (! in_array($locked->status, [Receivable::STATUS_OPEN, Receivable::STATUS_PARTIAL], true)) {
+                    throw new InvalidArgumentException('Só é possível gerar Pix para cobranças em aberto.');
+                }
 
-            $existing = ReceivableCharge::query()->where('receivable_id', $locked->id)->lockForUpdate()->first();
+                $existing = ReceivableCharge::query()->where('receivable_id', $locked->id)->lockForUpdate()->first();
 
-            if ($existing?->isPending()) {
-                return $existing;
-            }
+                if ($existing?->isPending()) {
+                    return $existing;
+                }
 
-            $charge = ReceivableCharge::query()->updateOrCreate(
-                ['receivable_id' => $locked->id],
-                [
-                    'organization_id' => $locked->organization_id,
-                    'client_id' => $locked->client_id,
-                    'provider' => ReceivableCharge::PROVIDER_ASAAS,
-                    'provider_payment_id' => $payment['provider_payment_id'],
-                    'billing_type' => $billingType,
-                    'status' => ReceivableCharge::STATUS_PENDING,
-                    'invoice_url' => $payment['invoice_url'],
-                    'pix_payload' => $payment['pix_payload'],
-                    'pix_encoded_image' => $payment['pix_encoded_image'],
-                    'bank_slip_url' => $payment['bank_slip_url'],
-                    'identification_field' => $payment['identification_field'],
-                    'last_synced_at' => now(),
-                ],
-            );
+                $created = ReceivableCharge::query()->updateOrCreate(
+                    ['receivable_id' => $locked->id],
+                    [
+                        'organization_id' => $locked->organization_id,
+                        'client_id' => $locked->client_id,
+                        'provider' => ReceivableCharge::PROVIDER_ASAAS,
+                        'provider_payment_id' => $payment['provider_payment_id'],
+                        'billing_type' => $billingType,
+                        'status' => ReceivableCharge::STATUS_PENDING,
+                        'invoice_url' => $payment['invoice_url'],
+                        'pix_payload' => $payment['pix_payload'],
+                        'pix_encoded_image' => $payment['pix_encoded_image'],
+                        'bank_slip_url' => $payment['bank_slip_url'],
+                        'identification_field' => $payment['identification_field'],
+                        'last_synced_at' => now(),
+                    ],
+                );
 
-            $locked->update([
-                'payment_url' => $payment['invoice_url'] ?? $payment['bank_slip_url'],
-                'payment_reference' => $payment['provider_payment_id'],
-            ]);
+                $locked->update([
+                    'payment_url' => $payment['invoice_url'] ?? $payment['bank_slip_url'],
+                    'payment_reference' => $payment['provider_payment_id'],
+                ]);
 
-            $gateway->update(['last_error' => null]);
+                $gateway->update(['last_error' => null]);
 
-            return $charge->fresh();
-        });
+                return $created->fresh();
+            });
+        } catch (\Throwable $exception) {
+            $this->discardAsaasPayment($gateway, $payment['provider_payment_id']);
+
+            throw $exception;
+        }
+
+        if ($charge->provider_payment_id !== $payment['provider_payment_id']) {
+            $this->discardAsaasPayment($gateway, $payment['provider_payment_id']);
+        }
+
+        return $charge;
+    }
+
+    private function discardAsaasPayment(OrganizationPaymentGateway $gateway, string $paymentId): void
+    {
+        try {
+            $this->tenantAsaasPaymentGateway->deletePayment($gateway, $paymentId);
+        } catch (\Throwable) {
+        }
     }
 }
