@@ -98,6 +98,7 @@ Route::middleware(['auth', 'platform.admin'])->prefix('platform')->name('platfor
     Route::get('/plans/{plan}/edit', [PlatformPlanController::class, 'edit'])->name('plans.edit');
     Route::patch('/plans/{plan}', [PlatformPlanController::class, 'update'])->name('plans.update');
     Route::get('/organizations', [PlatformOrganizationController::class, 'index'])->name('organizations.index');
+    Route::post('/organizations', [PlatformOrganizationController::class, 'store'])->name('organizations.store');
     Route::get('/organizations/{organization}', [PlatformOrganizationController::class, 'show'])->name('organizations.show');
     Route::patch('/organizations/{organization}/notes', [PlatformOrganizationController::class, 'updateNotes'])->name('organizations.notes.update');
     Route::patch('/organizations/{organization}/plan', [PlatformOrganizationPlanController::class, 'updatePlan'])->name('organizations.plan.update');

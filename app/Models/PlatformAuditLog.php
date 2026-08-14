@@ -21,6 +21,8 @@ class PlatformAuditLog extends Model
 
     public const ACTION_ORGANIZATION_VIEWED = 'platform.organization.viewed';
 
+    public const ACTION_TENANT_PROVISIONED = 'platform.tenant.provisioned';
+
     protected $fillable = [
         'platform_admin_user_id',
         'action',
