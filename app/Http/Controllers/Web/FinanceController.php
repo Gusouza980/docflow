@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers\Web;
 
+use App\Actions\Finance\CreateReceivableAsaasCharge;
 use App\Actions\Finance\GenerateReceivableRecurrences;
 use App\Actions\Finance\NotifyOverdueReceivableToClient;
 use App\Actions\Finance\RenegotiateReceivable;
 use App\Actions\Organizations\RecordAuditLog;
+use App\Exceptions\AsaasApiException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Web\RenegotiateReceivableRequest;
 use App\Http\Requests\Web\StoreFinancialCategoryRequest;
@@ -20,6 +22,7 @@ use App\Models\FinancialCategory;
 use App\Models\OrganizationMember;
 use App\Models\Payable;
 use App\Models\Receivable;
+use App\Models\ReceivableCharge;
 use App\Models\ReceivableRecurrence;
 use App\Models\ReceivableReminder;
 use App\Support\WebOrganizationContext;
@@ -30,6 +33,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
+use InvalidArgumentException;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 class FinanceController extends Controller
@@ -44,11 +48,13 @@ class FinanceController extends Controller
 
         abort_unless($this->canAccessFinance($membership), HttpResponse::HTTP_FORBIDDEN);
 
+        $membership->loadMissing('organization.paymentGateway');
+
         $receivablesQuery = $this->receivableQuery($request, $membership);
         $payablesQuery = $this->payableQuery($request, $membership);
 
         $receivables = (clone $receivablesQuery)
-            ->with(['client', 'category'])
+            ->with(['client', 'category', 'charge'])
             ->withCount('reminders')
             ->orderBy('due_at')
             ->paginate(12, ['*'], 'receivables_page')
@@ -98,6 +104,7 @@ class FinanceController extends Controller
                 'client_id' => $request->string('client_id')->toString(),
             ],
             'options' => $this->options($membership),
+            'payment_gateway' => $this->paymentGatewaySummary($membership),
         ]);
     }
 
@@ -248,6 +255,34 @@ class FinanceController extends Controller
         return redirect()->route('finance.index')->with('status', 'Cobrança renegociada. Nova cobrança criada.');
     }
 
+    public function chargeReceivable(
+        Request $request,
+        Receivable $receivable,
+        WebOrganizationContext $webOrganizationContext,
+        CreateReceivableAsaasCharge $createReceivableAsaasCharge,
+        RecordAuditLog $auditLog,
+    ): RedirectResponse {
+        $membership = $this->financeMembership($request, $webOrganizationContext);
+        abort_if($receivable->organization_id !== $membership->organization_id, HttpResponse::HTTP_NOT_FOUND);
+
+        $billingType = strtoupper((string) $request->input('billing_type', ReceivableCharge::TYPE_PIX));
+
+        try {
+            $charge = $createReceivableAsaasCharge->execute($receivable, $billingType);
+        } catch (InvalidArgumentException|AsaasApiException $exception) {
+            return redirect()->route('finance.index')->with('error', $exception->getMessage());
+        }
+
+        $auditLog->execute('web.finance.receivable.charge_created', $request->user(), $membership->organization, $receivable, [
+            'charge_id' => $charge->id,
+            'billing_type' => $charge->billing_type,
+        ], $request);
+
+        return redirect()->route('finance.index')->with('status', $charge->billing_type === ReceivableCharge::TYPE_BOLETO
+            ? 'Boleto gerado. O cliente já pode pagar no portal.'
+            : 'Pix gerado. O cliente já pode pagar no portal.');
+    }
+
     public function storeReceivableReminder(
         StoreReceivableReminderRequest $request,
         Receivable $receivable,
@@ -355,6 +390,21 @@ class FinanceController extends Controller
             'renegotiated_to_id' => $receivable->renegotiated_to_receivable_id,
             'client' => ['id' => $receivable->client->id, 'name' => $receivable->client->display_name],
             'category' => $receivable->category ? ['id' => $receivable->category->id, 'name' => $receivable->category->name] : null,
+            'charge' => $receivable->charge?->toPortalArray(),
+            'can_charge' => in_array($receivable->status, [Receivable::STATUS_OPEN, Receivable::STATUS_PARTIAL], true),
+        ];
+    }
+
+    /**
+     * @return array{connected: bool, can_manage: bool}
+     */
+    private function paymentGatewaySummary(OrganizationMember $membership): array
+    {
+        $gateway = $membership->organization->paymentGateway;
+
+        return [
+            'connected' => $gateway?->isReady() ?? false,
+            'can_manage' => $membership->isAdmin(),
         ];
     }
 

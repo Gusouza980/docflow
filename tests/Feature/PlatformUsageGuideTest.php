@@ -117,6 +117,7 @@ class PlatformUsageGuideTest extends TestCase
         $headings = array_column($guide['sections'], 'heading');
 
         $this->assertContains('Recorrências', $headings);
+        $this->assertContains('Pix e boleto no portal', $headings);
 
         $payload = json_encode($guide, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
@@ -125,6 +126,7 @@ class PlatformUsageGuideTest extends TestCase
         $this->assertStringContainsString('finance:generate-recurring-receivables', $payload);
         $this->assertStringContainsString('/platform/invoices', $payload);
         $this->assertStringContainsString('contract_id', $payload);
+        $this->assertStringContainsString('/webhooks/tenant/asaas/', $payload);
     }
 
     public function test_platform_admin_can_view_contracts_and_finance_guides(): void
@@ -145,6 +147,6 @@ class PlatformUsageGuideTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Platform/Guides/Show', false)
                 ->where('guide.slug', 'financeiro')
-                ->has('guide.sections', 4));
+                ->has('guide.sections', 5));
     }
 }

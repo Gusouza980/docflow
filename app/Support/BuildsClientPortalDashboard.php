@@ -157,6 +157,7 @@ class BuildsClientPortalDashboard
     public function financePageForAccess(ClientPortalAccess $access): array
     {
         $receivables = $access->client->receivables()
+            ->with('charge')
             ->whereIn('status', [Receivable::STATUS_OPEN, Receivable::STATUS_PARTIAL, Receivable::STATUS_PAID])
             ->orderByRaw('CASE WHEN due_at IS NULL THEN 1 ELSE 0 END')
             ->orderBy('due_at')
@@ -187,6 +188,9 @@ class BuildsClientPortalDashboard
                     'payment_reference' => $receivable->payment_reference,
                     'payment_url' => $receivable->payment_url,
                     'notes' => $receivable->notes,
+                    'can_pay' => in_array($receivable->status, [Receivable::STATUS_OPEN, Receivable::STATUS_PARTIAL], true)
+                        && $receivable->charge !== null,
+                    'charge' => $receivable->charge?->toPortalArray(),
                 ])
                 ->values()
                 ->all(),

@@ -1,8 +1,8 @@
 # Sprint ativa
 
-**Status:** Sprint 23 implementada — Horizonte 5  
+**Status:** Sprint 24 implementada — Horizonte 5  
 **Última sync:** 2026-08-13  
-**Branch:** `feat/sprint-23-contrato-gera-cobranca`
+**Branch:** `feat/sprint-24-cliente-paga-cobranca`
 
 ## Concluído
 
@@ -16,10 +16,11 @@
 | [21](sprint-21-dashboard-resultado-valor/TASKS.md) | Dashboard de resultado e valor | [x] |
 | [22](sprint-22-roi-docflow/TASKS.md) | ROI Docflow (automações × horas) | [x] |
 | [23](sprint-23-contrato-gera-cobranca/TASKS.md) | Contrato gera cobrança | [x] |
+| [24](sprint-24-cliente-paga-cobranca/TASKS.md) | Cliente paga (Asaas do tenant) | [x] |
 
 ## Em foco
 
-Sprint 23 na stack. Próximo: [Sprint 24](sprint-24-cliente-paga-cobranca/TASKS.md) (cliente paga).
+Sprint 24 na stack (base: Sprint 23). Próximo: [Sprint 25](sprint-25-comunicacao-real/TASKS.md).
 
 Plano: [Horizonte 5](horizonte-05-rotina-diaria/README.md).
 

@@ -13,9 +13,22 @@ class AsaasClient
     public function __construct(
         private ?string $apiKey = null,
         private ?string $baseUrl = null,
+        private bool $usePlatformDefaults = true,
     ) {
-        $this->apiKey ??= (string) config('docflow.billing.asaas_api_key');
+        if ($this->usePlatformDefaults) {
+            $this->apiKey ??= (string) config('docflow.billing.asaas_api_key');
+        }
+
         $this->baseUrl ??= rtrim((string) config('docflow.billing.asaas_base_url'), '/');
+    }
+
+    public static function forTenant(string $apiKey, ?string $baseUrl = null): self
+    {
+        if ($apiKey === '') {
+            throw new AsaasApiException('A chave Asaas da organização está vazia.');
+        }
+
+        return new self($apiKey, $baseUrl, usePlatformDefaults: false);
     }
 
     /**

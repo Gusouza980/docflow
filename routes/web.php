@@ -36,6 +36,7 @@ use App\Http\Controllers\Web\OrganizationBillingController;
 use App\Http\Controllers\Web\OrganizationController;
 use App\Http\Controllers\Web\OrganizationInvitationController;
 use App\Http\Controllers\Web\OrganizationMemberController;
+use App\Http\Controllers\Web\OrganizationPaymentGatewayController;
 use App\Http\Controllers\Web\OrganizationPlanController;
 use App\Http\Controllers\Web\Platform\DashboardController as PlatformDashboardController;
 use App\Http\Controllers\Web\Platform\InvoiceController as PlatformInvoiceController;
@@ -53,6 +54,7 @@ use App\Http\Controllers\Web\TaskChecklistItemController;
 use App\Http\Controllers\Web\TaskController;
 use App\Http\Controllers\Web\TaskTemplateController;
 use App\Http\Controllers\Web\Webhooks\BillingWebhookController;
+use App\Http\Controllers\Web\Webhooks\TenantAsaasWebhookController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -82,6 +84,7 @@ Route::middleware('guest')->group(function (): void {
 Route::get('/invitations/{token}/accept', [InvitationAcceptanceController::class, 'show'])->name('web.invitations.accept.show');
 
 Route::post('/webhooks/billing/{provider}', [BillingWebhookController::class, 'store'])->name('webhooks.billing');
+Route::post('/webhooks/tenant/asaas/{organization}', [TenantAsaasWebhookController::class, 'store'])->name('webhooks.tenant.asaas');
 
 Route::middleware(['auth', 'platform.admin'])->prefix('platform')->name('platform.')->group(function (): void {
     Route::get('/', [PlatformDashboardController::class, 'index'])->name('dashboard');
@@ -170,6 +173,7 @@ Route::middleware('auth')->group(function (): void {
     Route::post('/organizations/billing/cancel', [OrganizationBillingController::class, 'cancel'])->name('organizations.billing.cancel');
     Route::post('/organizations', [OrganizationController::class, 'store'])->name('organizations.store');
     Route::patch('/organizations/{organization}', [OrganizationController::class, 'update'])->name('organizations.update');
+    Route::put('/organizations/{organization}/payment-gateway', [OrganizationPaymentGatewayController::class, 'update'])->name('organizations.payment-gateway.update');
     Route::post('/organizations/{organization}/switch', [OrganizationController::class, 'switch'])->name('organizations.switch');
     Route::post('/invitations/{token}/accept', [InvitationAcceptanceController::class, 'store'])->name('web.invitations.accept');
 
@@ -288,6 +292,7 @@ Route::middleware('auth')->group(function (): void {
         Route::post('/finance/categories', [FinanceController::class, 'storeCategory'])->name('finance.categories.store');
         Route::post('/finance/receivables', [FinanceController::class, 'storeReceivable'])->name('finance.receivables.store');
         Route::post('/finance/receivables/{receivable}/payments', [FinanceController::class, 'payReceivable'])->name('finance.receivables.payments.store');
+        Route::post('/finance/receivables/{receivable}/charge', [FinanceController::class, 'chargeReceivable'])->name('finance.receivables.charge');
         Route::patch('/finance/receivables/{receivable}/cancel', [FinanceController::class, 'cancelReceivable'])->name('finance.receivables.cancel');
         Route::patch('/finance/receivables/{receivable}/renegotiate', [FinanceController::class, 'renegotiateReceivable'])->name('finance.receivables.renegotiate');
         Route::post('/finance/receivables/{receivable}/reminders', [FinanceController::class, 'storeReceivableReminder'])->name('finance.receivables.reminders.store');
