@@ -1,8 +1,8 @@
 # Sprint ativa
 
-**Status:** Sprint 25 implementada — Horizonte 5  
+**Status:** Horizonte 5 concluído  
 **Última sync:** 2026-08-13  
-**Branch:** `feat/sprint-25-comunicacao-real`
+**Branch:** `feat/sprint-26-meu-dia-ciclo-mensal`
 
 ## Concluído
 
@@ -18,10 +18,11 @@
 | [23](sprint-23-contrato-gera-cobranca/TASKS.md) | Contrato gera cobrança | [x] |
 | [24](sprint-24-cliente-paga-cobranca/TASKS.md) | Cliente paga (Asaas do tenant) | [x] |
 | [25](sprint-25-comunicacao-real/TASKS.md) | Comunicação que sai de verdade | [x] |
+| [26](sprint-26-meu-dia-ciclo-mensal/TASKS.md) | Meu dia + pacote documental | [x] |
 
 ## Em foco
 
-Sprint 25 na stack (base: Sprint 24). Próximo: [Sprint 26](sprint-26-meu-dia-ciclo-mensal/TASKS.md).
+Horizonte 5 fechado (23–26). Verticais jurídico/contábil ficam para o Horizonte 6, após uso real.
 
 Plano: [Horizonte 5](horizonte-05-rotina-diaria/README.md).
 

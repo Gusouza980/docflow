@@ -37,6 +37,7 @@ const createForm = useForm({
     is_active: true,
     default_amount_cents: '',
     default_billing_interval: 'month',
+    monthly_document_items: '',
 });
 
 const editForm = useForm({
@@ -45,6 +46,7 @@ const editForm = useForm({
     is_active: true,
     default_amount_cents: '',
     default_billing_interval: 'month',
+    monthly_document_items: '',
 });
 
 const money = formatBrlCurrency;
@@ -70,6 +72,7 @@ function openEdit(type) {
     editForm.is_active = type.is_active;
     editForm.default_amount_cents = formatBrlFromCents(type.default_amount_cents);
     editForm.default_billing_interval = type.default_billing_interval ?? 'month';
+    editForm.monthly_document_items = type.monthly_document_items_text ?? '';
     editModalOpen.value = true;
 }
 
@@ -112,6 +115,9 @@ function submitEdit() {
                 <template #cell-defaults="{ row }">
                     <p class="text-sm text-slate-700">{{ money(row.default_amount_cents) }}</p>
                     <p class="text-xs text-slate-500">{{ row.default_billing_interval_label || 'Sem recorrência' }}</p>
+                    <p v-if="row.monthly_document_items?.length" class="mt-1 text-xs text-slate-500">
+                        Pedir todo mês: {{ row.monthly_document_items.length }} item(ns)
+                    </p>
                 </template>
                 <template #cell-status="{ row }">
                     <Badge :tone="row.is_active ? 'success' : 'secondary'">{{ row.is_active ? 'Ativo' : 'Inativo' }}</Badge>
@@ -130,6 +136,7 @@ function submitEdit() {
                 <TextareaInput id="service-type-description" v-model="createForm.description" label="Descrição" :error="createForm.errors.description" />
                 <CurrencyInput id="service-type-amount" v-model="createForm.default_amount_cents" label="Valor sugerido" :error="createForm.errors.default_amount_cents" />
                 <SelectInput id="service-type-interval" v-model="createForm.default_billing_interval" label="Recorrência sugerida" :options="options.billing_intervals" :error="createForm.errors.default_billing_interval" />
+                <TextareaInput id="service-type-monthly-docs" v-model="createForm.monthly_document_items" label="Pedir todo mês (um por linha)" hint="Gera a solicitação documental do mês para clientes com este serviço ativo." :error="createForm.errors.monthly_document_items" />
                 <div class="flex justify-end gap-2">
                     <Button type="button" variant="secondary" @click="createModalOpen = false">Cancelar</Button>
                     <Button type="submit" :disabled="createForm.processing">Salvar</Button>
@@ -143,6 +150,7 @@ function submitEdit() {
                 <TextareaInput id="edit-service-type-description" v-model="editForm.description" label="Descrição" :error="editForm.errors.description" />
                 <CurrencyInput id="edit-service-type-amount" v-model="editForm.default_amount_cents" label="Valor sugerido" :error="editForm.errors.default_amount_cents" />
                 <SelectInput id="edit-service-type-interval" v-model="editForm.default_billing_interval" label="Recorrência sugerida" :options="options.billing_intervals" :error="editForm.errors.default_billing_interval" />
+                <TextareaInput id="edit-service-type-monthly-docs" v-model="editForm.monthly_document_items" label="Pedir todo mês (um por linha)" hint="Gera a solicitação documental do mês para clientes com este serviço ativo." :error="editForm.errors.monthly_document_items" />
                 <label class="flex items-center gap-2 text-sm text-slate-700">
                     <input v-model="editForm.is_active" type="checkbox" class="rounded border-slate-300" />
                     Ativo

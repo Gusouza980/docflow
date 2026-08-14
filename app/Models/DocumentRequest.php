@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Database\Factories\DocumentRequestFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,7 +11,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class DocumentRequest extends Model
 {
-    /** @use HasFactory<\Database\Factories\DocumentRequestFactory> */
+    /** @use HasFactory<DocumentRequestFactory> */
     use HasFactory, SoftDeletes;
 
     public const STATUS_PENDING = 'pending';
@@ -22,10 +23,12 @@ class DocumentRequest extends Model
     protected $fillable = [
         'organization_id',
         'client_id',
+        'client_service_id',
         'requested_by_user_id',
         'title',
         'instructions',
         'due_at',
+        'billing_period',
         'status',
         'completed_at',
         'cancelled_at',
@@ -40,6 +43,7 @@ class DocumentRequest extends Model
     {
         return [
             'due_at' => 'date',
+            'billing_period' => 'date',
             'completed_at' => 'datetime',
             'cancelled_at' => 'datetime',
         ];
@@ -53,6 +57,11 @@ class DocumentRequest extends Model
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);
+    }
+
+    public function clientService(): BelongsTo
+    {
+        return $this->belongsTo(ClientService::class);
     }
 
     public function requestedBy(): BelongsTo

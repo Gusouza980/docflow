@@ -139,7 +139,7 @@ class PlatformUsageGuideTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Platform/Guides/Show', false)
                 ->where('guide.slug', 'servicos-contratos')
-                ->has('guide.sections', 4));
+                ->has('guide.sections', 5));
 
         $this->actingAs($admin)
             ->get('/platform/guides/financeiro')
