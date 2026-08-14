@@ -28,6 +28,11 @@ class CreateReceivableAsaasCharge
 
         $existing = DB::transaction(function () use ($receivable): ?ReceivableCharge {
             $locked = Receivable::query()->lockForUpdate()->findOrFail($receivable->id);
+
+            if (! in_array($locked->status, [Receivable::STATUS_OPEN, Receivable::STATUS_PARTIAL], true)) {
+                throw new InvalidArgumentException('Só é possível gerar Pix para cobranças em aberto.');
+            }
+
             $charge = ReceivableCharge::query()->where('receivable_id', $locked->id)->lockForUpdate()->first();
 
             return $charge?->isPending() ? $charge : null;
@@ -53,6 +58,11 @@ class CreateReceivableAsaasCharge
 
         return DB::transaction(function () use ($receivable, $billingType, $gateway, $payment): ReceivableCharge {
             $locked = Receivable::query()->lockForUpdate()->findOrFail($receivable->id);
+
+            if (! in_array($locked->status, [Receivable::STATUS_OPEN, Receivable::STATUS_PARTIAL], true)) {
+                throw new InvalidArgumentException('Só é possível gerar Pix para cobranças em aberto.');
+            }
+
             $existing = ReceivableCharge::query()->where('receivable_id', $locked->id)->lockForUpdate()->first();
 
             if ($existing?->isPending()) {
