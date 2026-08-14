@@ -125,6 +125,7 @@ function formatChanges(changes) {
             </div>
 
             <div v-if="can.manage" class="flex flex-wrap gap-2">
+                <Link href="/messages/batch"><Button variant="secondary" size="sm">Envio em lote</Button></Link>
                 <Link href="/message-templates"><Button variant="secondary" size="sm">Modelos de mensagem</Button></Link>
                 <Link href="/announcements"><Button variant="secondary" size="sm">Comunicados</Button></Link>
             </div>

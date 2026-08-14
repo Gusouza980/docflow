@@ -30,6 +30,7 @@ use App\Http\Controllers\Web\DocumentRequestItemController;
 use App\Http\Controllers\Web\FinanceController;
 use App\Http\Controllers\Web\InternalNotificationController;
 use App\Http\Controllers\Web\LeadController;
+use App\Http\Controllers\Web\MessageBatchController;
 use App\Http\Controllers\Web\MessageTemplateController;
 use App\Http\Controllers\Web\OnboardingTemplateController;
 use App\Http\Controllers\Web\OrganizationBillingController;
@@ -217,6 +218,7 @@ Route::middleware('auth')->group(function (): void {
         Route::delete('/clients/{client}/tags/{tag}', [ClientTagController::class, 'detach'])->name('clients.tags.detach');
         Route::get('/clients/{client}/messages/poll', [ClientHubController::class, 'messages'])->name('clients.messages.poll');
         Route::post('/clients/{client}/messages', [ClientHubController::class, 'storeMessage'])->name('clients.messages.store');
+        Route::post('/clients/{client}/messages/{message}/whatsapp', [ClientHubController::class, 'openWhatsApp'])->name('clients.messages.whatsapp');
         Route::post('/clients/{client}/messages/{message}/ticket', [ClientHubController::class, 'storeTicketFromMessage'])->name('clients.messages.ticket.store');
         Route::get('/clients/{client}/tickets/{ticket}', [ClientHubController::class, 'showTicket'])->name('clients.tickets.show');
         Route::post('/clients/{client}/tickets', [ClientHubController::class, 'storeTicket'])->name('clients.tickets.store');
@@ -310,6 +312,10 @@ Route::middleware('auth')->group(function (): void {
         Route::post('/portal/tickets', [PortalController::class, 'storeTicket'])->name('portal.tickets.store');
         Route::patch('/portal/profile-updates/{profileUpdate}/approve', [ClientProfileUpdateController::class, 'approve'])->name('portal.profile-updates.approve');
         Route::patch('/portal/profile-updates/{profileUpdate}/reject', [ClientProfileUpdateController::class, 'reject'])->name('portal.profile-updates.reject');
+
+        Route::get('/messages/batch', [MessageBatchController::class, 'create'])->name('messages.batch.create');
+        Route::post('/messages/batch', [MessageBatchController::class, 'store'])->name('messages.batch.store');
+        Route::get('/messages/batches/{batch}', [MessageBatchController::class, 'show'])->name('messages.batches.show');
 
         Route::get('/message-templates', [MessageTemplateController::class, 'index'])->name('message-templates.index');
         Route::post('/message-templates', [MessageTemplateController::class, 'store'])->name('message-templates.store');

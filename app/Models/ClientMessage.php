@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use Database\Factories\ClientMessageFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ClientMessage extends Model
 {
-    /** @use HasFactory<\Database\Factories\ClientMessageFactory> */
+    /** @use HasFactory<ClientMessageFactory> */
     use HasFactory;
 
     public const DIRECTION_OUTBOUND = 'outbound';
@@ -17,7 +18,11 @@ class ClientMessage extends Model
 
     public const STATUS_REGISTERED = 'registered';
 
+    public const STATUS_QUEUED = 'queued';
+
     public const STATUS_SENT = 'sent';
+
+    public const STATUS_FAILED = 'failed';
 
     public const STATUS_RECEIVED = 'received';
 
@@ -28,6 +33,7 @@ class ClientMessage extends Model
         'client_id',
         'message_template_id',
         'ticket_id',
+        'batch_id',
         'sent_by_user_id',
         'client_portal_access_id',
         'channel',
@@ -35,6 +41,7 @@ class ClientMessage extends Model
         'status',
         'subject',
         'body',
+        'failure_reason',
         'external_name',
         'external_email',
         'sent_at',
@@ -74,6 +81,11 @@ class ClientMessage extends Model
     public function ticket(): BelongsTo
     {
         return $this->belongsTo(Ticket::class);
+    }
+
+    public function batch(): BelongsTo
+    {
+        return $this->belongsTo(MessageBatch::class, 'batch_id');
     }
 
     public function sentBy(): BelongsTo

@@ -1,8 +1,8 @@
 # Sprint ativa
 
-**Status:** Sprint 24 implementada — Horizonte 5  
+**Status:** Sprint 25 implementada — Horizonte 5  
 **Última sync:** 2026-08-13  
-**Branch:** `feat/sprint-24-cliente-paga-cobranca`
+**Branch:** `feat/sprint-25-comunicacao-real`
 
 ## Concluído
 
@@ -17,10 +17,11 @@
 | [22](sprint-22-roi-docflow/TASKS.md) | ROI Docflow (automações × horas) | [x] |
 | [23](sprint-23-contrato-gera-cobranca/TASKS.md) | Contrato gera cobrança | [x] |
 | [24](sprint-24-cliente-paga-cobranca/TASKS.md) | Cliente paga (Asaas do tenant) | [x] |
+| [25](sprint-25-comunicacao-real/TASKS.md) | Comunicação que sai de verdade | [x] |
 
 ## Em foco
 
-Sprint 24 na stack (base: Sprint 23). Próximo: [Sprint 25](sprint-25-comunicacao-real/TASKS.md).
+Sprint 25 na stack (base: Sprint 24). Próximo: [Sprint 26](sprint-26-meu-dia-ciclo-mensal/TASKS.md).
 
 Plano: [Horizonte 5](horizonte-05-rotina-diaria/README.md).
 

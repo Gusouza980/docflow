@@ -50,6 +50,7 @@ return [
             'create_tasks_from_template' => 8,
             'create_document_request' => 6,
             'notify_organization_members' => 3,
+            'send_message_template' => 4,
             'default' => 5,
         ],
     ],

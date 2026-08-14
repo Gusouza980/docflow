@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use Database\Factories\MessageTemplateFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class MessageTemplate extends Model
 {
-    /** @use HasFactory<\Database\Factories\MessageTemplateFactory> */
+    /** @use HasFactory<MessageTemplateFactory> */
     use HasFactory;
 
     public const CHANNEL_EMAIL = 'email';
@@ -63,7 +64,27 @@ class MessageTemplate extends Model
      */
     public function renderBody(array $variables): string
     {
-        return str($this->body)
+        return $this->renderText($this->body, $variables);
+    }
+
+    /**
+     * @param  array<string, string>  $variables
+     */
+    public function renderSubject(array $variables): ?string
+    {
+        if ($this->subject === null || $this->subject === '') {
+            return null;
+        }
+
+        return $this->renderText($this->subject, $variables);
+    }
+
+    /**
+     * @param  array<string, string>  $variables
+     */
+    public function renderText(string $text, array $variables): string
+    {
+        return str($text)
             ->replaceMatches('/{{\s*([a-zA-Z0-9_]+)\s*}}/', fn (array $matches): string => $variables[$matches[1]] ?? $matches[0])
             ->toString();
     }

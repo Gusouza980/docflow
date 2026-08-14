@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Web\StoreAutomationRuleRequest;
 use App\Models\AutomationLog;
 use App\Models\AutomationRule;
+use App\Models\MessageTemplate;
 use App\Models\OrganizationMember;
 use App\Models\TaskTemplate;
 use App\Support\Billing\PlanLimitChecker;
@@ -62,6 +63,16 @@ class AutomationRuleController extends Controller
                         'value' => $template->id,
                         'label' => $template->name,
                     ]),
+                'message_templates' => MessageTemplate::query()
+                    ->where('organization_id', $membership->organization_id)
+                    ->where('is_active', true)
+                    ->whereIn('channel', [MessageTemplate::CHANNEL_EMAIL, MessageTemplate::CHANNEL_PORTAL])
+                    ->orderBy('name')
+                    ->get(['id', 'name', 'channel'])
+                    ->map(fn (MessageTemplate $template): array => [
+                        'value' => $template->id,
+                        'label' => $template->name,
+                    ]),
             ],
             'can' => [
                 'manage' => true,
@@ -91,6 +102,16 @@ class AutomationRuleController extends Controller
             abort_unless($template->organization_id === $membership->organization_id, HttpResponse::HTTP_NOT_FOUND);
 
             $actions[0]['params']['task_template_id'] = $template->id;
+        }
+
+        if ($data['preset_key'] === 'receivable_overdue_email') {
+            abort_unless(! empty($data['message_template_id']), HttpResponse::HTTP_UNPROCESSABLE_ENTITY);
+
+            $template = MessageTemplate::query()->findOrFail($data['message_template_id']);
+            abort_unless($template->organization_id === $membership->organization_id, HttpResponse::HTTP_NOT_FOUND);
+            abort_unless(in_array($template->channel, [MessageTemplate::CHANNEL_EMAIL, MessageTemplate::CHANNEL_PORTAL], true), HttpResponse::HTTP_UNPROCESSABLE_ENTITY);
+
+            $actions[0]['params']['message_template_id'] = $template->id;
         }
 
         $rule = AutomationRule::query()->create([

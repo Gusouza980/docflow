@@ -656,6 +656,7 @@ class UsageGuideCatalog
                         'Criar tarefas a partir de template.',
                         'Criar solicitação documental.',
                         'Notificar membros da org (InternalReminder tipo automation).',
+                        '`send_message_template` — e-mail ou portal com modelo existente (preset cobrança vencida).',
                     ],
                 ],
                 [
@@ -693,8 +694,18 @@ class UsageGuideCatalog
                     'heading' => 'Páginas internas (escritório)',
                     'pages' => [
                         ['path' => '/portal', 'name' => 'Gestão de acessos', 'notes' => 'Criar/revogar links'],
+                        ['path' => '/messages/batch', 'name' => 'Envio em lote', 'notes' => 'Revisão + status por destinatário'],
                         ['path' => '/message-templates', 'name' => 'Modelos de mensagem', 'notes' => 'Comunicação padronizada'],
                         ['path' => '/announcements', 'name' => 'Comunicados', 'notes' => 'Avisos ao portal'],
+                    ],
+                ],
+                [
+                    'heading' => 'Envio que sai de verdade',
+                    'rules' => [
+                        'E-mail do modelo vai para o contato (primário → qualquer e-mail → acesso do portal).',
+                        'Portal grava a conversa e avisa o acesso ativo.',
+                        'WhatsApp abre `wa.me` com o texto do modelo — o Docflow não fala com a API da Meta.',
+                        'Lote: filtrar, revisar quem será pulado (sem consentimento/contato), depois enviar. Teto de 100.',
                     ],
                 ],
                 [

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Web;
 
+use App\Actions\Communication\DeliverOutboundClientMessage;
 use App\Actions\Notifications\NotifyPortalClient;
 use App\Actions\Tickets\StoreTicketMessageAttachment;
 use App\Http\Controllers\Controller;
@@ -13,7 +14,6 @@ use App\Http\Requests\Web\UpdateClientHubTicketRequest;
 use App\Models\Client;
 use App\Models\ClientMessage;
 use App\Models\ClientPortalAccess;
-use App\Models\CommunicationConsent;
 use App\Models\MessageTemplate;
 use App\Models\OrganizationMember;
 use App\Models\Ticket;
@@ -22,6 +22,8 @@ use App\Models\TicketMessageAttachment;
 use App\Support\Billing\PlanLimitChecker;
 use App\Support\BuildsClientPortalDashboard;
 use App\Support\BuildsTicketHubPayload;
+use App\Support\Communication\ClientMessageDestination;
+use App\Support\Communication\WhatsAppLink;
 use App\Support\WebOrganizationContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -39,6 +41,9 @@ class ClientHubController extends Controller
         private BuildsTicketHubPayload $ticketPayload,
         private StoreTicketMessageAttachment $storeTicketAttachment,
         private NotifyPortalClient $notifyPortalClient,
+        private DeliverOutboundClientMessage $deliverOutboundClientMessage,
+        private ClientMessageDestination $destination,
+        private WhatsAppLink $whatsAppLink,
     ) {}
 
     public function messages(Client $client, Request $request, WebOrganizationContext $webOrganizationContext): JsonResponse
@@ -204,37 +209,53 @@ class ClientHubController extends Controller
             ? MessageTemplate::whereBelongsTo($membership->organization)->findOrFail($data['message_template_id'])
             : null;
 
-        if (! $this->hasConsent($client, $data['channel'], $template?->purpose ?? 'general')) {
+        $purpose = $template?->purpose ?? 'general';
+        $reason = $this->destination->skipReason($client, $data['channel'], $purpose);
+
+        if ($reason !== null) {
             return redirect()
                 ->route('clients.show', ['client' => $client, 'tab' => 'communication'])
-                ->with('error', 'Consentimento ativo é obrigatório para este canal.');
+                ->with('error', $this->deliveryError($reason));
         }
 
-        $message = ClientMessage::create([
-            'organization_id' => $membership->organization_id,
-            'client_id' => $client->id,
-            'message_template_id' => $template?->id,
-            'sent_by_user_id' => $request->user()->id,
-            'channel' => $data['channel'],
-            'direction' => ClientMessage::DIRECTION_OUTBOUND,
-            'status' => ClientMessage::STATUS_SENT,
-            'subject' => $data['subject'] ?? $template?->subject,
-            'body' => $data['body'] ?? $template?->renderBody(['client_name' => $client->display_name]),
-            'sent_at' => now(),
-        ]);
+        $variables = $this->destination->variablesFor($client);
+        $message = $this->deliverOutboundClientMessage->queue(
+            client: $client,
+            channel: $data['channel'],
+            body: $data['body'] ?? '',
+            subject: $data['subject'] ?? $template?->subject,
+            template: $template,
+            sentBy: $request->user(),
+            variables: $variables,
+        );
 
-        if ($data['channel'] === 'portal') {
-            $this->notifyPortalClient->execute(
-                $client,
-                'Nova mensagem do escritório',
-                str($message->body)->limit(200)->toString(),
-                route('client-portal.messages', absolute: true),
-            );
-        }
+        $status = match ($message->channel) {
+            MessageTemplate::CHANNEL_WHATSAPP => 'Mensagem pronta. Abra o WhatsApp para enviar.',
+            default => 'Mensagem enviada.',
+        };
 
         return redirect()
             ->route('clients.show', ['client' => $client, 'tab' => 'communication'])
-            ->with('status', 'Mensagem registrada.');
+            ->with('status', $status)
+            ->with('whatsapp_url', $message->channel === MessageTemplate::CHANNEL_WHATSAPP
+                ? $this->whatsAppLink->forClient($client, $message->body)
+                : null);
+    }
+
+    public function openWhatsApp(
+        Client $client,
+        ClientMessage $message,
+        Request $request,
+        WebOrganizationContext $webOrganizationContext,
+    ): RedirectResponse {
+        $membership = $this->membership($request, $webOrganizationContext);
+        abort_if($client->organization_id !== $membership->organization_id, HttpResponse::HTTP_NOT_FOUND);
+        abort_if($message->client_id !== $client->id, HttpResponse::HTTP_NOT_FOUND);
+        Gate::authorize('update', $client);
+
+        $this->deliverOutboundClientMessage->markWhatsAppOpened($message);
+
+        return back()->with('status', 'WhatsApp marcado como enviado.');
     }
 
     public function storeTicketFromMessage(
@@ -373,13 +394,13 @@ class ClientHubController extends Controller
         return $membership;
     }
 
-    private function hasConsent(Client $client, string $channel, string $purpose): bool
+    private function deliveryError(string $reason): string
     {
-        return CommunicationConsent::query()
-            ->whereBelongsTo($client)
-            ->where('channel', $channel)
-            ->whereIn('purpose', [$purpose, 'general'])
-            ->where('status', CommunicationConsent::STATUS_GRANTED)
-            ->exists();
+        return match ($reason) {
+            'Sem consentimento para este canal' => 'Consentimento ativo é obrigatório para este canal.',
+            'Sem e-mail no contato' => 'Cadastre um e-mail no contato do cliente.',
+            'Sem WhatsApp no contato' => 'Cadastre o WhatsApp no contato do cliente.',
+            default => $reason,
+        };
     }
 }

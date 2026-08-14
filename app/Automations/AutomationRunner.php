@@ -5,6 +5,7 @@ namespace App\Automations;
 use App\Automations\Actions\CreateDocumentRequestAction;
 use App\Automations\Actions\CreateTasksFromTemplateAction;
 use App\Automations\Actions\NotifyOrganizationMembersAction;
+use App\Automations\Actions\SendMessageTemplateAction;
 use App\Models\AutomationLog;
 use App\Models\AutomationRule;
 use App\Models\Organization;
@@ -23,6 +24,7 @@ class AutomationRunner
         private CreateTasksFromTemplateAction $createTasksFromTemplateAction,
         private CreateDocumentRequestAction $createDocumentRequestAction,
         private NotifyOrganizationMembersAction $notifyOrganizationMembersAction,
+        private SendMessageTemplateAction $sendMessageTemplateAction,
     ) {}
 
     /**
@@ -141,6 +143,7 @@ class AutomationRunner
             AutomationRule::ACTION_CREATE_TASKS_FROM_TEMPLATE => $this->createTasksFromTemplateAction->execute($rule, $subject, $params, $context),
             AutomationRule::ACTION_CREATE_DOCUMENT_REQUEST => $this->createDocumentRequestAction->execute($rule, $subject, $params, $context),
             AutomationRule::ACTION_NOTIFY_ORGANIZATION_MEMBERS => $this->notifyOrganizationMembersAction->execute($rule, $subject, $params, $context),
+            AutomationRule::ACTION_SEND_MESSAGE_TEMPLATE => $this->sendMessageTemplateAction->execute($rule, $subject, $params, $context),
             default => throw new \InvalidArgumentException("Ação de automação inválida: {$type}"),
         };
     }

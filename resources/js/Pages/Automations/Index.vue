@@ -32,6 +32,7 @@ const createForm = useForm({
     preset_key: props.presets[0]?.value ?? '',
     name: '',
     task_template_id: '',
+    message_template_id: '',
     is_active: true,
 });
 
@@ -92,6 +93,15 @@ function submitCreate() {
                     :options="options.task_templates"
                     required
                     :error="createForm.errors.task_template_id"
+                />
+                <SelectInput
+                    v-if="selectedPreset?.value === 'receivable_overdue_email'"
+                    id="automation-message-template"
+                    v-model="createForm.message_template_id"
+                    label="Modelo de e-mail"
+                    :options="options.message_templates"
+                    required
+                    :error="createForm.errors.message_template_id"
                 />
                 <div class="flex justify-end gap-2">
                     <Button type="button" variant="secondary" @click="createModalOpen = false">Cancelar</Button>

@@ -72,6 +72,19 @@ class AutomationPresets
                     ],
                 ],
             ],
+            'receivable_overdue_email' => [
+                'name' => 'Cobrança vencida → e-mail ao cliente',
+                'trigger' => AutomationRule::TRIGGER_RECEIVABLE_OVERDUE,
+                'conditions' => [],
+                'actions' => [
+                    [
+                        'type' => AutomationRule::ACTION_SEND_MESSAGE_TEMPLATE,
+                        'params' => [
+                            'message_template_id' => null,
+                        ],
+                    ],
+                ],
+            ],
         ];
     }
 

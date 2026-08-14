@@ -385,8 +385,20 @@ function submitMessage() {
         onSuccess: () => {
             messageForm.reset('body', 'subject');
             pollMessages();
+
+            if (page.props.flash?.whatsapp_url) {
+                window.open(page.props.flash.whatsapp_url, '_blank', 'noopener');
+            }
         },
     });
+}
+
+function openWhatsApp(message) {
+    if (message.whatsapp_url) {
+        window.open(message.whatsapp_url, '_blank', 'noopener');
+    }
+
+    router.post(`/clients/${props.client.id}/messages/${message.id}/whatsapp`, {}, { preserveScroll: true });
 }
 
 function openTicketFromMessage(message) {
@@ -652,6 +664,9 @@ function copyPortalUrl() {
                 </div>
 
                 <div v-else-if="activeTab === 'communication'" class="grid gap-4">
+                    <div class="flex justify-end">
+                        <Link href="/messages/batch"><Button variant="secondary" size="sm">Envio em lote</Button></Link>
+                    </div>
                     <Alert v-if="!hub.communications.has_portal_consent" tone="warning">
                         Este cliente ainda não autorizou comunicação pelo portal. Mensagens outbound pelo canal portal exigem consentimento.
                     </Alert>
@@ -672,7 +687,18 @@ function copyPortalUrl() {
                                     <p class="mb-1 text-xs font-semibold text-slate-500">{{ message.sender_name }} · {{ message.channel }}</p>
                                     <p v-if="message.subject" class="mb-1 text-sm font-semibold">{{ message.subject }}</p>
                                     <p class="whitespace-pre-wrap text-sm leading-6">{{ message.body }}</p>
-                                    <p class="mt-1 text-right text-[11px] text-slate-500">{{ formatMessageTime(message.created_at) }}</p>
+                                    <div class="mt-1 flex items-center justify-between gap-2">
+                                        <StatusPill v-if="message.status" :status="message.status" />
+                                        <p class="text-right text-[11px] text-slate-500">{{ formatMessageTime(message.created_at) }}</p>
+                                    </div>
+                                    <button
+                                        v-if="message.can_open_whatsapp && can.update"
+                                        type="button"
+                                        class="mt-2 text-xs font-semibold text-blue-700 underline underline-offset-2 hover:text-blue-900"
+                                        @click="openWhatsApp(message)"
+                                    >
+                                        Abrir WhatsApp
+                                    </button>
                                     <button
                                         v-if="message.can_open_ticket && can.update"
                                         type="button"
