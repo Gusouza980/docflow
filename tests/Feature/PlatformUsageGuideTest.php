@@ -18,8 +18,8 @@ class PlatformUsageGuideTest extends TestCase
     {
         $admin = User::factory()->create(['is_platform_admin' => true]);
 
-        $this->actingAs($admin)
-            ->get('/platform/guides')
+        $this->actingAs($admin, 'admin')
+            ->get('/admin/guides')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Platform/Guides/Index', false)
@@ -31,8 +31,8 @@ class PlatformUsageGuideTest extends TestCase
     {
         $admin = User::factory()->create(['is_platform_admin' => true]);
 
-        $this->actingAs($admin)
-            ->get('/platform/guides/portal-do-cliente')
+        $this->actingAs($admin, 'admin')
+            ->get('/admin/guides/portal-do-cliente')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Platform/Guides/Show', false)
@@ -46,8 +46,8 @@ class PlatformUsageGuideTest extends TestCase
     {
         $admin = User::factory()->create(['is_platform_admin' => true]);
 
-        $this->actingAs($admin)
-            ->get('/platform/guides/planos-limites-features')
+        $this->actingAs($admin, 'admin')
+            ->get('/admin/guides/planos-limites-features')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Platform/Guides/Show', false)
@@ -59,8 +59,8 @@ class PlatformUsageGuideTest extends TestCase
     {
         $admin = User::factory()->create(['is_platform_admin' => true]);
 
-        $this->actingAs($admin)
-            ->get('/platform/guides/nao-existe')
+        $this->actingAs($admin, 'admin')
+            ->get('/admin/guides/nao-existe')
             ->assertNotFound();
     }
 
@@ -77,8 +77,8 @@ class PlatformUsageGuideTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get('/platform/guides')
-            ->assertForbidden();
+            ->get('/admin/guides')
+            ->assertRedirect(route('admin.login'));
     }
 
     public function test_catalog_exposes_all_expected_slugs(): void
@@ -108,7 +108,7 @@ class PlatformUsageGuideTest extends TestCase
         $this->assertStringContainsString('Gerar mensalidade no financeiro', $payload);
         $this->assertStringContainsString('finance:generate-recurring-receivables', $payload);
         $this->assertStringContainsString('MRR continua estimado pelos contratos ativos', $payload);
-        $this->assertStringContainsString('/platform/invoices', $payload);
+        $this->assertStringContainsString('/admin/invoices', $payload);
     }
 
     public function test_finance_guide_documents_contract_recurrence_and_saas_split(): void
@@ -124,25 +124,36 @@ class PlatformUsageGuideTest extends TestCase
         $this->assertIsString($payload);
         $this->assertStringContainsString('Gerar mensalidade no financeiro', $payload);
         $this->assertStringContainsString('finance:generate-recurring-receivables', $payload);
-        $this->assertStringContainsString('/platform/invoices', $payload);
+        $this->assertStringContainsString('/admin/invoices', $payload);
         $this->assertStringContainsString('contract_id', $payload);
         $this->assertStringContainsString('/webhooks/tenant/asaas/', $payload);
+    }
+
+    public function test_platform_admin_guide_documents_login_and_impersonation(): void
+    {
+        $guide = app(UsageGuideCatalog::class)->find('platform-admin');
+        $payload = json_encode($guide, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
+        $this->assertIsString($payload);
+        $this->assertStringContainsString('/admin/login', $payload);
+        $this->assertStringContainsString('Acessar como dono', $payload);
+        $this->assertStringContainsString('impersonation.started', $payload);
     }
 
     public function test_platform_admin_can_view_contracts_and_finance_guides(): void
     {
         $admin = User::factory()->create(['is_platform_admin' => true]);
 
-        $this->actingAs($admin)
-            ->get('/platform/guides/servicos-contratos')
+        $this->actingAs($admin, 'admin')
+            ->get('/admin/guides/servicos-contratos')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Platform/Guides/Show', false)
                 ->where('guide.slug', 'servicos-contratos')
                 ->has('guide.sections', 5));
 
-        $this->actingAs($admin)
-            ->get('/platform/guides/financeiro')
+        $this->actingAs($admin, 'admin')
+            ->get('/admin/guides/financeiro')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Platform/Guides/Show', false)

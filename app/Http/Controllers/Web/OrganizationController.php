@@ -2,10 +2,8 @@
 
 namespace App\Http\Controllers\Web;
 
-use App\Actions\Organizations\CreateOrganization;
 use App\Actions\Organizations\RecordAuditLog;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Web\StoreOrganizationRequest;
 use App\Http\Requests\Web\UpdateOrganizationRequest;
 use App\Models\Organization;
 use App\Models\OrganizationInvitation;
@@ -19,7 +17,7 @@ use Inertia\Response;
 
 class OrganizationController extends Controller
 {
-    public function index(Request $request, WebOrganizationContext $webOrganizationContext): Response
+    public function index(Request $request, WebOrganizationContext $webOrganizationContext): Response|RedirectResponse
     {
         $activeMembership = $webOrganizationContext->membership($request);
 
@@ -60,24 +58,14 @@ class OrganizationController extends Controller
                     ],
             ]);
 
+        if ($organizations->isEmpty()) {
+            return redirect()->route('organizations.unassigned');
+        }
+
         return Inertia::render('Organizations/Index', [
             'organizations' => $organizations,
             'activeOrganizationId' => $activeMembership?->organization_id,
         ]);
-    }
-
-    public function store(
-        StoreOrganizationRequest $request,
-        CreateOrganization $createOrganization,
-        RecordAuditLog $auditLog,
-    ): RedirectResponse {
-        $organization = $createOrganization->execute($request->user(), $request->validated());
-
-        $request->session()->put('active_organization_id', $organization->id);
-
-        $auditLog->execute('web.organization.created', $request->user(), $organization, $organization, request: $request);
-
-        return redirect()->route('organizations.index')->with('status', 'Organização criada e selecionada.');
     }
 
     public function update(

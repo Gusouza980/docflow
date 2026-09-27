@@ -13,7 +13,7 @@ const page = usePage();
 const form = useForm({});
 
 function submit() {
-    form.post(`/invitations/${props.invitation.token}/accept`, { preserveScroll: true });
+    form.post(`/plataforma/invitations/${props.invitation.token}/accept`, { preserveScroll: true });
 }
 </script>
 
@@ -36,7 +36,7 @@ function submit() {
             <Button v-if="page.props.auth?.user" type="submit" :disabled="!invitation.can_accept || form.processing" :loading="form.processing">
                 Aceitar convite
             </Button>
-            <Link v-else href="/login" class="inline-flex h-10 items-center justify-center rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-700">
+            <Link v-else href="/plataforma/login" class="inline-flex h-10 items-center justify-center rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-700">
                 Entrar para aceitar
             </Link>
         </form>

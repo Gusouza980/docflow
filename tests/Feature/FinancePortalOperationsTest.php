@@ -6,12 +6,14 @@ use App\Models\Client;
 use App\Models\ClientPortalAccess;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
+use App\Models\Plan;
 use App\Models\PortalClientAlert;
 use App\Models\Receivable;
 use App\Models\ReceivableReminder;
 use App\Models\SchedulerRunLog;
 use App\Models\User;
 use App\Notifications\PortalClientAlertNotification;
+use Database\Seeders\PlanSeeder;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
@@ -21,6 +23,13 @@ use Tests\TestCase;
 class FinancePortalOperationsTest extends TestCase
 {
     use LazilyRefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->seed(PlanSeeder::class);
+    }
 
     public function test_notify_overdue_command_creates_portal_alert_and_notification(): void
     {
@@ -96,12 +105,12 @@ class FinancePortalOperationsTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post("/finance/receivables/{$receivable->id}/reminders", [
+            ->post("/plataforma/finance/receivables/{$receivable->id}/reminders", [
                 'channel' => ReceivableReminder::CHANNEL_EMAIL,
                 'notes' => 'Cliente contatado.',
                 'notify_client' => true,
             ])
-            ->assertRedirect('/finance');
+            ->assertRedirect('/plataforma/finance');
 
         $this->assertDatabaseHas('receivable_reminders', [
             'receivable_id' => $receivable->id,
@@ -120,10 +129,13 @@ class FinancePortalOperationsTest extends TestCase
     public function test_admin_can_access_audit_page_and_assistant_cannot(): void
     {
         [$admin, $organization] = $this->createMember(OrganizationMember::ROLE_ADMIN);
+        $escritorioPlanId = Plan::query()->where('slug', 'escritorio')->value('id');
+        $organization->update(['plan_id' => $escritorioPlanId]);
+        $organization->subscription?->update(['plan_id' => $escritorioPlanId]);
 
         $this->actingAs($admin)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get('/audit')
+            ->get('/plataforma/audit')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Audit/Index', false)
@@ -134,7 +146,7 @@ class FinancePortalOperationsTest extends TestCase
 
         $this->actingAs($assistant)
             ->withSession(['active_organization_id' => $assistantOrganization->id])
-            ->get('/audit')
+            ->get('/plataforma/audit')
             ->assertForbidden();
     }
 

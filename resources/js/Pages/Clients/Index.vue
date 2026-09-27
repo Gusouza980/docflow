@@ -108,7 +108,7 @@ watch(() => createForm.type, (type) => {
 });
 
 function applyFilters() {
-    router.get('/clients', filterForm.data(), {
+    router.get('/plataforma/clients', filterForm.data(), {
         preserveState: true,
         preserveScroll: true,
     });
@@ -148,7 +148,7 @@ function closeCreateModal() {
 }
 
 function submitCreate() {
-    createForm.post('/clients', {
+    createForm.post('/plataforma/clients', {
         preserveScroll: true,
     });
 }

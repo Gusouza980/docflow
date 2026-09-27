@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Actions\Organizations\CreateOrganization;
 use App\Models\Client;
 use App\Models\ClientPortalAccess;
 use App\Models\Organization;
@@ -31,16 +32,13 @@ class SubscriptionLifecycleTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $this->actingAs($user)
-            ->post('/organizations', [
-                'name' => 'Nova Org Trial',
-                'document' => '12345678901234',
-                'email' => 'nova@example.com',
-                'timezone' => 'America/Sao_Paulo',
-            ])
-            ->assertRedirect('/organizations');
+        $organization = app(CreateOrganization::class)->execute($user, [
+            'name' => 'Nova Org Trial',
+            'document' => '12345678901234',
+            'email' => 'nova@example.com',
+            'timezone' => 'America/Sao_Paulo',
+        ]);
 
-        $organization = Organization::query()->where('name', 'Nova Org Trial')->firstOrFail();
         $essencialPlan = Plan::query()->where('slug', 'essencial')->firstOrFail();
 
         $this->assertDatabaseHas('subscriptions', [
@@ -61,7 +59,7 @@ class SubscriptionLifecycleTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get('/dashboard')
+            ->get('/plataforma/dashboard')
             ->assertRedirect(route('subscription.required'));
 
         Sanctum::actingAs($user);
@@ -83,7 +81,7 @@ class SubscriptionLifecycleTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get('/dashboard')
+            ->get('/plataforma/dashboard')
             ->assertRedirect(route('subscription.required'));
     }
 
@@ -98,7 +96,7 @@ class SubscriptionLifecycleTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get('/dashboard')
+            ->get('/plataforma/dashboard')
             ->assertOk();
     }
 
@@ -113,7 +111,7 @@ class SubscriptionLifecycleTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get('/dashboard')
+            ->get('/plataforma/dashboard')
             ->assertRedirect(route('subscription.required'));
 
         $this->artisan('subscriptions:apply-grace-expiry')->assertSuccessful();
@@ -137,16 +135,16 @@ class SubscriptionLifecycleTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get('/dashboard')
+            ->get('/plataforma/dashboard')
             ->assertRedirect(route('subscription.required'));
 
-        $this->actingAs($platformAdmin)
-            ->post("/platform/organizations/{$organization->id}/subscription/extend-trial", ['days' => 14])
+        $this->actingAs($platformAdmin, 'admin')
+            ->post("/admin/organizations/{$organization->id}/subscription/extend-trial", ['days' => 14])
             ->assertRedirect();
 
-        $this->actingAs($user)
+        $this->actingAs($user, 'web')
             ->withSession(['active_organization_id' => $organization->id])
-            ->get('/dashboard')
+            ->get('/plataforma/dashboard')
             ->assertOk();
     }
 
@@ -157,17 +155,17 @@ class SubscriptionLifecycleTest extends TestCase
 
         $profissionalPlan = Plan::query()->where('slug', 'profissional')->firstOrFail();
 
-        $this->actingAs($platformAdmin)
-            ->post("/platform/organizations/{$organization->id}/subscription/change-plan", [
+        $this->actingAs($platformAdmin, 'admin')
+            ->post("/admin/organizations/{$organization->id}/subscription/change-plan", [
                 'plan_id' => $profissionalPlan->id,
             ])
             ->assertRedirect();
 
         $organization->refresh();
 
-        $this->actingAs($user)
+        $this->actingAs($user, 'web')
             ->withSession(['active_organization_id' => $organization->id])
-            ->get('/organizations/plan')
+            ->get('/plataforma/organizations/plan')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('summary.plan.slug', 'profissional'));

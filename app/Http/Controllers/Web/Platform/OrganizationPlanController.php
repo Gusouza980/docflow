@@ -33,7 +33,7 @@ class OrganizationPlanController extends Controller
         );
 
         return redirect()
-            ->route('platform.organizations.show', $organization)
+            ->route('admin.organizations.show', $organization)
             ->with('status', 'Plano da organização atualizado.');
     }
 
@@ -57,7 +57,7 @@ class OrganizationPlanController extends Controller
         );
 
         return redirect()
-            ->route('platform.organizations.show', $organization)
+            ->route('admin.organizations.show', $organization)
             ->with('status', 'Override de plano registrado.');
     }
 
@@ -80,7 +80,7 @@ class OrganizationPlanController extends Controller
         );
 
         return redirect()
-            ->route('platform.organizations.show', $organization)
+            ->route('admin.organizations.show', $organization)
             ->with('status', 'Override removido.');
     }
 }

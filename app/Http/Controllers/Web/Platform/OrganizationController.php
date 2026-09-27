@@ -94,7 +94,7 @@ class OrganizationController extends Controller
         );
 
         return redirect()
-            ->route('platform.organizations.show', $result['organization'])
+            ->route('admin.organizations.show', $result['organization'])
             ->with('status', "Cliente {$result['user']->email} provisionado. Enviamos o link para definir a senha.")
             ->with('reset_url', $result['reset_url']);
     }
@@ -206,7 +206,7 @@ class OrganizationController extends Controller
         );
 
         return redirect()
-            ->route('platform.organizations.show', $organization)
+            ->route('admin.organizations.show', $organization)
             ->with('status', 'Notas internas atualizadas.');
     }
 
@@ -225,7 +225,7 @@ class OrganizationController extends Controller
         );
 
         return redirect()
-            ->route('platform.organizations.show', $organization)
+            ->route('admin.organizations.show', $organization)
             ->with('status', 'Organização suspensa.');
     }
 
@@ -244,7 +244,7 @@ class OrganizationController extends Controller
         );
 
         return redirect()
-            ->route('platform.organizations.show', $organization)
+            ->route('admin.organizations.show', $organization)
             ->with('status', 'Organização reativada.');
     }
 

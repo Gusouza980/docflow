@@ -67,7 +67,7 @@ class ReportManagementTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get('/reports')
+            ->get('/plataforma/reports')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Reports/Index', false)

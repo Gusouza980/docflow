@@ -23,10 +23,24 @@ class EnsureOrganizationAccessible
         $membership = $this->webOrganizationContext->membership($request);
 
         if ($membership === null) {
-            return $next($request);
+            return redirect()->route('organizations.unassigned');
         }
 
         $organization = $membership->organization;
+
+        if ($request->session()->has('impersonator_id')) {
+            return $next($request);
+        }
+
+        if ($request->routeIs(
+            'subscription.required',
+            'organizations.plan.show',
+            'organizations.billing.show',
+            'organizations.billing.change-plan',
+            'organizations.billing.cancel',
+        )) {
+            return $next($request);
+        }
 
         if ($this->organizationAccessibility->isAccessible($organization)) {
             return $next($request);

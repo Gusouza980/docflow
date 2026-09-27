@@ -2,6 +2,7 @@
 import { computed } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import AppTopbar from '../Components/Layout/AppTopbar.vue';
+import ImpersonationBanner from '../Components/Layout/ImpersonationBanner.vue';
 import MainSidebar from '../Components/Layout/MainSidebar.vue';
 import PlanUsageBanner from '../Components/Layout/PlanUsageBanner.vue';
 import SubscriptionBanner from '../Components/Layout/SubscriptionBanner.vue';
@@ -20,6 +21,7 @@ const user = computed(() => page.props.auth?.user ?? { name: 'Usuário', email: 
 
 <template>
     <div class="min-h-screen bg-slate-50 text-slate-900">
+        <ImpersonationBanner />
         <div class="grid min-h-screen lg:grid-cols-[264px_1fr]">
             <aside class="hidden lg:block">
                 <MainSidebar :active="activeNav" />

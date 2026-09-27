@@ -1,5 +1,9 @@
 <?php
 
+use App\Http\Controllers\Web\Admin\Auth\AuthenticatedSessionController as AdminAuthenticatedSessionController;
+use App\Http\Controllers\Web\Admin\Auth\NewPasswordController as AdminNewPasswordController;
+use App\Http\Controllers\Web\Admin\Auth\PasswordResetLinkController as AdminPasswordResetLinkController;
+use App\Http\Controllers\Web\Admin\ImpersonationController as AdminImpersonationController;
 use App\Http\Controllers\Web\AnnouncementController;
 use App\Http\Controllers\Web\AuditController;
 use App\Http\Controllers\Web\Auth\AuthenticatedSessionController;
@@ -28,6 +32,7 @@ use App\Http\Controllers\Web\DocumentController;
 use App\Http\Controllers\Web\DocumentRequestController;
 use App\Http\Controllers\Web\DocumentRequestItemController;
 use App\Http\Controllers\Web\FinanceController;
+use App\Http\Controllers\Web\ImpersonationStopController;
 use App\Http\Controllers\Web\InternalNotificationController;
 use App\Http\Controllers\Web\LeadController;
 use App\Http\Controllers\Web\MessageBatchController;
@@ -40,6 +45,7 @@ use App\Http\Controllers\Web\OrganizationInvitationController;
 use App\Http\Controllers\Web\OrganizationMemberController;
 use App\Http\Controllers\Web\OrganizationPaymentGatewayController;
 use App\Http\Controllers\Web\OrganizationPlanController;
+use App\Http\Controllers\Web\OrganizationUnassignedController;
 use App\Http\Controllers\Web\Platform\DashboardController as PlatformDashboardController;
 use App\Http\Controllers\Web\Platform\InvoiceController as PlatformInvoiceController;
 use App\Http\Controllers\Web\Platform\OrganizationController as PlatformOrganizationController;
@@ -72,25 +78,80 @@ Route::get('/docs', function () {
     return Inertia::render('Docs/Index');
 })->name('docs');
 
-Route::middleware('guest')->group(function (): void {
-    Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
-    Route::post('/login', [AuthenticatedSessionController::class, 'store'])->middleware('throttle:login');
+Route::permanentRedirect('/login', '/plataforma/login');
+Route::permanentRedirect('/forgot-password', '/plataforma/forgot-password');
+Route::get('/reset-password/{token}', function (string $token) {
+    return redirect()->route('password.reset', ['token' => $token, 'email' => request('email')]);
+});
+Route::permanentRedirect('/platform', '/admin');
+Route::any('/platform/{path}', function (string $path) {
+    $target = '/admin/'.$path;
+    $query = request()->getQueryString();
 
-    Route::get('/forgot-password', [PasswordResetLinkController::class, 'create'])->name('password.request');
-    Route::post('/forgot-password', [PasswordResetLinkController::class, 'store'])->middleware('throttle:login')->name('password.email');
+    return redirect($query ? $target.'?'.$query : $target);
+})->where('path', '.*');
 
-    Route::get('/reset-password/{token}', [NewPasswordController::class, 'create'])->name('password.reset');
-    Route::post('/reset-password', [NewPasswordController::class, 'store'])->name('password.store');
+$legacyTenantPrefixes = [
+    'dashboard',
+    'my-day',
+    'notifications',
+    'team',
+    'leads',
+    'onboarding-templates',
+    'clients',
+    'service-types',
+    'contracts',
+    'automations',
+    'documents',
+    'document-requests',
+    'document-categories',
+    'document-request-items',
+    'tasks',
+    'task-templates',
+    'task-checklist-items',
+    'deadlines',
+    'calendar',
+    'calendar-events',
+    'finance',
+    'messages',
+    'message-templates',
+    'announcements',
+    'reports',
+    'audit',
+    'organizations',
+    'subscription',
+    'organization-invitations',
+    'organization-members',
+];
+
+foreach ($legacyTenantPrefixes as $prefix) {
+    Route::any('/'.$prefix, function () use ($prefix) {
+        $query = request()->getQueryString();
+        $target = '/plataforma/'.$prefix;
+
+        return redirect($query ? $target.'?'.$query : $target, 301);
+    });
+    Route::any('/'.$prefix.'/{path}', function (string $path) use ($prefix) {
+        $query = request()->getQueryString();
+        $target = '/plataforma/'.$prefix.'/'.$path;
+
+        return redirect($query ? $target.'?'.$query : $target, 301);
+    })->where('path', '.*');
+}
+
+Route::permanentRedirect('/portal', '/plataforma/portal');
+
+Route::middleware('admin.guest')->prefix('admin')->name('admin.')->group(function (): void {
+    Route::get('/login', [AdminAuthenticatedSessionController::class, 'create'])->name('login');
+    Route::post('/login', [AdminAuthenticatedSessionController::class, 'store'])->middleware('throttle:login');
+    Route::get('/forgot-password', [AdminPasswordResetLinkController::class, 'create'])->name('password.request');
+    Route::post('/forgot-password', [AdminPasswordResetLinkController::class, 'store'])->middleware('throttle:login')->name('password.email');
+    Route::get('/reset-password/{token}', [AdminNewPasswordController::class, 'create'])->name('password.reset');
+    Route::post('/reset-password', [AdminNewPasswordController::class, 'store'])->name('password.store');
 });
 
-Route::get('/invitations/{token}/accept', [InvitationAcceptanceController::class, 'show'])->name('web.invitations.accept.show');
-
-Route::post('/webhooks/billing/{provider}', [BillingWebhookController::class, 'store'])->name('webhooks.billing');
-Route::post('/webhooks/tenant/asaas/{organization}', [TenantAsaasWebhookController::class, 'store'])
-    ->middleware('throttle:60,1')
-    ->name('webhooks.tenant.asaas');
-
-Route::middleware(['auth', 'platform.admin'])->prefix('platform')->name('platform.')->group(function (): void {
+Route::middleware(['auth:admin', 'platform.admin'])->prefix('admin')->name('admin.')->group(function (): void {
+    Route::post('/logout', [AdminAuthenticatedSessionController::class, 'destroy'])->name('logout');
     Route::get('/', [PlatformDashboardController::class, 'index'])->name('dashboard');
     Route::get('/plans', [PlatformPlanController::class, 'index'])->name('plans.index');
     Route::get('/plans/create', [PlatformPlanController::class, 'create'])->name('plans.create');
@@ -106,6 +167,7 @@ Route::middleware(['auth', 'platform.admin'])->prefix('platform')->name('platfor
     Route::delete('/organizations/{organization}/overrides/{override}', [PlatformOrganizationPlanController::class, 'destroyOverride'])->name('organizations.overrides.destroy');
     Route::post('/organizations/{organization}/suspend', [PlatformOrganizationController::class, 'suspend'])->name('organizations.suspend');
     Route::post('/organizations/{organization}/reactivate', [PlatformOrganizationController::class, 'reactivate'])->name('organizations.reactivate');
+    Route::post('/organizations/{organization}/impersonate', [AdminImpersonationController::class, 'store'])->name('organizations.impersonate');
     Route::post('/organizations/{organization}/subscription/change-plan', [PlatformSubscriptionController::class, 'changePlan'])->name('organizations.subscription.change-plan');
     Route::post('/organizations/{organization}/subscription/extend-trial', [PlatformSubscriptionController::class, 'extendTrial'])->name('organizations.subscription.extend-trial');
     Route::post('/organizations/{organization}/subscription/cancel', [PlatformSubscriptionController::class, 'cancel'])->name('organizations.subscription.cancel');
@@ -118,6 +180,30 @@ Route::middleware(['auth', 'platform.admin'])->prefix('platform')->name('platfor
     Route::get('/guides', [PlatformUsageGuideController::class, 'index'])->name('guides.index');
     Route::get('/guides/{guide}', [PlatformUsageGuideController::class, 'show'])->name('guides.show');
 });
+
+Route::middleware(['redirect.admin.away', 'guest'])->prefix('plataforma')->group(function (): void {
+    Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
+    Route::post('/login', [AuthenticatedSessionController::class, 'store'])->middleware('throttle:login');
+
+    Route::get('/forgot-password', [PasswordResetLinkController::class, 'create'])->name('password.request');
+    Route::post('/forgot-password', [PasswordResetLinkController::class, 'store'])->middleware('throttle:login')->name('password.email');
+
+    Route::get('/reset-password/{token}', [NewPasswordController::class, 'create'])->name('password.reset');
+    Route::post('/reset-password', [NewPasswordController::class, 'store'])->name('password.store');
+});
+
+Route::prefix('plataforma')->group(function (): void {
+    Route::get('/invitations/{token}/accept', [InvitationAcceptanceController::class, 'show'])->name('web.invitations.accept.show');
+});
+
+Route::get('/invitations/{token}/accept', function (string $token) {
+    return redirect()->route('web.invitations.accept.show', $token);
+});
+
+Route::post('/webhooks/billing/{provider}', [BillingWebhookController::class, 'store'])->name('webhooks.billing');
+Route::post('/webhooks/tenant/asaas/{organization}', [TenantAsaasWebhookController::class, 'store'])
+    ->middleware('throttle:60,1')
+    ->name('webhooks.tenant.asaas');
 
 Route::middleware('portal.guest')->group(function (): void {
     Route::get('/portal/login', [PortalAuthenticatedSessionController::class, 'create'])->name('portal.login');
@@ -167,20 +253,24 @@ Route::get('/client-portal/{token}', [ClientPortalInviteController::class, 'lega
     ->where('token', '[A-Za-z0-9]{48}')
     ->name('client-portal.show');
 
-Route::middleware('auth')->group(function (): void {
+Route::middleware(['redirect.admin.away', 'auth'])->prefix('plataforma')->group(function (): void {
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
+    Route::post('/impersonation/stop', [ImpersonationStopController::class, 'destroy'])->name('impersonation.stop');
 
+    Route::post('/invitations/{token}/accept', [InvitationAcceptanceController::class, 'store'])
+        ->middleware('deny.impersonation')
+        ->name('web.invitations.accept');
+
+    Route::get('/organizations/unassigned', OrganizationUnassignedController::class)->name('organizations.unassigned');
     Route::get('/subscription/required', [SubscriptionRequiredController::class, 'show'])->name('subscription.required');
     Route::get('/organizations', [OrganizationController::class, 'index'])->name('organizations.index');
     Route::get('/organizations/plan', [OrganizationPlanController::class, 'show'])->name('organizations.plan.show');
     Route::get('/organizations/billing', [OrganizationBillingController::class, 'show'])->name('organizations.billing.show');
     Route::post('/organizations/billing/change-plan', [OrganizationBillingController::class, 'changePlan'])->name('organizations.billing.change-plan');
     Route::post('/organizations/billing/cancel', [OrganizationBillingController::class, 'cancel'])->name('organizations.billing.cancel');
-    Route::post('/organizations', [OrganizationController::class, 'store'])->name('organizations.store');
     Route::patch('/organizations/{organization}', [OrganizationController::class, 'update'])->name('organizations.update');
     Route::put('/organizations/{organization}/payment-gateway', [OrganizationPaymentGatewayController::class, 'update'])->name('organizations.payment-gateway.update');
     Route::post('/organizations/{organization}/switch', [OrganizationController::class, 'switch'])->name('organizations.switch');
-    Route::post('/invitations/{token}/accept', [InvitationAcceptanceController::class, 'store'])->name('web.invitations.accept');
 
     Route::middleware('org.accessible')->group(function (): void {
         Route::get('/dashboard', DashboardController::class)->name('dashboard');

@@ -65,9 +65,9 @@ class BillingLifecycleTest extends TestCase
             'due_at' => now()->subDay(),
         ]);
 
-        $this->actingAs($platformAdmin)
-            ->post("/platform/invoices/{$invoice->id}/mark-paid")
-            ->assertRedirect(route('platform.invoices.index'));
+        $this->actingAs($platformAdmin, 'admin')
+            ->post("/admin/invoices/{$invoice->id}/mark-paid")
+            ->assertRedirect(route('admin.invoices.index'));
 
         $organization->refresh();
         $organization->subscription->refresh();
@@ -104,7 +104,7 @@ class BillingLifecycleTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post('/organizations/billing/change-plan', ['plan_id' => $profissionalPlan->id])
+            ->post('/plataforma/organizations/billing/change-plan', ['plan_id' => $profissionalPlan->id])
             ->assertRedirect(route('organizations.billing.show'));
 
         $organization->refresh();
@@ -126,7 +126,7 @@ class BillingLifecycleTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get('/dashboard')
+            ->get('/plataforma/dashboard')
             ->assertOk();
     }
 
@@ -193,8 +193,8 @@ class BillingLifecycleTest extends TestCase
             'organization_id' => $organization->id,
         ]);
 
-        $this->actingAs($platformAdmin)
-            ->post("/platform/invoices/{$invoice->id}/mark-paid")
+        $this->actingAs($platformAdmin, 'admin')
+            ->post("/admin/invoices/{$invoice->id}/mark-paid")
             ->assertRedirect();
 
         $this->assertDatabaseHas('platform_audit_logs', [
@@ -209,7 +209,7 @@ class BillingLifecycleTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get('/organizations/billing')
+            ->get('/plataforma/organizations/billing')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Organizations/Billing', false)

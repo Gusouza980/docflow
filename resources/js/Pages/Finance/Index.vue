@@ -151,19 +151,19 @@ const reminderForm = useForm({
 });
 
 function applyFilters() {
-    router.get('/finance', filterForm.data(), { preserveState: true, preserveScroll: true });
+    router.get('/plataforma/finance', filterForm.data(), { preserveState: true, preserveScroll: true });
 }
 
 function submitReceivable() {
-    receivableForm.post('/finance/receivables', { preserveScroll: true, onSuccess: () => receivableModalOpen.value = false });
+    receivableForm.post('/plataforma/finance/receivables', { preserveScroll: true, onSuccess: () => receivableModalOpen.value = false });
 }
 
 function submitPayable() {
-    payableForm.post('/finance/payables', { preserveScroll: true, onSuccess: () => payableModalOpen.value = false });
+    payableForm.post('/plataforma/finance/payables', { preserveScroll: true, onSuccess: () => payableModalOpen.value = false });
 }
 
 function submitCategory() {
-    categoryForm.post('/finance/categories', { preserveScroll: true, onSuccess: () => categoryModalOpen.value = false });
+    categoryForm.post('/plataforma/finance/categories', { preserveScroll: true, onSuccess: () => categoryModalOpen.value = false });
 }
 
 function openPayment(type, item) {
@@ -177,8 +177,8 @@ function openPayment(type, item) {
 
 function submitPayment() {
     const url = paymentType.value === 'receivable'
-        ? `/finance/receivables/${paymentTarget.value.id}/payments`
-        : `/finance/payables/${paymentTarget.value.id}/payments`;
+        ? `/plataforma/finance/receivables/${paymentTarget.value.id}/payments`
+        : `/plataforma/finance/payables/${paymentTarget.value.id}/payments`;
 
     paymentForm.post(url, { preserveScroll: true, onSuccess: () => paymentModalOpen.value = false });
 }
@@ -190,15 +190,15 @@ function openCancel(receivable) {
 }
 
 function submitCancel() {
-    cancelForm.patch(`/finance/receivables/${paymentTarget.value.id}/cancel`, { preserveScroll: true, onSuccess: () => cancelModalOpen.value = false });
+    cancelForm.patch(`/plataforma/finance/receivables/${paymentTarget.value.id}/cancel`, { preserveScroll: true, onSuccess: () => cancelModalOpen.value = false });
 }
 
 function submitRecurrence() {
-    recurrenceForm.post('/finance/recurrences', { preserveScroll: true, onSuccess: () => recurrenceModalOpen.value = false });
+    recurrenceForm.post('/plataforma/finance/recurrences', { preserveScroll: true, onSuccess: () => recurrenceModalOpen.value = false });
 }
 
 function generateRecurrence(recurrence) {
-    useForm({}).post(`/finance/recurrences/${recurrence.id}/generate`, { preserveScroll: true });
+    useForm({}).post(`/plataforma/finance/recurrences/${recurrence.id}/generate`, { preserveScroll: true });
 }
 
 function openRenegotiate(receivable) {
@@ -211,7 +211,7 @@ function openRenegotiate(receivable) {
 }
 
 function submitRenegotiate() {
-    renegotiateForm.patch(`/finance/receivables/${paymentTarget.value.id}/renegotiate`, {
+    renegotiateForm.patch(`/plataforma/finance/receivables/${paymentTarget.value.id}/renegotiate`, {
         preserveScroll: true,
         onSuccess: () => renegotiateModalOpen.value = false,
     });
@@ -225,14 +225,14 @@ function openReminder(receivable) {
 }
 
 function submitReminder() {
-    reminderForm.post(`/finance/receivables/${paymentTarget.value.id}/reminders`, {
+    reminderForm.post(`/plataforma/finance/receivables/${paymentTarget.value.id}/reminders`, {
         preserveScroll: true,
         onSuccess: () => reminderModalOpen.value = false,
     });
 }
 
 function generateCharge(receivable, billingType = 'PIX') {
-    useForm({ billing_type: billingType }).post(`/finance/receivables/${receivable.id}/charge`, { preserveScroll: true });
+    useForm({ billing_type: billingType }).post(`/plataforma/finance/receivables/${receivable.id}/charge`, { preserveScroll: true });
 }
 
 function openCharge(receivable) {
@@ -263,7 +263,7 @@ async function copyText(value) {
                 <p v-if="payment_gateway.connected" class="font-medium">Pix no portal está ativo. Gere a cobrança na linha e o cliente paga sozinho.</p>
                 <p v-else-if="payment_gateway.can_manage">
                     Conecte o Asaas do escritório em
-                    <a href="/organizations" class="font-semibold underline">Organizações</a>
+                    <a href="/plataforma/organizations" class="font-semibold underline">Organizações</a>
                     para o cliente pagar no portal.
                 </p>
                 <p v-else>Peça ao administrador para conectar o Asaas em Organizações. Enquanto isso, use as instruções de texto e a baixa manual.</p>

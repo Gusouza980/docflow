@@ -15,7 +15,7 @@ const form = useForm({
 });
 
 function submit() {
-    form.post('/login', {
+    form.post('/plataforma/login', {
         preserveScroll: true,
         onFinish: () => form.reset('password'),
     });
@@ -33,7 +33,7 @@ function submit() {
 
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <CheckboxInput v-model="form.remember" label="Manter conectado" />
-                <Link href="/forgot-password" class="text-sm font-semibold text-blue-700 hover:text-blue-800">
+                <Link href="/plataforma/forgot-password" class="text-sm font-semibold text-blue-700 hover:text-blue-800">
                     Esqueci minha senha
                 </Link>
             </div>

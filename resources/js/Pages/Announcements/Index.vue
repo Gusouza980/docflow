@@ -50,7 +50,7 @@ const editForm = useForm({
 });
 
 function submitCreate() {
-    createForm.post('/announcements', { preserveScroll: true, onSuccess: () => createModalOpen.value = false });
+    createForm.post('/plataforma/announcements', { preserveScroll: true, onSuccess: () => createModalOpen.value = false });
 }
 
 function openEdit(announcement) {
@@ -66,7 +66,7 @@ function openEdit(announcement) {
 }
 
 function submitEdit() {
-    editForm.patch(`/announcements/${selectedAnnouncement.value.id}`, { preserveScroll: true, onSuccess: () => editModalOpen.value = false });
+    editForm.patch(`/plataforma/announcements/${selectedAnnouncement.value.id}`, { preserveScroll: true, onSuccess: () => editModalOpen.value = false });
 }
 
 function destroyAnnouncement(announcement) {
@@ -74,13 +74,13 @@ function destroyAnnouncement(announcement) {
         return;
     }
 
-    useForm({}).delete(`/announcements/${announcement.id}`, { preserveScroll: true });
+    useForm({}).delete(`/plataforma/announcements/${announcement.id}`, { preserveScroll: true });
 }
 </script>
 
 <template>
     <Head title="Comunicados" />
-    <AppLayout title="Comunicados" active-nav="announcements" :breadcrumbs="[{ label: 'Portal', href: '/portal' }, { label: 'Comunicados' }]">
+    <AppLayout title="Comunicados" active-nav="announcements" :breadcrumbs="[{ label: 'Portal', href: '/plataforma/portal' }, { label: 'Comunicados' }]">
         <div class="grid gap-4">
             <Alert v-if="page.props.flash?.status" tone="success">{{ page.props.flash.status }}</Alert>
             <Alert v-if="page.props.flash?.error" tone="danger">{{ page.props.flash.error }}</Alert>

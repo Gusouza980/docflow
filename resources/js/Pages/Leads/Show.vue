@@ -43,30 +43,30 @@ const convertForm = useForm({
 });
 
 function submitStage() {
-    stageForm.patch(`/leads/${props.lead.id}/stage`, { preserveScroll: true });
+    stageForm.patch(`/plataforma/leads/${props.lead.id}/stage`, { preserveScroll: true });
 }
 
 function submitActivity() {
-    activityForm.post(`/leads/${props.lead.id}/activities`, {
+    activityForm.post(`/plataforma/leads/${props.lead.id}/activities`, {
         preserveScroll: true,
         onSuccess: () => activityForm.reset('body', 'happened_at'),
     });
 }
 
 function submitProposal() {
-    proposalForm.post(`/leads/${props.lead.id}/proposals`, {
+    proposalForm.post(`/plataforma/leads/${props.lead.id}/proposals`, {
         preserveScroll: true,
         onSuccess: () => proposalForm.reset(),
     });
 }
 
 function updateProposalStatus(proposalId, status) {
-    useForm({ status }).patch(`/leads/${props.lead.id}/proposals/${proposalId}/status`, { preserveScroll: true });
+    useForm({ status }).patch(`/plataforma/leads/${props.lead.id}/proposals/${proposalId}/status`, { preserveScroll: true });
 }
 
 function convertLead() {
     convertForm.start_onboarding = startOnboarding.value;
-    convertForm.post(`/leads/${props.lead.id}/convert`);
+    convertForm.post(`/plataforma/leads/${props.lead.id}/convert`);
 }
 
 const money = formatBrlCurrency;
@@ -74,7 +74,7 @@ const money = formatBrlCurrency;
 
 <template>
     <Head :title="`Lead — ${lead.name}`" />
-    <AppLayout title="Lead" active-nav="leads" :breadcrumbs="[{ label: 'CRM', href: '/leads' }, { label: lead.name }]">
+    <AppLayout title="Lead" active-nav="leads" :breadcrumbs="[{ label: 'CRM', href: '/plataforma/leads' }, { label: lead.name }]">
         <div class="grid gap-4 lg:grid-cols-[1.2fr_1fr]">
             <div class="grid gap-4">
                 <Alert v-if="page.props.flash?.status" tone="success">{{ page.props.flash.status }}</Alert>
@@ -92,7 +92,7 @@ const money = formatBrlCurrency;
                     <p class="mt-3 text-sm font-medium text-slate-800">{{ money(lead.estimated_value_cents) }}</p>
                     <p v-if="lead.client" class="mt-2 text-sm">
                         Cliente:
-                        <Link :href="`/clients/${lead.client.id}?tab=commercial`" class="font-semibold text-slate-900 underline">{{ lead.client.display_name }}</Link>
+                        <Link :href="`/plataforma/clients/${lead.client.id}?tab=commercial`" class="font-semibold text-slate-900 underline">{{ lead.client.display_name }}</Link>
                     </p>
                 </section>
 

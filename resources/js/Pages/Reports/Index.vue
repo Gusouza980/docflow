@@ -62,35 +62,35 @@ const exportTypes = [
 ];
 
 function applyFilters() {
-    router.get('/reports', filterForm.data(), { preserveState: true, preserveScroll: true });
+    router.get('/plataforma/reports', filterForm.data(), { preserveState: true, preserveScroll: true });
 }
 
 function saveFilter() {
     saveFilterForm.filters = filterForm.data();
-    saveFilterForm.post('/reports/filters', { preserveScroll: true, onSuccess: () => filterModalOpen.value = false });
+    saveFilterForm.post('/plataforma/reports/filters', { preserveScroll: true, onSuccess: () => filterModalOpen.value = false });
 }
 
 function saveSchedule() {
     scheduleForm.filters = filterForm.data();
-    scheduleForm.post('/reports/schedules', { preserveScroll: true, onSuccess: () => scheduleModalOpen.value = false });
+    scheduleForm.post('/plataforma/reports/schedules', { preserveScroll: true, onSuccess: () => scheduleModalOpen.value = false });
 }
 
 function generateMonthly() {
-    monthlyForm.post('/reports/monthly', { preserveScroll: true, onSuccess: () => monthlyModalOpen.value = false });
+    monthlyForm.post('/plataforma/reports/monthly', { preserveScroll: true, onSuccess: () => monthlyModalOpen.value = false });
 }
 
 function releaseReport(report) {
-    useForm({}).patch(`/reports/${report.id}/release`, { preserveScroll: true });
+    useForm({}).patch(`/plataforma/reports/${report.id}/release`, { preserveScroll: true });
 }
 
 function runSchedule(schedule) {
-    runScheduleForm.post(`/reports/schedules/${schedule.id}/run`, { preserveScroll: true });
+    runScheduleForm.post(`/plataforma/reports/schedules/${schedule.id}/run`, { preserveScroll: true });
 }
 
 function exportSpreadsheet(reportType) {
     const form = document.createElement('form');
     form.method = 'POST';
-    form.action = '/reports/export';
+    form.action = '/plataforma/reports/export';
 
     const csrf = document.querySelector('meta[name="csrf-token"]')?.content;
     if (csrf) {

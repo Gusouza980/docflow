@@ -95,9 +95,9 @@ class UsageGuideCatalog
                     'heading' => 'O produto em três superfícies',
                     'body' => 'O Docflow tem três contextos distintos. Misturá-los na explicação ao cliente gera expectativa errada.',
                     'bullets' => [
-                        'App do escritório (`/dashboard` e módulos): operação multi-usuário da organização ativa.',
-                        'Portal do cliente (`/client-portal/{token}`): superfície externa escopada a um único cliente.',
-                        'Platform (`/platform`): administração cross-tenant (planos, orgs, faturas, este guia).',
+                        'Admin da plataforma (`/admin/login` → `/admin`): cadastro de tenants, planos, faturas e impersonação do dono.',
+                        'App do escritório (`/plataforma/login` → `/plataforma/dashboard`): operação multi-usuário da organização ativa.',
+                        'Portal do cliente (`/portal/login` → `/client-portal`): superfície externa escopada a um único cliente.',
                     ],
                 ],
                 [
@@ -113,22 +113,22 @@ class UsageGuideCatalog
                 [
                     'heading' => 'Mapa rápido de páginas internas',
                     'pages' => [
-                        ['path' => '/dashboard', 'name' => 'Dashboard', 'notes' => 'Resultado do período + alertas operacionais'],
-                        ['path' => '/my-day', 'name' => 'Meu dia', 'notes' => 'Fila do membro: tarefas, docs, cobranças, chamados'],
-                        ['path' => '/organizations', 'name' => 'Organizações', 'notes' => 'Troca e gestão da org ativa'],
-                        ['path' => '/team', 'name' => 'Equipe', 'notes' => 'Membros, convites e papéis'],
-                        ['path' => '/leads', 'name' => 'CRM', 'notes' => 'Feature `crm`'],
-                        ['path' => '/clients', 'name' => 'Clientes', 'notes' => 'Hub por cliente'],
-                        ['path' => '/service-types', 'name' => 'Serviços', 'notes' => 'Catálogo (admin/manager)'],
-                        ['path' => '/contracts', 'name' => 'Contratos', 'notes' => 'Vigência e valores'],
-                        ['path' => '/automations', 'name' => 'Automações', 'notes' => 'Feature `automations`'],
-                        ['path' => '/documents', 'name' => 'Documentos', 'notes' => 'Repositório versionado'],
-                        ['path' => '/document-requests', 'name' => 'Solicitações', 'notes' => 'Pedidos ao cliente'],
-                        ['path' => '/tasks', 'name' => 'Tarefas', 'notes' => 'Execução interna'],
-                        ['path' => '/finance', 'name' => 'Financeiro', 'notes' => 'Roles admin/manager/finance'],
-                        ['path' => '/portal', 'name' => 'Portal', 'notes' => 'Acessos externos (feature `portal`)'],
-                        ['path' => '/reports', 'name' => 'Relatórios', 'notes' => 'Indicadores e mensal'],
-                        ['path' => '/audit', 'name' => 'Auditoria', 'notes' => 'Feature `audit`'],
+                        ['path' => '/plataforma/dashboard', 'name' => 'Dashboard', 'notes' => 'Resultado do período + alertas operacionais'],
+                        ['path' => '/plataforma/my-day', 'name' => 'Meu dia', 'notes' => 'Fila do membro: tarefas, docs, cobranças, chamados'],
+                        ['path' => '/plataforma/organizations', 'name' => 'Organizações', 'notes' => 'Troca e gestão da org ativa'],
+                        ['path' => '/plataforma/team', 'name' => 'Equipe', 'notes' => 'Membros, convites e papéis'],
+                        ['path' => '/plataforma/leads', 'name' => 'CRM', 'notes' => 'Feature `crm`'],
+                        ['path' => '/plataforma/clients', 'name' => 'Clientes', 'notes' => 'Hub por cliente'],
+                        ['path' => '/plataforma/service-types', 'name' => 'Serviços', 'notes' => 'Catálogo (admin/manager)'],
+                        ['path' => '/plataforma/contracts', 'name' => 'Contratos', 'notes' => 'Vigência e valores'],
+                        ['path' => '/plataforma/automations', 'name' => 'Automações', 'notes' => 'Feature `automations`'],
+                        ['path' => '/plataforma/documents', 'name' => 'Documentos', 'notes' => 'Repositório versionado'],
+                        ['path' => '/plataforma/document-requests', 'name' => 'Solicitações', 'notes' => 'Pedidos ao cliente'],
+                        ['path' => '/plataforma/tasks', 'name' => 'Tarefas', 'notes' => 'Execução interna'],
+                        ['path' => '/plataforma/finance', 'name' => 'Financeiro', 'notes' => 'Roles admin/manager/finance'],
+                        ['path' => '/plataforma/portal', 'name' => 'Portal', 'notes' => 'Acessos externos (feature `portal`)'],
+                        ['path' => '/plataforma/reports', 'name' => 'Relatórios', 'notes' => 'Indicadores e mensal'],
+                        ['path' => '/plataforma/audit', 'name' => 'Auditoria', 'notes' => 'Feature `audit`'],
                     ],
                 ],
                 [
@@ -191,7 +191,7 @@ class UsageGuideCatalog
                 ],
                 [
                     'heading' => 'Organização ativa',
-                    'body' => 'Quase toda rota do app exige membership ativa na sessão (`active_organization_id`). Sem org selecionada, o usuário é redirecionado para `/organizations`.',
+                    'body' => 'Quase toda rota do app exige membership ativa na sessão (`active_organization_id`). Sem org, o usuário vê `/plataforma/organizations/unassigned`.',
                 ],
             ],
         ];
@@ -212,7 +212,7 @@ class UsageGuideCatalog
             'sections' => [
                 [
                     'heading' => 'Planos padrão (PlanSeeder)',
-                    'body' => 'Valores podem ser alterados em `/platform/plans`. Abaixo está o seed de referência.',
+                    'body' => 'Valores podem ser alterados em `/admin/plans`. Abaixo está o seed de referência.',
                     'tables' => [
                         [
                             'title' => 'Limites',
@@ -242,7 +242,7 @@ class UsageGuideCatalog
                     'rules' => [
                         '`PlanLimitChecker::assertWithinLimit` bloqueia criação além do teto (membros, clientes, storage, portal accesses).',
                         '`assertFeature` redireciona/bloqueia módulos sem feature (CRM, automações, portal, auditoria…).',
-                        'Overrides por organização em `/platform/organizations/{id}` alteram limite/feature sem mudar o plano base.',
+                        'Overrides por organização em `/admin/organizations/{id}` alteram limite/feature sem mudar o plano base.',
                         'Assinatura tem trial (padrão 14 dias), grace (7 dias) e status (`trialing`, `active`, `past_due`, `paused`, `canceled`).',
                         'Org suspensa na platform perde acesso operacional do tenant.',
                     ],
@@ -252,7 +252,7 @@ class UsageGuideCatalog
                     'bullets' => [
                         'Banner de uso do plano (`PlanUsageBanner`) alerta proximidade de limite.',
                         'Banner de assinatura informa trial/past_due.',
-                        'Tentativa de usar feature indisponível costuma ir para upgrade (`/organizations/plan`).',
+                        'Tentativa de usar feature indisponível costuma ir para upgrade (`/plataforma/organizations/plan`).',
                     ],
                 ],
             ],
@@ -267,30 +267,30 @@ class UsageGuideCatalog
         return [
             'slug' => 'implantacao-escritorio',
             'title' => 'Implantação do escritório',
-            'summary' => 'Checklist do primeiro uso após signup ou criação manual do tenant.',
+            'summary' => 'Checklist do primeiro uso após o platform admin provisionar o tenant.',
             'audience' => 'CS / onboarding',
             'sections' => [
                 [
                     'heading' => 'Fluxo recomendado',
                     'steps' => [
-                        'Criar conta e organização (ou receber convite).',
-                        'Selecionar organização ativa em `/organizations`.',
-                        'Convidar equipe em `/team` com papéis corretos.',
+                        'Platform admin provisiona o tenant em `/admin/organizations` (único cadastro de org).',
+                        'Dono entra em `/plataforma/login` (ou recebe convite) e seleciona a org em `/plataforma/organizations`.',
+                        'Convidar equipe em `/plataforma/team` com papéis corretos.',
                         'Cadastrar categorias documentais e financeiras necessárias.',
-                        'Criar modelos de tarefa (`/task-templates`) para onboarding.',
+                        'Criar modelos de tarefa (`/plataforma/task-templates`) para onboarding.',
                         'Se Profissional+: configurar CRM, templates de onboarding e 1–2 automações preset.',
                         'Cadastrar clientes prioritários e, se houver, contratos.',
-                        'Abrir `/dashboard` e validar alertas/KPIs.',
+                        'Abrir `/plataforma/dashboard` e validar alertas/KPIs.',
                     ],
                 ],
                 [
                     'heading' => 'Páginas da implantação',
                     'pages' => [
-                        ['path' => '/organizations', 'name' => 'Organizações', 'notes' => 'Criar/selecionar tenant'],
-                        ['path' => '/organizations/plan', 'name' => 'Plano', 'notes' => 'Self-service de plano/assinatura'],
-                        ['path' => '/team', 'name' => 'Equipe', 'notes' => 'Convites e papéis'],
-                        ['path' => '/task-templates', 'name' => 'Modelos de tarefa', 'notes' => 'Base de automações e onboarding'],
-                        ['path' => '/onboarding-templates', 'name' => 'Onboarding', 'notes' => 'Checklists CRM (Profissional+)'],
+                        ['path' => '/plataforma/organizations', 'name' => 'Organizações', 'notes' => 'Trocar org ativa (sem criar tenant)'],
+                        ['path' => '/plataforma/organizations/plan', 'name' => 'Plano', 'notes' => 'Self-service de plano/assinatura'],
+                        ['path' => '/plataforma/team', 'name' => 'Equipe', 'notes' => 'Convites e papéis'],
+                        ['path' => '/plataforma/task-templates', 'name' => 'Modelos de tarefa', 'notes' => 'Base de automações e onboarding'],
+                        ['path' => '/plataforma/onboarding-templates', 'name' => 'Onboarding', 'notes' => 'Checklists CRM (Profissional+)'],
                     ],
                 ],
                 [
@@ -320,8 +320,8 @@ class UsageGuideCatalog
                 [
                     'heading' => 'Páginas',
                     'pages' => [
-                        ['path' => '/clients', 'name' => 'Listagem', 'notes' => 'Filtros por status, risco, tags'],
-                        ['path' => '/clients/{id}', 'name' => 'Hub do cliente', 'notes' => 'Visão unificada + abas'],
+                        ['path' => '/plataforma/clients', 'name' => 'Listagem', 'notes' => 'Filtros por status, risco, tags'],
+                        ['path' => '/plataforma/clients/{id}', 'name' => 'Hub do cliente', 'notes' => 'Visão unificada + abas'],
                     ],
                 ],
                 [
@@ -362,9 +362,9 @@ class UsageGuideCatalog
                 [
                     'heading' => 'Páginas',
                     'pages' => [
-                        ['path' => '/documents', 'name' => 'Documentos', 'notes' => 'Upload, versão, validade, visibilidade'],
-                        ['path' => '/document-requests', 'name' => 'Solicitações', 'notes' => 'Itens, prazos, aprovação/recusa'],
-                        ['path' => '/service-types', 'name' => 'Tipos de serviço', 'notes' => 'Pacote “pedir todo mês”'],
+                        ['path' => '/plataforma/documents', 'name' => 'Documentos', 'notes' => 'Upload, versão, validade, visibilidade'],
+                        ['path' => '/plataforma/document-requests', 'name' => 'Solicitações', 'notes' => 'Itens, prazos, aprovação/recusa'],
+                        ['path' => '/plataforma/service-types', 'name' => 'Tipos de serviço', 'notes' => 'Pacote “pedir todo mês”'],
                     ],
                 ],
                 [
@@ -414,11 +414,11 @@ class UsageGuideCatalog
                 [
                     'heading' => 'Páginas',
                     'pages' => [
-                        ['path' => '/my-day', 'name' => 'Meu dia', 'notes' => 'Fila pessoal do membro'],
-                        ['path' => '/tasks', 'name' => 'Tarefas', 'notes' => 'Status, responsável, checklist'],
-                        ['path' => '/task-templates', 'name' => 'Modelos', 'notes' => 'Base para onboarding e automações'],
-                        ['path' => '/deadlines', 'name' => 'Prazos', 'notes' => 'Revisão obrigatória em alguns fluxos'],
-                        ['path' => '/calendar', 'name' => 'Agenda', 'notes' => 'Eventos, reuniões, notas → tarefas'],
+                        ['path' => '/plataforma/my-day', 'name' => 'Meu dia', 'notes' => 'Fila pessoal do membro'],
+                        ['path' => '/plataforma/tasks', 'name' => 'Tarefas', 'notes' => 'Status, responsável, checklist'],
+                        ['path' => '/plataforma/task-templates', 'name' => 'Modelos', 'notes' => 'Base para onboarding e automações'],
+                        ['path' => '/plataforma/deadlines', 'name' => 'Prazos', 'notes' => 'Revisão obrigatória em alguns fluxos'],
+                        ['path' => '/plataforma/calendar', 'name' => 'Agenda', 'notes' => 'Eventos, reuniões, notas → tarefas'],
                     ],
                 ],
                 [
@@ -427,7 +427,7 @@ class UsageGuideCatalog
                         'Criar tarefa avulsa ou a partir de modelo.',
                         'Concluir só com checklist obrigatório completo.',
                         'Prazo atrasado aparece no dashboard, no Meu dia e nos alertas.',
-                        'Começar o dia em `/my-day`: tarefas e chamados atribuídos; documentos e cobranças dos clientes visíveis.',
+                        'Começar o dia em `/plataforma/my-day`: tarefas e chamados atribuídos; documentos e cobranças dos clientes visíveis.',
                         'Após reunião, registrar notas e gerar tarefas derivadas.',
                         'Automações podem criar tarefas de template no `client.created`.',
                     ],
@@ -450,19 +450,19 @@ class UsageGuideCatalog
                 [
                     'heading' => 'Página',
                     'pages' => [
-                        ['path' => '/finance', 'name' => 'Financeiro', 'notes' => 'Receivables, recorrências, Pix/boleto, payments, payables'],
-                        ['path' => '/organizations', 'name' => 'Organizações', 'notes' => 'Admin conecta o Asaas do escritório'],
-                        ['path' => '/contracts/{id}', 'name' => 'Contrato', 'notes' => 'Pode gerar/pausar a recorrência ligada'],
+                        ['path' => '/plataforma/finance', 'name' => 'Financeiro', 'notes' => 'Receivables, recorrências, Pix/boleto, payments, payables'],
+                        ['path' => '/plataforma/organizations', 'name' => 'Organizações', 'notes' => 'Admin conecta o Asaas do escritório'],
+                        ['path' => '/plataforma/contracts/{id}', 'name' => 'Contrato', 'notes' => 'Pode gerar/pausar a recorrência ligada'],
                     ],
                 ],
                 [
                     'heading' => 'Fluxos',
                     'steps' => [
                         'Criar cobrança avulsa (receivable) vinculada a cliente.',
-                        'Ou cadastrar recorrência em `/finance`, ou marcar “Gerar mensalidade no financeiro” no contrato mensal/anual ativo.',
+                        'Ou cadastrar recorrência em `/plataforma/finance`, ou marcar “Gerar mensalidade no financeiro” no contrato mensal/anual ativo.',
                         'O scheduler `finance:generate-recurring-receivables` materializa as faturas no vencimento — o cadastro da recorrência não emite a primeira na hora.',
-                        'Admin conecta o Asaas do escritório em `/organizations` (chave + token de webhook). Não usar a chave SaaS do Docflow.',
-                        'Em `/finance`, clique em “Gerar Pix” na cobrança aberta (ação explícita).',
+                        'Admin conecta o Asaas do escritório em `/plataforma/organizations` (chave + token de webhook). Não usar a chave SaaS do Docflow.',
+                        'Em `/plataforma/finance`, clique em “Gerar Pix” na cobrança aberta (ação explícita).',
                         'O cliente paga no portal; o webhook marca a cobrança como paga. Baixa manual continua como fallback.',
                         'Registrar pagamento total ou parcial.',
                         'Status parcial mantém saldo em aberto nos indicadores.',
@@ -473,14 +473,14 @@ class UsageGuideCatalog
                 [
                     'heading' => 'Recorrências',
                     'steps' => [
-                        'Criar à mão em `/finance` (botão Recorrência) com cliente, valor e dia de vencimento.',
+                        'Criar à mão em `/plataforma/finance` (botão Recorrência) com cliente, valor e dia de vencimento.',
                         'Contrato mensal/anual ativo: admin/gestor marca o checkbox no criar ou no renovar (se ainda não houver recorrência).',
-                        'Recorrência ligada ao contrato aparece no card do detalhe e na listagem de `/finance`.',
+                        'Recorrência ligada ao contrato aparece no card do detalhe e na listagem de `/plataforma/finance`.',
                         'Cancelar o contrato pausa a recorrência (`is_active = false`); também dá para pausar no financeiro.',
                         'Gerar agora na listagem ou esperar o scheduler diário.',
                     ],
                     'rules' => [
-                        'Recorrência do escritório não é fatura SaaS (`/platform/invoices` / Asaas da assinatura Docflow).',
+                        'Recorrência do escritório não é fatura SaaS (`/admin/invoices` / Asaas da assinatura Docflow).',
                         'Contrato único (`once`) ou valor zero não gera recorrência, mesmo com a flag.',
                         'Uma recorrência por contrato (`contract_id` único); não duplica ao salvar de novo.',
                     ],
@@ -535,9 +535,9 @@ class UsageGuideCatalog
                 [
                     'heading' => 'Páginas',
                     'pages' => [
-                        ['path' => '/leads', 'name' => 'Board de leads', 'notes' => 'Stages do funil'],
-                        ['path' => '/leads/{id}', 'name' => 'Detalhe do lead', 'notes' => 'Atividades, propostas, conversão'],
-                        ['path' => '/onboarding-templates', 'name' => 'Templates de onboarding', 'notes' => 'Admin/manager'],
+                        ['path' => '/plataforma/leads', 'name' => 'Board de leads', 'notes' => 'Stages do funil'],
+                        ['path' => '/plataforma/leads/{id}', 'name' => 'Detalhe do lead', 'notes' => 'Atividades, propostas, conversão'],
+                        ['path' => '/plataforma/onboarding-templates', 'name' => 'Templates de onboarding', 'notes' => 'Admin/manager'],
                     ],
                 ],
                 [
@@ -576,11 +576,11 @@ class UsageGuideCatalog
                 [
                     'heading' => 'Páginas',
                     'pages' => [
-                        ['path' => '/service-types', 'name' => 'Tipos de serviço', 'notes' => 'Catálogo da org (admin/manager)'],
-                        ['path' => '/contracts', 'name' => 'Contratos', 'notes' => 'Listagem escopada por acesso a cliente'],
-                        ['path' => '/contracts/{id}', 'name' => 'Detalhe', 'notes' => 'Renovação, cancelamento e cobrança recorrente'],
-                        ['path' => '/clients/{id}', 'name' => 'Hub cliente', 'notes' => 'Abas Serviços e Contratos'],
-                        ['path' => '/finance', 'name' => 'Financeiro', 'notes' => 'Recorrência gerada pelo contrato'],
+                        ['path' => '/plataforma/service-types', 'name' => 'Tipos de serviço', 'notes' => 'Catálogo da org (admin/manager)'],
+                        ['path' => '/plataforma/contracts', 'name' => 'Contratos', 'notes' => 'Listagem escopada por acesso a cliente'],
+                        ['path' => '/plataforma/contracts/{id}', 'name' => 'Detalhe', 'notes' => 'Renovação, cancelamento e cobrança recorrente'],
+                        ['path' => '/plataforma/clients/{id}', 'name' => 'Hub cliente', 'notes' => 'Abas Serviços e Contratos'],
+                        ['path' => '/plataforma/finance', 'name' => 'Financeiro', 'notes' => 'Recorrência gerada pelo contrato'],
                     ],
                 ],
                 [
@@ -591,7 +591,7 @@ class UsageGuideCatalog
                         'Criar contrato com código, valor, intervalo (`month|year|once`), vigência e escopo.',
                         'Associar serviços ao contrato quando fizer sentido.',
                         'Se mensal/anual e status ativo, admin/gestor pode marcar “Gerar mensalidade no financeiro”.',
-                        'Sem a flag, o contrato não cria cobrança — o escritório lança à mão em `/finance`.',
+                        'Sem a flag, o contrato não cria cobrança — o escritório lança à mão em `/plataforma/finance`.',
                         'Renovar ou cancelar com motivo (cancelar pausa a recorrência ligada).',
                         'Dashboard mostra MRR estimado (pelos contratos ativos) e valor em risco (30 dias).',
                     ],
@@ -602,14 +602,14 @@ class UsageGuideCatalog
                         'O checkbox só aparece para admin/gestor, contrato ativo, intervalo mensal ou anual.',
                         'Marcar cria uma recorrência ligada ao contrato (mesmo cliente e valor).',
                         'Intervalo único (`once`) ignora a flag.',
-                        'O detalhe mostra o card “Cobrança recorrente” (ativa/pausada) com atalho para `/finance`.',
+                        'O detalhe mostra o card “Cobrança recorrente” (ativa/pausada) com atalho para `/plataforma/finance`.',
                         'Renovar: se já existe recorrência, atualiza término/valor e reativa; se não existe e a flag estiver marcada, cria.',
                         'Cancelar o contrato pausa a recorrência. Não apaga o histórico no financeiro.',
                     ],
                     'rules' => [
                         'Uma recorrência por contrato; salvar de novo não duplica.',
                         'A flag não altera o MRR do dashboard — MRR continua estimado pelos contratos ativos, mesmo sem mensalidade gerada.',
-                        'Recorrência do contrato é financeiro do escritório, não fatura SaaS em `/platform/invoices`.',
+                        'Recorrência do contrato é financeiro do escritório, não fatura SaaS em `/admin/invoices`.',
                         'A primeira fatura nasce no scheduler `finance:generate-recurring-receivables`, não na hora do cadastro.',
                         'Assistente/profissional não veem o checkbox; enviar a flag no POST não cria recorrência.',
                     ],
@@ -657,8 +657,8 @@ class UsageGuideCatalog
                 [
                     'heading' => 'Páginas',
                     'pages' => [
-                        ['path' => '/automations', 'name' => 'Regras', 'notes' => 'Criar a partir de presets'],
-                        ['path' => '/automations/{id}', 'name' => 'Detalhe', 'notes' => 'Últimas execuções / pausar'],
+                        ['path' => '/plataforma/automations', 'name' => 'Regras', 'notes' => 'Criar a partir de presets'],
+                        ['path' => '/plataforma/automations/{id}', 'name' => 'Detalhe', 'notes' => 'Últimas execuções / pausar'],
                     ],
                 ],
                 [
@@ -714,10 +714,10 @@ class UsageGuideCatalog
                 [
                     'heading' => 'Páginas internas (escritório)',
                     'pages' => [
-                        ['path' => '/portal', 'name' => 'Gestão de acessos', 'notes' => 'Criar/revogar links'],
-                        ['path' => '/messages/batch', 'name' => 'Envio em lote', 'notes' => 'Revisão + status por destinatário'],
-                        ['path' => '/message-templates', 'name' => 'Modelos de mensagem', 'notes' => 'Comunicação padronizada'],
-                        ['path' => '/announcements', 'name' => 'Comunicados', 'notes' => 'Avisos ao portal'],
+                        ['path' => '/plataforma/portal', 'name' => 'Gestão de acessos', 'notes' => 'Criar/revogar links'],
+                        ['path' => '/plataforma/messages/batch', 'name' => 'Envio em lote', 'notes' => 'Revisão + status por destinatário'],
+                        ['path' => '/plataforma/message-templates', 'name' => 'Modelos de mensagem', 'notes' => 'Comunicação padronizada'],
+                        ['path' => '/plataforma/announcements', 'name' => 'Comunicados', 'notes' => 'Avisos ao portal'],
                     ],
                 ],
                 [
@@ -742,7 +742,7 @@ class UsageGuideCatalog
                 [
                     'heading' => 'Fluxo ponta a ponta',
                     'steps' => [
-                        'Escritório cria acesso em `/portal` para cliente + contato.',
+                        'Escritório cria acesso em `/plataforma/portal` para cliente + contato.',
                         'Cliente abre o link com token (sem login do app interno).',
                         'Cliente vê somente dados do próprio cliente.',
                         'Envia documentos pedidos → equipe aprova/recusa.',
@@ -758,7 +758,7 @@ class UsageGuideCatalog
                         'Outros clientes da organização.',
                         'Observações internas, auditoria, automações, CRM, equipe.',
                         'Documentos confidenciais / não liberados.',
-                        'Área `/platform` ou app interno completo.',
+                        'Área `/admin` ou app interno completo.',
                     ],
                 ],
                 [
@@ -785,7 +785,7 @@ class UsageGuideCatalog
             'audience' => 'Gestão',
             'sections' => [
                 [
-                    'heading' => 'Dashboard (`/dashboard`)',
+                    'heading' => 'Dashboard (`/plataforma/dashboard`)',
                     'bullets' => [
                         'Hero financeiro: recebido (delta MTD), aberto, vencido, saldo líquido.',
                         'Contratos: MRR estimado e valor em risco 30d.',
@@ -796,7 +796,7 @@ class UsageGuideCatalog
                     ],
                 ],
                 [
-                    'heading' => 'Relatórios (`/reports`)',
+                    'heading' => 'Relatórios (`/plataforma/reports`)',
                     'bullets' => [
                         'Visão geral, produtividade, documentos, financeiro (se permitido).',
                         'Relatório mensal por cliente com liberação ao portal.',
@@ -807,7 +807,7 @@ class UsageGuideCatalog
                 [
                     'heading' => 'Rotina diária sugerida',
                     'steps' => [
-                        'Abrir `/my-day` e tratar atrasados (tarefas, docs, cobranças, chamados).',
+                        'Abrir `/plataforma/my-day` e tratar atrasados (tarefas, docs, cobranças, chamados).',
                         'Abrir dashboard e tratar alertas vermelhos da organização.',
                         'Olhar valor em risco de contratos e cobranças vencidas.',
                         'Executar tarefas/documentos do dia.',
@@ -827,26 +827,29 @@ class UsageGuideCatalog
         return [
             'slug' => 'platform-admin',
             'title' => 'Operações na Platform',
-            'summary' => 'O que o admin da plataforma faz em `/platform` no dia a dia.',
+            'summary' => 'O que o admin da plataforma faz em `/admin` no dia a dia.',
             'audience' => 'Platform admin',
             'sections' => [
                 [
                     'heading' => 'Páginas',
                     'pages' => [
-                        ['path' => '/platform', 'name' => 'Dashboard', 'notes' => 'MRR, trials, past_due, faturas'],
-                        ['path' => '/platform/organizations', 'name' => 'Organizações', 'notes' => 'Busca, ficha, notas, suspender'],
-                        ['path' => '/platform/plans', 'name' => 'Planos', 'notes' => 'CRUD de limites/features'],
-                        ['path' => '/platform/invoices', 'name' => 'Faturas', 'notes' => 'Marcar paga / void'],
-                        ['path' => '/platform/guides', 'name' => 'Guia de uso', 'notes' => 'Esta documentação'],
+                        ['path' => '/admin/login', 'name' => 'Login admin', 'notes' => 'Guard `admin`; recusa quem não é platform admin'],
+                        ['path' => '/admin', 'name' => 'Dashboard', 'notes' => 'MRR, trials, past_due, faturas'],
+                        ['path' => '/admin/organizations', 'name' => 'Organizações', 'notes' => 'Provisionar tenant, ficha, notas, suspender, impersonar'],
+                        ['path' => '/admin/plans', 'name' => 'Planos', 'notes' => 'CRUD de limites/features'],
+                        ['path' => '/admin/invoices', 'name' => 'Faturas', 'notes' => 'Marcar paga / void'],
+                        ['path' => '/admin/guides', 'name' => 'Guia de uso', 'notes' => 'Esta documentação'],
                     ],
                 ],
                 [
                     'heading' => 'Fluxos críticos',
                     'steps' => [
+                        'Provisionar tenant: único caminho de cadastro (não existe self-service no `/plataforma`).',
                         'Investigar tenant: abrir ficha da organização.',
+                        'Acessar como dono: impersona a membership admin mais antiga, com banner para sair.',
                         'Ajustar plano ou criar override de limite/feature.',
                         'Estender trial / alterar status de assinatura.',
-                        'Suspender org inadimplente (com motivo) — audita ação.',
+                        'Suspender org inadimplente (com motivo) — audita ação. Impersonação de suporte continua permitida.',
                         'Reativar após regularização.',
                         'Marcar fatura como paga ou anular.',
                     ],
@@ -854,10 +857,10 @@ class UsageGuideCatalog
                 [
                     'heading' => 'Regras',
                     'rules' => [
-                        'Acesso somente com `is_platform_admin`.',
-                        'Ações sensíveis geram `platform_audit_logs`.',
+                        'Login só em `/admin/login` com `is_platform_admin` (guard `admin`).',
+                        'Ações sensíveis geram `platform_audit_logs` (`impersonation.started` / `stopped`).',
                         'Billing pode ser manual ou Asaas (config `docflow.billing`).',
-                        'Nunca operar dados de cliente final pela platform — use o app do tenant.',
+                        'Não operar o escritório pela API Sanctum nem pelo login `/plataforma` — só via impersonação web.',
                     ],
                 ],
             ],

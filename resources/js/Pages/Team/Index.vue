@@ -52,7 +52,7 @@ function roleLabel(role) {
 }
 
 function submitInvitation() {
-    inviteForm.post('/organization-invitations', {
+    inviteForm.post('/plataforma/organization-invitations', {
         preserveScroll: true,
         onSuccess: () => inviteForm.reset('name', 'email'),
     });
@@ -86,7 +86,7 @@ function submitInvitation() {
                         <div class="flex justify-end">
                             <Link
                                 v-if="row.can_suspend"
-                                :href="`/organization-members/${row.id}/suspend`"
+                                :href="`/plataforma/organization-members/${row.id}/suspend`"
                                 method="patch"
                                 as="button"
                                 class="inline-flex h-8 items-center justify-center rounded-lg bg-red-600 px-3 text-[13px] font-semibold text-white hover:bg-red-700"
@@ -95,7 +95,7 @@ function submitInvitation() {
                             </Link>
                             <Link
                                 v-if="row.can_reactivate"
-                                :href="`/organization-members/${row.id}/reactivate`"
+                                :href="`/plataforma/organization-members/${row.id}/reactivate`"
                                 method="patch"
                                 as="button"
                                 class="inline-flex h-8 items-center justify-center rounded-lg border border-slate-300 bg-white px-3 text-[13px] font-semibold text-slate-800 hover:bg-slate-50"
@@ -128,7 +128,7 @@ function submitInvitation() {
                         <div class="flex justify-end">
                             <Link
                                 v-if="row.can_cancel"
-                                :href="`/organization-invitations/${row.id}`"
+                                :href="`/plataforma/organization-invitations/${row.id}`"
                                 method="delete"
                                 as="button"
                                 class="inline-flex h-8 items-center justify-center rounded-lg border border-slate-300 bg-white px-3 text-[13px] font-semibold text-slate-800 hover:bg-slate-50"

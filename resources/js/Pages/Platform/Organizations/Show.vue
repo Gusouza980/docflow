@@ -51,6 +51,7 @@ const overrideForm = useForm({
 const extendTrialForm = useForm({ days: 7 });
 const subscriptionPlanForm = useForm({ plan_id: props.organization.plan_id ?? '' });
 const subscriptionActionForm = useForm({});
+const impersonateForm = useForm({});
 
 const memberColumns = [
     { key: 'name', label: 'Nome' },
@@ -65,11 +66,11 @@ const auditColumns = [
 ];
 
 function saveNotes() {
-    notesForm.patch(`/platform/organizations/${props.organization.id}/notes`, { preserveScroll: true });
+    notesForm.patch(`/admin/organizations/${props.organization.id}/notes`, { preserveScroll: true });
 }
 
 function suspendOrganization() {
-    suspendForm.post(`/platform/organizations/${props.organization.id}/suspend`, {
+    suspendForm.post(`/admin/organizations/${props.organization.id}/suspend`, {
         preserveScroll: true,
         onSuccess: () => {
             suspendModalOpen.value = false;
@@ -79,15 +80,15 @@ function suspendOrganization() {
 }
 
 function reactivateOrganization() {
-    reactivateForm.post(`/platform/organizations/${props.organization.id}/reactivate`, { preserveScroll: true });
+    reactivateForm.post(`/admin/organizations/${props.organization.id}/reactivate`, { preserveScroll: true });
 }
 
 function savePlan() {
-    planForm.patch(`/platform/organizations/${props.organization.id}/plan`, { preserveScroll: true });
+    planForm.patch(`/admin/organizations/${props.organization.id}/plan`, { preserveScroll: true });
 }
 
 function saveOverride() {
-    overrideForm.post(`/platform/organizations/${props.organization.id}/overrides`, { preserveScroll: true });
+    overrideForm.post(`/admin/organizations/${props.organization.id}/overrides`, { preserveScroll: true });
 }
 
 function removeOverride() {
@@ -95,25 +96,29 @@ function removeOverride() {
         return;
     }
 
-    removeOverrideForm.delete(`/platform/organizations/${props.organization.id}/overrides/${props.activeOverride.id}`, { preserveScroll: true });
+    removeOverrideForm.delete(`/admin/organizations/${props.organization.id}/overrides/${props.activeOverride.id}`, { preserveScroll: true });
 }
 
 function extendTrial() {
-    extendTrialForm.post(`/platform/organizations/${props.organization.id}/subscription/extend-trial`, { preserveScroll: true });
+    extendTrialForm.post(`/admin/organizations/${props.organization.id}/subscription/extend-trial`, { preserveScroll: true });
 }
 
 function changeSubscriptionPlan() {
-    subscriptionPlanForm.post(`/platform/organizations/${props.organization.id}/subscription/change-plan`, { preserveScroll: true });
+    subscriptionPlanForm.post(`/admin/organizations/${props.organization.id}/subscription/change-plan`, { preserveScroll: true });
 }
 
 function runSubscriptionAction(action) {
-    subscriptionActionForm.post(`/platform/organizations/${props.organization.id}/subscription/${action}`, { preserveScroll: true });
+    subscriptionActionForm.post(`/admin/organizations/${props.organization.id}/subscription/${action}`, { preserveScroll: true });
+}
+
+function impersonateOwner() {
+    impersonateForm.post(`/admin/organizations/${props.organization.id}/impersonate`);
 }
 </script>
 
 <template>
     <Head :title="`Platform · ${organization.name}`" />
-    <PlatformLayout :title="organization.name" active-nav="organizations" :breadcrumbs="[{ label: 'Organizações', href: '/platform/organizations' }, { label: organization.name }]">
+    <PlatformLayout :title="organization.name" active-nav="organizations" :breadcrumbs="[{ label: 'Organizações', href: '/admin/organizations' }, { label: organization.name }]">
         <div class="grid gap-4">
             <Alert v-if="page.props.flash?.status" tone="success">{{ page.props.flash.status }}</Alert>
             <Alert v-if="page.props.flash?.reset_url" tone="info">
@@ -126,9 +131,10 @@ function runSubscriptionAction(action) {
                     <p class="text-sm text-slate-500">Criada em {{ organization.created_at }}</p>
                 </div>
                 <div class="flex flex-wrap gap-2">
+                    <Button :disabled="impersonateForm.processing" @click="impersonateOwner">Acessar como dono</Button>
                     <Button v-if="organization.status === 'active'" variant="danger" @click="suspendModalOpen = true">Suspender</Button>
                     <Button v-else variant="secondary" @click="reactivateOrganization">Reativar</Button>
-                    <Link href="/platform/organizations"><Button variant="secondary">Voltar</Button></Link>
+                    <Link href="/admin/organizations"><Button variant="secondary">Voltar</Button></Link>
                 </div>
             </div>
 

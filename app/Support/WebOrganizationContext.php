@@ -13,7 +13,7 @@ class WebOrganizationContext
 
     public function membership(Request $request): ?OrganizationMember
     {
-        $user = $request->user();
+        $user = $request->user('web') ?? $request->user();
 
         if (! $user instanceof User) {
             return null;

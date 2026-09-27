@@ -54,7 +54,7 @@ const createForm = useForm({
 const money = formatBrlCurrency;
 
 function applyFilters() {
-    filterForm.get('/contracts', { preserveState: true, preserveScroll: true });
+    filterForm.get('/plataforma/contracts', { preserveState: true, preserveScroll: true });
 }
 
 function submitCreate() {
@@ -62,7 +62,7 @@ function submitCreate() {
         ...data,
         amount_cents: data.amount_cents === '' ? null : data.amount_cents,
         ends_at: data.ends_at || null,
-    })).post('/contracts', {
+    })).post('/plataforma/contracts', {
         preserveScroll: true,
         onSuccess: () => {
             createModalOpen.value = false;

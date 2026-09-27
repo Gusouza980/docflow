@@ -34,7 +34,7 @@ class CrmOnboardingTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get('/leads')
+            ->get('/plataforma/leads')
             ->assertRedirect(route('organizations.plan.show'));
     }
 
@@ -44,7 +44,7 @@ class CrmOnboardingTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post('/leads', [
+            ->post('/plataforma/leads', [
                 'name' => 'Maria Lead',
                 'email' => 'maria@example.test',
                 'origin' => Lead::ORIGIN_REFERRAL,
@@ -56,7 +56,7 @@ class CrmOnboardingTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->patch("/leads/{$lead->id}/stage", [
+            ->patch("/plataforma/leads/{$lead->id}/stage", [
                 'stage' => Lead::STAGE_FIRST_CONTACT,
             ])
             ->assertRedirect();
@@ -74,8 +74,8 @@ class CrmOnboardingTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->from("/leads/{$lead->id}")
-            ->patch("/leads/{$lead->id}/stage", [
+            ->from("/plataforma/leads/{$lead->id}")
+            ->patch("/plataforma/leads/{$lead->id}/stage", [
                 'stage' => Lead::STAGE_LOST,
             ])
             ->assertSessionHasErrors('lost_reason');
@@ -92,8 +92,8 @@ class CrmOnboardingTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->from("/leads/{$lead->id}")
-            ->patch("/leads/{$lead->id}/stage", [
+            ->from("/plataforma/leads/{$lead->id}")
+            ->patch("/plataforma/leads/{$lead->id}/stage", [
                 'stage' => Lead::STAGE_WON,
             ])
             ->assertSessionHasErrors('stage');
@@ -120,14 +120,14 @@ class CrmOnboardingTest extends TestCase
 
         $this->actingAs($admin)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post("/leads/{$lead->id}/convert")
+            ->post("/plataforma/leads/{$lead->id}/convert")
             ->assertRedirect();
 
         $clientId = $lead->fresh()->client_id;
 
         $this->actingAs($readonly)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get("/clients/{$clientId}?tab=commercial")
+            ->get("/plataforma/clients/{$clientId}?tab=commercial")
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Clients/Show', false)
@@ -159,7 +159,7 @@ class CrmOnboardingTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post("/leads/{$lead->id}/convert")
+            ->post("/plataforma/leads/{$lead->id}/convert")
             ->assertRedirect();
 
         $lead->refresh();
@@ -178,7 +178,7 @@ class CrmOnboardingTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get("/clients/{$lead->client_id}?tab=commercial")
+            ->get("/plataforma/clients/{$lead->client_id}?tab=commercial")
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Clients/Show', false)
@@ -214,7 +214,7 @@ class CrmOnboardingTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post("/leads/{$lead->id}/convert", ['start_onboarding' => true])
+            ->post("/plataforma/leads/{$lead->id}/convert", ['start_onboarding' => true])
             ->assertRedirect();
 
         $this->assertSame(2, Task::query()
@@ -230,7 +230,7 @@ class CrmOnboardingTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post('/leads', [
+            ->post('/plataforma/leads', [
                 'name' => 'Lead bloqueado',
             ])
             ->assertForbidden();
@@ -248,7 +248,7 @@ class CrmOnboardingTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get("/leads/{$lead->id}")
+            ->get("/plataforma/leads/{$lead->id}")
             ->assertNotFound();
     }
 

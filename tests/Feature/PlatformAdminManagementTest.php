@@ -22,8 +22,8 @@ class PlatformAdminManagementTest extends TestCase
     {
         $admin = $this->createPlatformAdmin();
 
-        $this->actingAs($admin)
-            ->get('/platform')
+        $this->actingAs($admin, 'admin')
+            ->get('/admin')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Platform/Dashboard/Index', false)
@@ -36,8 +36,8 @@ class PlatformAdminManagementTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get('/platform')
-            ->assertForbidden();
+            ->get('/admin')
+            ->assertRedirect(route('admin.login'));
     }
 
     public function test_assistant_cannot_access_platform(): void
@@ -46,8 +46,8 @@ class PlatformAdminManagementTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get('/platform')
-            ->assertForbidden();
+            ->get('/admin')
+            ->assertRedirect(route('admin.login'));
     }
 
     public function test_platform_admin_can_suspend_organization_and_audit(): void
@@ -55,11 +55,11 @@ class PlatformAdminManagementTest extends TestCase
         $admin = $this->createPlatformAdmin();
         $organization = Organization::factory()->create(['status' => Organization::STATUS_ACTIVE]);
 
-        $this->actingAs($admin)
-            ->post("/platform/organizations/{$organization->id}/suspend", [
+        $this->actingAs($admin, 'admin')
+            ->post("/admin/organizations/{$organization->id}/suspend", [
                 'reason' => 'Inadimplência',
             ])
-            ->assertRedirect(route('platform.organizations.show', $organization));
+            ->assertRedirect(route('admin.organizations.show', $organization));
 
         $this->assertSame(Organization::STATUS_SUSPENDED, $organization->fresh()->status);
 
@@ -76,9 +76,9 @@ class PlatformAdminManagementTest extends TestCase
         $admin = $this->createPlatformAdmin();
         $organization = Organization::factory()->create(['status' => Organization::STATUS_SUSPENDED]);
 
-        $this->actingAs($admin)
-            ->post("/platform/organizations/{$organization->id}/reactivate")
-            ->assertRedirect(route('platform.organizations.show', $organization));
+        $this->actingAs($admin, 'admin')
+            ->post("/admin/organizations/{$organization->id}/reactivate")
+            ->assertRedirect(route('admin.organizations.show', $organization));
 
         $this->assertSame(Organization::STATUS_ACTIVE, $organization->fresh()->status);
 
@@ -93,11 +93,11 @@ class PlatformAdminManagementTest extends TestCase
         $admin = $this->createPlatformAdmin();
         $organization = Organization::factory()->create();
 
-        $this->actingAs($admin)
-            ->patch("/platform/organizations/{$organization->id}/notes", [
+        $this->actingAs($admin, 'admin')
+            ->patch("/admin/organizations/{$organization->id}/notes", [
                 'platform_notes' => 'Cliente enterprise — tratar com prioridade.',
             ])
-            ->assertRedirect(route('platform.organizations.show', $organization));
+            ->assertRedirect(route('admin.organizations.show', $organization));
 
         $this->assertSame('Cliente enterprise — tratar com prioridade.', $organization->fresh()->platform_notes);
 
@@ -114,16 +114,16 @@ class PlatformAdminManagementTest extends TestCase
         Organization::factory()->count(3)->create(['status' => Organization::STATUS_ACTIVE]);
         Organization::factory()->create(['status' => Organization::STATUS_SUSPENDED, 'name' => 'Org Suspensa']);
 
-        $this->actingAs($admin)
-            ->get('/platform/organizations')
+        $this->actingAs($admin, 'admin')
+            ->get('/admin/organizations')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Platform/Organizations/Index', false)
-                ->where('organizations.meta.total', 4)
-                ->has('organizations.data', 4));
+                ->where('organizations.meta.total', Organization::query()->count())
+                ->has('organizations.data', Organization::query()->count()));
 
-        $this->actingAs($admin)
-            ->get('/platform/organizations?status=suspended')
+        $this->actingAs($admin, 'admin')
+            ->get('/admin/organizations?status=suspended&search=Org+Suspensa')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('organizations.meta.total', 1)
@@ -137,8 +137,8 @@ class PlatformAdminManagementTest extends TestCase
 
         $admin = $this->createPlatformAdmin();
 
-        $this->actingAs($admin)
-            ->post('/platform/organizations', [
+        $this->actingAs($admin, 'admin')
+            ->post('/admin/organizations', [
                 'owner_name' => 'Ana Escritório',
                 'owner_email' => 'ana@escritorio.test',
                 'name' => 'Escritório Ana',
@@ -178,12 +178,12 @@ class PlatformAdminManagementTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post('/platform/organizations', [
+            ->post('/admin/organizations', [
                 'owner_name' => 'Outro',
                 'owner_email' => 'outro@test.com',
                 'name' => 'Outra Org',
             ])
-            ->assertForbidden();
+            ->assertRedirect(route('admin.login'));
     }
 
     public function test_provisioning_rejects_duplicate_owner_email(): void
@@ -192,14 +192,14 @@ class PlatformAdminManagementTest extends TestCase
         $admin = $this->createPlatformAdmin();
         User::factory()->create(['email' => 'ana@escritorio.test']);
 
-        $this->actingAs($admin)
-            ->from('/platform/organizations')
-            ->post('/platform/organizations', [
+        $this->actingAs($admin, 'admin')
+            ->from('/admin/organizations')
+            ->post('/admin/organizations', [
                 'owner_name' => 'Ana',
                 'owner_email' => 'ana@escritorio.test',
                 'name' => 'Escritório Ana',
             ])
-            ->assertRedirect('/platform/organizations')
+            ->assertRedirect('/admin/organizations')
             ->assertSessionHasErrors('owner_email');
     }
 
@@ -210,24 +210,26 @@ class PlatformAdminManagementTest extends TestCase
 
         $admin = $this->createPlatformAdmin();
 
-        $this->actingAs($admin)
-            ->post('/platform/organizations', [
+        $this->actingAs($admin, 'admin')
+            ->post('/admin/organizations', [
                 'owner_name' => 'Ana Escritório',
                 'owner_email' => 'ana@escritorio.test',
                 'name' => 'Escritório Ana',
             ]);
 
-        $this->post('/logout');
+        $this->post('/admin/logout');
+
+        $this->app['auth']->shouldUse('web');
 
         $user = User::query()->where('email', 'ana@escritorio.test')->firstOrFail();
         $user->update(['password' => 'password']);
 
-        $this->post('/login', [
+        $this->post('/plataforma/login', [
             'email' => 'ana@escritorio.test',
             'password' => 'password',
-        ])->assertRedirect('/dashboard');
+        ])->assertRedirect('/plataforma/dashboard');
 
-        $this->get('/dashboard')
+        $this->get('/plataforma/dashboard')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page->component('Dashboard/Index', false));
     }

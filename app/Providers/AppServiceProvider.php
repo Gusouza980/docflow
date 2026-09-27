@@ -9,7 +9,9 @@ use App\Contracts\Billing\BillingGateway;
 use App\Contracts\Mail\TransactionalMailer;
 use App\Mail\LaravelTransactionalMailer;
 use App\Mail\LogTransactionalMailer;
+use App\Models\User;
 use App\Support\OrganizationContext;
+use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -55,6 +57,24 @@ class AppServiceProvider extends ServiceProvider
 
         RateLimiter::for('login', function (Request $request) {
             return Limit::perMinute(5)->by($request->ip());
+        });
+
+        ResetPassword::createUrlUsing(function (object $notifiable, string $token): string {
+            if ($notifiable instanceof User && $notifiable->isPlatformAdmin()) {
+                return url(route('admin.password.reset', [
+                    'token' => $token,
+                    'email' => $notifiable->getEmailForPasswordReset(),
+                ]));
+            }
+
+            $email = $notifiable instanceof User
+                ? $notifiable->getEmailForPasswordReset()
+                : (string) $notifiable->email;
+
+            return url(route('password.reset', [
+                'token' => $token,
+                'email' => $email,
+            ]));
         });
 
         Gate::before(function ($user, string $ability) {

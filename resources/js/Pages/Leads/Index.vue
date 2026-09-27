@@ -32,7 +32,7 @@ const createForm = useForm({
 });
 
 function submitCreate() {
-    createForm.post('/leads', {
+    createForm.post('/plataforma/leads', {
         preserveScroll: true,
         onSuccess: () => {
             createOpen.value = false;
@@ -73,7 +73,7 @@ const money = formatBrlCurrency;
                         <Link
                             v-for="lead in grouped[stage.value] || []"
                             :key="lead.id"
-                            :href="`/leads/${lead.id}`"
+                            :href="`/plataforma/leads/${lead.id}`"
                             class="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 hover:border-slate-300 hover:bg-white"
                         >
                             <p class="text-sm font-semibold text-slate-900">{{ lead.name }}</p>

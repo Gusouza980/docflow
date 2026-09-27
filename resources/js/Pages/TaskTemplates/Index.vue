@@ -72,7 +72,7 @@ function removeEditItem(index) {
 }
 
 function submitCreate() {
-    createForm.post('/task-templates', { preserveScroll: true, onSuccess: () => createModalOpen.value = false });
+    createForm.post('/plataforma/task-templates', { preserveScroll: true, onSuccess: () => createModalOpen.value = false });
 }
 
 function openEdit(template) {
@@ -92,7 +92,7 @@ function openEdit(template) {
 }
 
 function submitEdit() {
-    editForm.patch(`/task-templates/${selectedTemplate.value.id}`, { preserveScroll: true, onSuccess: () => editModalOpen.value = false });
+    editForm.patch(`/plataforma/task-templates/${selectedTemplate.value.id}`, { preserveScroll: true, onSuccess: () => editModalOpen.value = false });
 }
 
 function openApply(template) {
@@ -102,7 +102,7 @@ function openApply(template) {
 }
 
 function submitApply() {
-    applyForm.post(`/task-templates/${selectedTemplate.value.id}/create-tasks`, { preserveScroll: true, onSuccess: () => applyModalOpen.value = false });
+    applyForm.post(`/plataforma/task-templates/${selectedTemplate.value.id}/create-tasks`, { preserveScroll: true, onSuccess: () => applyModalOpen.value = false });
 }
 </script>
 

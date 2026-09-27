@@ -28,7 +28,7 @@ class OrganizationBillingController extends Controller
         $membership = $webOrganizationContext->membership($request);
 
         if (! $membership) {
-            return redirect()->route('organizations.index')->with('error', 'Selecione uma organização.');
+            return redirect()->route('organizations.unassigned');
         }
 
         abort_unless($membership->isAdmin(), HttpResponse::HTTP_FORBIDDEN);

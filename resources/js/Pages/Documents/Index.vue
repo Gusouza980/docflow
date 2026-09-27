@@ -97,7 +97,7 @@ const categoryForm = useForm({
 });
 
 function applyFilters() {
-    router.get('/documents', filterForm.data(), { preserveState: true, preserveScroll: true });
+    router.get('/plataforma/documents', filterForm.data(), { preserveState: true, preserveScroll: true });
 }
 
 function clearFilters() {
@@ -116,7 +116,7 @@ function openUploadModal() {
 }
 
 function submitUpload() {
-    uploadForm.post('/documents', {
+    uploadForm.post('/plataforma/documents', {
         preserveScroll: true,
         onSuccess: () => uploadModalOpen.value = false,
     });
@@ -140,11 +140,11 @@ function submitCategory() {
     };
 
     if (editingCategory.value) {
-        categoryForm.patch(`/document-categories/${editingCategory.value.id}`, options);
+        categoryForm.patch(`/plataforma/document-categories/${editingCategory.value.id}`, options);
         return;
     }
 
-    categoryForm.post('/document-categories', options);
+    categoryForm.post('/plataforma/document-categories', options);
 }
 </script>
 

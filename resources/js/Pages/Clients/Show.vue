@@ -66,7 +66,7 @@ const serviceForm = useForm({
 });
 
 function submitService() {
-    serviceForm.post(`/clients/${props.client.id}/services`, {
+    serviceForm.post(`/plataforma/clients/${props.client.id}/services`, {
         preserveScroll: true,
         onSuccess: () => serviceForm.reset('notes', 'ends_at'),
     });
@@ -214,7 +214,7 @@ function openEditModal() {
 }
 
 function submitEdit() {
-    editForm.patch(`/clients/${props.client.id}`, {
+    editForm.patch(`/plataforma/clients/${props.client.id}`, {
         preserveScroll: true,
         onSuccess: () => {
             editModalOpen.value = false;
@@ -223,7 +223,7 @@ function submitEdit() {
 }
 
 function submitStatus() {
-    statusForm.patch(`/clients/${props.client.id}/status`, {
+    statusForm.patch(`/plataforma/clients/${props.client.id}/status`, {
         preserveScroll: true,
         onSuccess: () => {
             statusModalOpen.value = false;
@@ -232,7 +232,7 @@ function submitStatus() {
 }
 
 function submitContact() {
-    contactForm.post(`/clients/${props.client.id}/contacts`, {
+    contactForm.post(`/plataforma/clients/${props.client.id}/contacts`, {
         preserveScroll: true,
         onSuccess: () => {
             contactForm.reset();
@@ -242,7 +242,7 @@ function submitContact() {
 }
 
 function submitTag() {
-    tagForm.post('/client-tags', {
+    tagForm.post('/plataforma/client-tags', {
         preserveScroll: true,
         onSuccess: () => {
             tagForm.reset('name');
@@ -253,16 +253,16 @@ function submitTag() {
 
 function switchTab(tab) {
     activeTab.value = tab;
-    router.get(`/clients/${props.client.id}`, { tab, ticket_filter: ticketFilterForm.ticket_filter }, { preserveState: true, preserveScroll: true, replace: true });
+    router.get(`/plataforma/clients/${props.client.id}`, { tab, ticket_filter: ticketFilterForm.ticket_filter }, { preserveState: true, preserveScroll: true, replace: true });
 }
 
 function applyTicketFilter() {
-    router.get(`/clients/${props.client.id}`, { tab: 'tickets', ticket_filter: ticketFilterForm.ticket_filter }, { preserveState: true, preserveScroll: true });
+    router.get(`/plataforma/clients/${props.client.id}`, { tab: 'tickets', ticket_filter: ticketFilterForm.ticket_filter }, { preserveState: true, preserveScroll: true });
 }
 
 function openTicket(ticketId) {
     activeTicketId.value = ticketId;
-    router.get(`/clients/${props.client.id}`, {
+    router.get(`/plataforma/clients/${props.client.id}`, {
         tab: 'tickets',
         ticket_filter: ticketFilterForm.ticket_filter,
         ticket: ticketId,
@@ -271,14 +271,14 @@ function openTicket(ticketId) {
 
 function closeTicketDrawer() {
     activeTicketId.value = null;
-    router.get(`/clients/${props.client.id}`, {
+    router.get(`/plataforma/clients/${props.client.id}`, {
         tab: 'tickets',
         ticket_filter: ticketFilterForm.ticket_filter,
     }, { preserveState: true, preserveScroll: true, replace: true });
 }
 
 function submitTicketCreate() {
-    ticketCreateForm.post(`/clients/${props.client.id}/tickets`, {
+    ticketCreateForm.post(`/plataforma/clients/${props.client.id}/tickets`, {
         preserveScroll: true,
         onSuccess: () => {
             ticketCreateForm.reset();
@@ -336,8 +336,8 @@ async function pollMessages() {
 
     const lastId = chatMessages.value.at(-1)?.id;
     const url = lastId
-        ? `/clients/${props.client.id}/messages/poll?since_id=${lastId}`
-        : `/clients/${props.client.id}/messages/poll`;
+        ? `/plataforma/clients/${props.client.id}/messages/poll?since_id=${lastId}`
+        : `/plataforma/clients/${props.client.id}/messages/poll`;
 
     try {
         const response = await fetch(url, {
@@ -380,7 +380,7 @@ watch(activeTab, (tab) => {
 });
 
 function submitMessage() {
-    messageForm.post(`/clients/${props.client.id}/messages`, {
+    messageForm.post(`/plataforma/clients/${props.client.id}/messages`, {
         preserveScroll: true,
         onSuccess: () => {
             messageForm.reset('body', 'subject');
@@ -398,15 +398,15 @@ function openWhatsApp(message) {
         window.open(message.whatsapp_url, '_blank', 'noopener');
     }
 
-    router.post(`/clients/${props.client.id}/messages/${message.id}/whatsapp`, {}, { preserveScroll: true });
+    router.post(`/plataforma/clients/${props.client.id}/messages/${message.id}/whatsapp`, {}, { preserveScroll: true });
 }
 
 function openTicketFromMessage(message) {
-    router.post(`/clients/${props.client.id}/messages/${message.id}/ticket`, {}, { preserveScroll: true });
+    router.post(`/plataforma/clients/${props.client.id}/messages/${message.id}/ticket`, {}, { preserveScroll: true });
 }
 
 function submitPortalAccess() {
-    portalAccessForm.post(`/clients/${props.client.id}/portal-accesses`, {
+    portalAccessForm.post(`/plataforma/clients/${props.client.id}/portal-accesses`, {
         preserveScroll: true,
         onSuccess: () => {
             portalAccessForm.reset('name', 'email', 'expires_at');
@@ -426,7 +426,7 @@ function copyPortalUrl() {
 
 <template>
     <Head :title="client.display_name" />
-    <AppLayout :title="client.display_name" active-nav="clients" :breadcrumbs="[{ label: 'Clientes', href: '/clients' }, { label: client.display_name }]">
+    <AppLayout :title="client.display_name" active-nav="clients" :breadcrumbs="[{ label: 'Clientes', href: '/plataforma/clients' }, { label: client.display_name }]">
         <div class="grid gap-4">
             <Alert v-if="page.props.flash?.status" tone="success">{{ page.props.flash.status }}</Alert>
             <Alert v-if="page.props.flash?.error" tone="danger">{{ page.props.flash.error }}</Alert>
@@ -504,7 +504,7 @@ function copyPortalUrl() {
                                     </div>
                                     <Link
                                         v-if="can.update"
-                                        :href="`/client-contacts/${contact.id}`"
+                                        :href="`/plataforma/client-contacts/${contact.id}`"
                                         method="delete"
                                         as="button"
                                         class="inline-flex h-8 items-center justify-center rounded-lg border border-slate-300 bg-white px-3 text-[13px] font-semibold text-slate-800 hover:bg-slate-50"
@@ -538,7 +538,7 @@ function copyPortalUrl() {
                         <div class="flex flex-wrap gap-2">
                             <span v-for="tag in client.tags" :key="tag.id" class="inline-flex items-center gap-2 rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold text-teal-700 ring-1 ring-inset ring-teal-200">
                                 {{ tag.name }}
-                                <Link v-if="can.update" :href="`/clients/${client.id}/tags/${tag.id}`" method="delete" as="button" class="text-teal-900">×</Link>
+                                <Link v-if="can.update" :href="`/plataforma/clients/${client.id}/tags/${tag.id}`" method="delete" as="button" class="text-teal-900">×</Link>
                             </span>
                             <span v-if="!client.tags.length" class="text-sm text-slate-500">Sem etiquetas.</span>
                         </div>
@@ -548,7 +548,7 @@ function copyPortalUrl() {
                                 <Link
                                     v-for="tag in availableTags"
                                     :key="tag.id"
-                                    :href="`/clients/${client.id}/tags/${tag.id}`"
+                                    :href="`/plataforma/clients/${client.id}/tags/${tag.id}`"
                                     method="post"
                                     as="button"
                                     class="rounded-full border border-slate-300 bg-white px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50"
@@ -659,13 +659,13 @@ function copyPortalUrl() {
                                 <Link :href="contract.href" class="text-sm font-semibold text-slate-800 underline">Abrir</Link>
                             </li>
                         </ul>
-                        <p v-else class="text-sm text-slate-500">Nenhum contrato. Crie em <Link href="/contracts" class="underline">Contratos</Link>.</p>
+                        <p v-else class="text-sm text-slate-500">Nenhum contrato. Crie em <Link href="/plataforma/contracts" class="underline">Contratos</Link>.</p>
                     </Card>
                 </div>
 
                 <div v-else-if="activeTab === 'communication'" class="grid gap-4">
                     <div class="flex justify-end">
-                        <Link href="/messages/batch"><Button variant="secondary" size="sm">Envio em lote</Button></Link>
+                        <Link href="/plataforma/messages/batch"><Button variant="secondary" size="sm">Envio em lote</Button></Link>
                     </div>
                     <Alert v-if="!hub.communications.has_portal_consent" tone="warning">
                         Este cliente ainda não autorizou comunicação pelo portal. Mensagens outbound pelo canal portal exigem consentimento.
@@ -788,7 +788,7 @@ function copyPortalUrl() {
                         <template #cell-actions="{ row }">
                             <Link
                                 v-if="can.update && row.status === 'active'"
-                                :href="`/clients/${client.id}/portal-accesses/${row.id}/revoke`"
+                                :href="`/plataforma/clients/${client.id}/portal-accesses/${row.id}/revoke`"
                                 method="patch"
                                 as="button"
                                 class="inline-flex h-8 items-center justify-center rounded-lg border border-slate-300 bg-white px-3 text-[13px] font-semibold text-slate-800 hover:bg-slate-50"

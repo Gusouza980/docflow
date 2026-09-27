@@ -6,6 +6,7 @@ use App\Models\Client;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\User;
+use Database\Seeders\PlanSeeder;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -13,6 +14,13 @@ use Tests\TestCase;
 class ClientManagementTest extends TestCase
 {
     use LazilyRefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->seed(PlanSeeder::class);
+    }
 
     public function test_admin_can_create_individual_client(): void
     {

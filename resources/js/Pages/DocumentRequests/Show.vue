@@ -53,7 +53,7 @@ function openUpload(item) {
 }
 
 function submitUpload() {
-    uploadForm.post(`/document-request-items/${selectedItem.value.id}/upload`, {
+    uploadForm.post(`/plataforma/document-request-items/${selectedItem.value.id}/upload`, {
         preserveScroll: true,
         onSuccess: () => uploadModalOpen.value = false,
     });
@@ -67,18 +67,18 @@ function openReject(item) {
 }
 
 function submitReject() {
-    rejectForm.patch(`/document-request-items/${selectedItem.value.id}/reject`, {
+    rejectForm.patch(`/plataforma/document-request-items/${selectedItem.value.id}/reject`, {
         preserveScroll: true,
         onSuccess: () => rejectModalOpen.value = false,
     });
 }
 
 function approve(item) {
-    approveForm.patch(`/document-request-items/${item.id}/approve`, { preserveScroll: true });
+    approveForm.patch(`/plataforma/document-request-items/${item.id}/approve`, { preserveScroll: true });
 }
 
 function submitCancel() {
-    cancelForm.patch(`/document-requests/${props.documentRequest.id}/cancel`, {
+    cancelForm.patch(`/plataforma/document-requests/${props.documentRequest.id}/cancel`, {
         preserveScroll: true,
         onSuccess: () => cancelModalOpen.value = false,
     });
@@ -87,7 +87,7 @@ function submitCancel() {
 
 <template>
     <Head :title="documentRequest.title" />
-    <AppLayout :title="documentRequest.title" active-nav="document-requests" :breadcrumbs="[{ label: 'Solicitações', href: '/document-requests' }, { label: documentRequest.title }]">
+    <AppLayout :title="documentRequest.title" active-nav="document-requests" :breadcrumbs="[{ label: 'Solicitações', href: '/plataforma/document-requests' }, { label: documentRequest.title }]">
         <div class="grid gap-4">
             <Alert v-if="page.props.flash?.status" tone="success">{{ page.props.flash.status }}</Alert>
             <Alert v-if="page.props.flash?.error" tone="danger">{{ page.props.flash.error }}</Alert>

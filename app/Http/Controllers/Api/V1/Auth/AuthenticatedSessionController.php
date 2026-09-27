@@ -19,7 +19,7 @@ class AuthenticatedSessionController extends Controller
         $data = $request->validated();
         $user = User::where('email', $data['email'])->first();
 
-        if (! $user || ! Hash::check($data['password'], $user->password)) {
+        if (! $user || $user->isPlatformAdmin() || ! Hash::check($data['password'], $user->password)) {
             throw ValidationException::withMessages([
                 'email' => ['The provided credentials are incorrect.'],
             ]);

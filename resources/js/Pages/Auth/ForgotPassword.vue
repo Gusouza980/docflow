@@ -12,7 +12,7 @@ const form = useForm({
 });
 
 function submit() {
-    form.post('/forgot-password', { preserveScroll: true });
+    form.post('/plataforma/forgot-password', { preserveScroll: true });
 }
 </script>
 
@@ -24,7 +24,7 @@ function submit() {
         <form class="grid gap-4" @submit.prevent="submit">
             <TextInput id="email" v-model="form.email" type="email" label="E-mail" required :error="form.errors.email" />
             <Button type="submit" :loading="form.processing" :disabled="form.processing">Enviar instruções</Button>
-            <Link href="/login" class="text-center text-sm font-semibold text-blue-700 hover:text-blue-800">Voltar para o login</Link>
+            <Link href="/plataforma/login" class="text-center text-sm font-semibold text-blue-700 hover:text-blue-800">Voltar para o login</Link>
         </form>
     </AuthLayout>
 </template>

@@ -40,7 +40,7 @@ class WebOperationalManagementTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get('/tasks')
+            ->get('/plataforma/tasks')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Tasks/Index', false)
@@ -58,7 +58,7 @@ class WebOperationalManagementTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post('/tasks', [
+            ->post('/plataforma/tasks', [
                 'client_id' => $client->id,
                 'assigned_to_member_id' => $member->id,
                 'title' => 'Preparar contrato',
@@ -71,34 +71,34 @@ class WebOperationalManagementTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post("/tasks/{$task->id}/checklist-items", [
+            ->post("/plataforma/tasks/{$task->id}/checklist-items", [
                 'title' => 'Conferir dados',
                 'is_required' => true,
             ])
-            ->assertRedirect("/tasks/{$task->id}");
+            ->assertRedirect("/plataforma/tasks/{$task->id}");
 
         $item = TaskChecklistItem::firstOrFail();
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->patch("/tasks/{$task->id}/complete")
-            ->assertRedirect("/tasks/{$task->id}");
+            ->patch("/plataforma/tasks/{$task->id}/complete")
+            ->assertRedirect("/plataforma/tasks/{$task->id}");
 
         $this->assertNotSame(Task::STATUS_COMPLETED, $task->fresh()->status);
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->patch("/task-checklist-items/{$item->id}", [
+            ->patch("/plataforma/task-checklist-items/{$item->id}", [
                 'is_completed' => true,
             ])
-            ->assertRedirect("/tasks/{$task->id}");
+            ->assertRedirect("/plataforma/tasks/{$task->id}");
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->patch("/tasks/{$task->id}/complete", [
+            ->patch("/plataforma/tasks/{$task->id}/complete", [
                 'completion_notes' => 'Finalizado.',
             ])
-            ->assertRedirect("/tasks/{$task->id}");
+            ->assertRedirect("/plataforma/tasks/{$task->id}");
 
         $this->assertSame(Task::STATUS_COMPLETED, $task->fresh()->status);
     }
@@ -110,25 +110,25 @@ class WebOperationalManagementTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post('/task-templates', [
+            ->post('/plataforma/task-templates', [
                 'name' => 'Onboarding',
                 'items' => [
                     ['title' => 'Coletar documentos', 'due_in_days' => 2],
                     ['title' => 'Abrir processo', 'due_in_days' => 5],
                 ],
             ])
-            ->assertRedirect('/task-templates');
+            ->assertRedirect('/plataforma/task-templates');
 
         $template = TaskTemplate::firstOrFail();
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post("/task-templates/{$template->id}/create-tasks", [
+            ->post("/plataforma/task-templates/{$template->id}/create-tasks", [
                 'client_id' => $client->id,
                 'assigned_to_member_id' => $member->id,
                 'base_date' => '2026-05-01',
             ])
-            ->assertRedirect('/tasks');
+            ->assertRedirect('/plataforma/tasks');
 
         $this->assertSame(2, Task::query()->count());
         $this->assertDatabaseHas('tasks', [
@@ -154,7 +154,7 @@ class WebOperationalManagementTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->patch("/task-templates/{$template->id}", [
+            ->patch("/plataforma/task-templates/{$template->id}", [
                 'name' => 'Onboarding atualizado',
                 'description' => 'Fluxo revisado',
                 'priority' => TaskPriority::High->value,
@@ -173,7 +173,7 @@ class WebOperationalManagementTest extends TestCase
                     ],
                 ],
             ])
-            ->assertRedirect('/task-templates');
+            ->assertRedirect('/plataforma/task-templates');
 
         $this->assertDatabaseHas('task_templates', [
             'id' => $template->id,
@@ -200,40 +200,40 @@ class WebOperationalManagementTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post('/deadlines', [
+            ->post('/plataforma/deadlines', [
                 'client_id' => $client->id,
                 'assigned_to_member_id' => $member->id,
                 'title' => 'Prazo judicial',
                 'due_at' => now()->addDays(5)->toDateString(),
                 'requires_review' => true,
             ])
-            ->assertRedirect('/deadlines');
+            ->assertRedirect('/plataforma/deadlines');
 
         $deadline = Deadline::firstOrFail();
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->patch("/deadlines/{$deadline->id}/complete")
-            ->assertRedirect('/deadlines');
+            ->patch("/plataforma/deadlines/{$deadline->id}/complete")
+            ->assertRedirect('/plataforma/deadlines');
 
         $this->assertNotSame(Deadline::STATUS_COMPLETED, $deadline->fresh()->status);
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->patch("/deadlines/{$deadline->id}/request-review", [
+            ->patch("/plataforma/deadlines/{$deadline->id}/request-review", [
                 'review_notes' => 'Revisar petição.',
             ])
-            ->assertRedirect('/deadlines');
+            ->assertRedirect('/plataforma/deadlines');
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->patch("/deadlines/{$deadline->id}/approve-review")
-            ->assertRedirect('/deadlines');
+            ->patch("/plataforma/deadlines/{$deadline->id}/approve-review")
+            ->assertRedirect('/plataforma/deadlines');
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->patch("/deadlines/{$deadline->id}/complete")
-            ->assertRedirect('/deadlines');
+            ->patch("/plataforma/deadlines/{$deadline->id}/complete")
+            ->assertRedirect('/plataforma/deadlines');
 
         $this->assertSame(Deadline::STATUS_COMPLETED, $deadline->fresh()->status);
     }
@@ -245,7 +245,7 @@ class WebOperationalManagementTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post('/calendar-events', [
+            ->post('/plataforma/calendar-events', [
                 'client_id' => $client->id,
                 'title' => 'Reunião de alinhamento',
                 'type' => CalendarEventType::Meeting->value,
@@ -255,13 +255,13 @@ class WebOperationalManagementTest extends TestCase
                     ['organization_member_id' => $member->id],
                 ],
             ])
-            ->assertRedirect('/calendar');
+            ->assertRedirect('/plataforma/calendar');
 
         $event = CalendarEvent::firstOrFail();
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post("/calendar-events/{$event->id}/notes", [
+            ->post("/plataforma/calendar-events/{$event->id}/notes", [
                 'notes' => 'Resumo da reunião.',
                 'tasks' => [
                     [
@@ -271,7 +271,7 @@ class WebOperationalManagementTest extends TestCase
                     ],
                 ],
             ])
-            ->assertRedirect('/calendar');
+            ->assertRedirect('/plataforma/calendar');
 
         $this->assertSame(CalendarEvent::STATUS_DONE, $event->fresh()->status);
         $this->assertDatabaseHas('tasks', [

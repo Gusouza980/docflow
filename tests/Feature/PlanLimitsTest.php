@@ -36,7 +36,7 @@ class PlanLimitsTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post('/organization-invitations', [
+            ->post('/plataforma/organization-invitations', [
                 'email' => 'novo@example.com',
                 'role' => OrganizationMember::ROLE_ASSISTANT,
             ])
@@ -61,7 +61,7 @@ class PlanLimitsTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post('/clients', [
+            ->post('/plataforma/clients', [
                 'type' => Client::TYPE_INDIVIDUAL,
                 'display_name' => 'Cliente Extra',
                 'access_policy' => Client::ACCESS_ALL_MEMBERS,
@@ -93,7 +93,7 @@ class PlanLimitsTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post('/portal/accesses', [
+            ->post('/plataforma/portal/accesses', [
                 'client_id' => $client->id,
                 'name' => 'Maria Cliente',
                 'email' => 'maria@example.com',
@@ -109,7 +109,7 @@ class PlanLimitsTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get('/organizations/plan')
+            ->get('/plataforma/organizations/plan')
             ->assertForbidden();
     }
 
@@ -122,7 +122,7 @@ class PlanLimitsTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get('/organizations/plan')
+            ->get('/plataforma/organizations/plan')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Organizations/Plan', false)
@@ -141,16 +141,16 @@ class PlanLimitsTest extends TestCase
             'status' => OrganizationMember::STATUS_ACTIVE,
         ]);
 
-        $this->actingAs($platformAdmin)
-            ->post("/platform/organizations/{$organization->id}/overrides", [
+        $this->actingAs($platformAdmin, 'admin')
+            ->post("/admin/organizations/{$organization->id}/overrides", [
                 'reason' => 'Cortesia comercial',
                 'limits' => ['max_members' => 10],
             ])
             ->assertRedirect();
 
-        $this->actingAs($user)
+        $this->actingAs($user, 'web')
             ->withSession(['active_organization_id' => $organization->id])
-            ->post('/organization-invitations', [
+            ->post('/plataforma/organization-invitations', [
                 'email' => 'novo@example.com',
                 'role' => OrganizationMember::ROLE_ASSISTANT,
             ])

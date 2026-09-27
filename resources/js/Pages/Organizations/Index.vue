@@ -16,7 +16,6 @@ const props = defineProps({
 });
 
 const page = usePage();
-const createModalOpen = ref(false);
 const editingOrganizationId = ref(null);
 
 const columns = [
@@ -26,14 +25,6 @@ const columns = [
     { key: 'pending_invitations_count', label: 'Convites' },
     { key: 'actions', label: '' },
 ];
-
-const createForm = useForm({
-    name: '',
-    document: '',
-    email: '',
-    phone: '',
-    timezone: 'America/Sao_Paulo',
-});
 
 const editForm = useForm({
     name: '',
@@ -65,7 +56,7 @@ function savePaymentGateway() {
         return;
     }
 
-    gatewayForm.put(`/organizations/${activeOrganization.value.id}/payment-gateway`, {
+    gatewayForm.put(`/plataforma/organizations/${activeOrganization.value.id}/payment-gateway`, {
         preserveScroll: true,
         onSuccess: () => gatewayForm.reset(),
     });
@@ -90,30 +81,6 @@ watch(selectedOrganization, (organization) => {
     editForm.reset();
 });
 
-function createOrganization() {
-    createForm.post('/organizations', {
-        preserveScroll: true,
-        onSuccess: () => {
-            createForm.reset('name', 'document', 'email', 'phone');
-            createModalOpen.value = false;
-        },
-    });
-}
-
-function openCreateModal() {
-    createForm.clearErrors();
-    createModalOpen.value = true;
-}
-
-function closeCreateModal() {
-    if (createForm.processing) {
-        return;
-    }
-
-    createForm.clearErrors();
-    createModalOpen.value = false;
-}
-
 function editOrganization(organization) {
     editForm.clearErrors();
     editingOrganizationId.value = organization.id;
@@ -133,7 +100,7 @@ function updateOrganization() {
         return;
     }
 
-    editForm.patch(`/organizations/${selectedOrganization.value.id}`, {
+    editForm.patch(`/plataforma/organizations/${selectedOrganization.value.id}`, {
         preserveScroll: true,
         onSuccess: () => {
             editForm.clearErrors();
@@ -158,9 +125,8 @@ function updateOrganization() {
                             <p class="mt-1 text-xs text-slate-500">Gerencie organizações e selecione o contexto ativo da sessão.</p>
                         </div>
                         <div class="flex gap-2">
-                            <Link v-if="page.props.auth?.permissions?.can_manage_organization && activeOrganizationId" href="/organizations/plan" class="inline-flex h-8 items-center rounded-lg border border-slate-300 bg-white px-3 text-[13px] font-semibold text-slate-800 hover:bg-slate-50">Plano e uso</Link>
-                            <Link v-if="page.props.auth?.permissions?.can_manage_organization && activeOrganizationId" href="/organizations/billing" class="inline-flex h-8 items-center rounded-lg border border-slate-300 bg-white px-3 text-[13px] font-semibold text-slate-800 hover:bg-slate-50">Billing</Link>
-                            <Button size="sm" @click="openCreateModal">Nova organização</Button>
+                            <Link v-if="page.props.auth?.permissions?.can_manage_organization && activeOrganizationId" href="/plataforma/organizations/plan" class="inline-flex h-8 items-center rounded-lg border border-slate-300 bg-white px-3 text-[13px] font-semibold text-slate-800 hover:bg-slate-50">Plano e uso</Link>
+                            <Link v-if="page.props.auth?.permissions?.can_manage_organization && activeOrganizationId" href="/plataforma/organizations/billing" class="inline-flex h-8 items-center rounded-lg border border-slate-300 bg-white px-3 text-[13px] font-semibold text-slate-800 hover:bg-slate-50">Billing</Link>
                         </div>
                     </div>
                 </template>
@@ -180,7 +146,7 @@ function updateOrganization() {
                     <div class="flex justify-end gap-2">
                         <Link
                             v-if="!row.active"
-                            :href="`/organizations/${row.id}/switch`"
+                            :href="`/plataforma/organizations/${row.id}/switch`"
                             method="post"
                             as="button"
                             class="inline-flex h-8 items-center justify-center rounded-lg border border-slate-300 bg-white px-3 text-[13px] font-semibold text-slate-800 hover:bg-slate-50"
@@ -240,19 +206,6 @@ function updateOrganization() {
                 </form>
             </div>
         </div>
-
-        <Modal open title="Nova organização" description="Crie um novo workspace e torne-o ativo para sua sessão." @close="closeCreateModal" v-if="createModalOpen">
-            <form id="create-organization-form" class="grid gap-4" @submit.prevent="createOrganization">
-                <TextInput id="create-name" v-model="createForm.name" label="Nome" required :error="createForm.errors.name" />
-                <TextInput id="create-document" v-model="createForm.document" label="Documento" :error="createForm.errors.document" />
-                <TextInput id="create-email" v-model="createForm.email" type="email" label="E-mail" :error="createForm.errors.email" />
-                <TextInput id="create-phone" v-model="createForm.phone" label="Telefone" :error="createForm.errors.phone" />
-                <TextInput id="create-timezone" v-model="createForm.timezone" label="Fuso horário" required :error="createForm.errors.timezone" />
-            </form>
-            <template #actions>
-                <Button type="submit" form="create-organization-form" :loading="createForm.processing" :disabled="createForm.processing">Criar organização</Button>
-            </template>
-        </Modal>
 
         <Modal v-if="selectedOrganization" open title="Editar organização" :description="selectedOrganization.name" @close="closeEditModal">
             <form id="edit-organization-form" class="grid gap-4" @submit.prevent="updateOrganization">

@@ -64,7 +64,7 @@ const reviewForm = useForm({ review_notes: '' });
 const completeForm = useForm({ completion_notes: '' });
 
 function applyFilters() {
-    router.get('/deadlines', filterForm.data(), { preserveState: true, preserveScroll: true });
+    router.get('/plataforma/deadlines', filterForm.data(), { preserveState: true, preserveScroll: true });
 }
 
 function clearFilters() {
@@ -76,7 +76,7 @@ function clearFilters() {
 }
 
 function submitCreate() {
-    createForm.post('/deadlines', { preserveScroll: true, onSuccess: () => createModalOpen.value = false });
+    createForm.post('/plataforma/deadlines', { preserveScroll: true, onSuccess: () => createModalOpen.value = false });
 }
 
 function requestReview(deadline) {
@@ -86,11 +86,11 @@ function requestReview(deadline) {
 }
 
 function submitReview() {
-    reviewForm.patch(`/deadlines/${selectedDeadline.value.id}/request-review`, { preserveScroll: true, onSuccess: () => reviewModalOpen.value = false });
+    reviewForm.patch(`/plataforma/deadlines/${selectedDeadline.value.id}/request-review`, { preserveScroll: true, onSuccess: () => reviewModalOpen.value = false });
 }
 
 function approveReview(deadline) {
-    useForm({}).patch(`/deadlines/${deadline.id}/approve-review`, { preserveScroll: true });
+    useForm({}).patch(`/plataforma/deadlines/${deadline.id}/approve-review`, { preserveScroll: true });
 }
 
 function complete(deadline) {
@@ -100,7 +100,7 @@ function complete(deadline) {
 }
 
 function submitComplete() {
-    completeForm.patch(`/deadlines/${selectedDeadline.value.id}/complete`, { preserveScroll: true, onSuccess: () => completeModalOpen.value = false });
+    completeForm.patch(`/plataforma/deadlines/${selectedDeadline.value.id}/complete`, { preserveScroll: true, onSuccess: () => completeModalOpen.value = false });
 }
 </script>
 

@@ -17,7 +17,12 @@ class PasswordResetController extends Controller
 {
     public function store(ForgotPasswordRequest $request): JsonResponse
     {
-        Password::sendResetLink($request->validated());
+        $email = $request->validated('email');
+        $user = User::query()->where('email', $email)->first();
+
+        if ($user && ! $user->isPlatformAdmin()) {
+            Password::sendResetLink(['email' => $email]);
+        }
 
         return response()->json([
             'message' => 'If the email exists, a password reset link will be sent.',
@@ -29,6 +34,10 @@ class PasswordResetController extends Controller
         $status = Password::reset(
             $request->validated(),
             function (User $user, string $password): void {
+                if ($user->isPlatformAdmin()) {
+                    return;
+                }
+
                 $user->forceFill([
                     'password' => Hash::make($password),
                     'remember_token' => Str::random(60),
@@ -43,6 +52,14 @@ class PasswordResetController extends Controller
         if ($status !== Password::PASSWORD_RESET) {
             throw ValidationException::withMessages([
                 'email' => [__($status)],
+            ]);
+        }
+
+        $user = User::query()->where('email', $request->validated('email'))->first();
+
+        if ($user?->isPlatformAdmin()) {
+            throw ValidationException::withMessages([
+                'email' => [__('passwords.user')],
             ]);
         }
 

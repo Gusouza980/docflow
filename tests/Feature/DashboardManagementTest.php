@@ -43,7 +43,7 @@ class DashboardManagementTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get('/dashboard')
+            ->get('/plataforma/dashboard')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Dashboard/Index', false)
@@ -53,9 +53,9 @@ class DashboardManagementTest extends TestCase
                 ->where('alerts.0.type', 'tasks_overdue')
                 ->where('alerts.0.count', 1)
                 ->where('alerts.0.severity', 'danger')
-                ->where('alerts.0.href', '/tasks?flag=overdue')
+                ->where('alerts.0.href', '/plataforma/tasks?flag=overdue')
                 ->where('alerts.1.type', 'documents_overdue')
-                ->where('alerts.1.href', '/document-requests?overdue=1'));
+                ->where('alerts.1.href', '/plataforma/document-requests?overdue=1'));
     }
 
     public function test_finance_member_sees_finance_kpis_and_alerts(): void
@@ -75,7 +75,7 @@ class DashboardManagementTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get('/dashboard')
+            ->get('/plataforma/dashboard')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Dashboard/Index', false)
@@ -83,7 +83,7 @@ class DashboardManagementTest extends TestCase
                 ->where('metrics.overdue_receivables_cents', 50000)
                 ->has('alerts', 1)
                 ->where('alerts.0.type', 'receivables_overdue')
-                ->where('alerts.0.href', '/finance?status=open'));
+                ->where('alerts.0.href', '/plataforma/finance?status=open'));
     }
 
     public function test_assistant_does_not_see_finance_kpis_or_alerts(): void
@@ -103,7 +103,7 @@ class DashboardManagementTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get('/dashboard')
+            ->get('/plataforma/dashboard')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Dashboard/Index', false)
@@ -137,7 +137,7 @@ class DashboardManagementTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get('/dashboard?period=week')
+            ->get('/plataforma/dashboard?period=week')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Dashboard/Index', false)
@@ -146,7 +146,7 @@ class DashboardManagementTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get('/dashboard?period=month')
+            ->get('/plataforma/dashboard?period=month')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('metrics.completed_tasks', 2));
@@ -193,7 +193,7 @@ class DashboardManagementTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get('/dashboard?period=month')
+            ->get('/plataforma/dashboard?period=month')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Dashboard/Index', false)
@@ -230,7 +230,7 @@ class DashboardManagementTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get('/dashboard')
+            ->get('/plataforma/dashboard')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('contracts_revenue.mrr_cents', 140000)
@@ -265,7 +265,7 @@ class DashboardManagementTest extends TestCase
 
         $this->actingAs($profissionalUser)
             ->withSession(['active_organization_id' => $profissionalOrg->id])
-            ->get('/dashboard')
+            ->get('/plataforma/dashboard')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('can_access_crm', true)
@@ -279,7 +279,7 @@ class DashboardManagementTest extends TestCase
 
         $this->actingAs($essencialUser)
             ->withSession(['active_organization_id' => $essencialOrg->id])
-            ->get('/dashboard')
+            ->get('/plataforma/dashboard')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('can_access_crm', false)
@@ -328,7 +328,7 @@ class DashboardManagementTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get('/dashboard?period=month')
+            ->get('/plataforma/dashboard?period=month')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('can_access_automations', true)
@@ -337,7 +337,7 @@ class DashboardManagementTest extends TestCase
                 ->where('docflow_roi.estimated_hours_saved', 0.2)
                 ->where('docflow_roi.estimated_minutes_saved_delta', 3)
                 ->where('docflow_roi.is_estimate', true)
-                ->where('docflow_roi.href', '/automations'));
+                ->where('docflow_roi.href', '/plataforma/automations'));
     }
 
     public function test_essencial_plan_does_not_receive_docflow_roi(): void
@@ -351,7 +351,7 @@ class DashboardManagementTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get('/dashboard')
+            ->get('/plataforma/dashboard')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('can_access_automations', false)
@@ -371,7 +371,7 @@ class DashboardManagementTest extends TestCase
 
         $this->actingAs($assistant)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get('/dashboard')
+            ->get('/plataforma/dashboard')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('can_access_automations', false)
@@ -379,7 +379,7 @@ class DashboardManagementTest extends TestCase
 
         $this->actingAs($finance)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get('/dashboard')
+            ->get('/plataforma/dashboard')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('can_access_automations', false)
@@ -415,7 +415,7 @@ class DashboardManagementTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get('/dashboard')
+            ->get('/plataforma/dashboard')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('docflow_roi.runs', 1)
@@ -446,7 +446,7 @@ class DashboardManagementTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get('/dashboard')
+            ->get('/plataforma/dashboard')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('can_access_finance', false)
@@ -481,7 +481,7 @@ class DashboardManagementTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get('/dashboard?period=month')
+            ->get('/plataforma/dashboard?period=month')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('commercial.accepted_proposals_cents', 150000)
@@ -514,7 +514,7 @@ class DashboardManagementTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get('/dashboard?period=month')
+            ->get('/plataforma/dashboard?period=month')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('commercial.won_leads_cents', 200000)

@@ -49,63 +49,63 @@ const journeys = [
 const modules = [
     {
         title: 'Dashboard',
-        route: '/dashboard',
+        route: '/plataforma/dashboard',
         meaning: 'Painel de indicadores e alertas críticos da organização ativa.',
         actions: ['Ver clientes ativos, inadimplentes e de alto risco.', 'Identificar tarefas atrasadas.', 'Acompanhar documentos vencidos e próximos do vencimento.', 'Acessar pendências estruturais de clientes.'],
         connection: 'Resume dados de clientes, tarefas, documentos, chamados e financeiro para orientar a rotina diária.',
     },
     {
         title: 'Clientes',
-        route: '/clients',
+        route: '/plataforma/clients',
         meaning: 'Base operacional de pessoas físicas e jurídicas atendidas pelo escritório.',
         actions: ['Cadastrar e editar clientes.', 'Controlar status, prioridade e risco.', 'Adicionar contatos, responsáveis e etiquetas.', 'Restringir acesso a clientes sensíveis.'],
         connection: 'Cliente é o eixo que conecta documentos, tarefas, prazos, agenda, cobranças, portal, chamados e relatórios.',
     },
     {
         title: 'Documentos',
-        route: '/documents',
+        route: '/plataforma/documents',
         meaning: 'Repositório privado de arquivos, versões, categorias, validade e visibilidade.',
         actions: ['Enviar documentos.', 'Substituir versões.', 'Visualizar e baixar por rotas seguras.', 'Controlar validade, categoria e sensibilidade.'],
         connection: 'Documentos podem nascer de solicitações documentais e alimentar relatórios de pendências e vencimentos.',
     },
     {
         title: 'Solicitações documentais',
-        route: '/document-requests',
+        route: '/plataforma/document-requests',
         meaning: 'Controle de pedidos de documentos ao cliente, com itens, prazos e revisão.',
         actions: ['Criar solicitações com múltiplos itens.', 'Enviar arquivos para itens.', 'Aprovar ou recusar documentos recebidos.', 'Cancelar solicitações quando necessário.'],
         connection: 'Itens solicitados aparecem no portal do cliente e em indicadores documentais.',
     },
     {
         title: 'Tarefas e modelos',
-        route: '/tasks',
+        route: '/plataforma/tasks',
         meaning: 'Gestão do trabalho interno com responsáveis, prioridade, prazo e checklist.',
         actions: ['Criar tarefas.', 'Editar status e responsável.', 'Concluir com validação de checklist obrigatório.', 'Gerar tarefas a partir de modelos reutilizáveis.'],
         connection: 'Tarefas se conectam a clientes, agenda, modelos, dashboard e relatórios de produtividade.',
     },
     {
         title: 'Prazos e agenda',
-        route: '/deadlines',
+        route: '/plataforma/deadlines',
         meaning: 'Controle de prazos importantes e eventos de calendário.',
         actions: ['Criar prazos com revisão obrigatória.', 'Solicitar e aprovar revisão.', 'Registrar eventos e reuniões.', 'Gerar tarefas a partir de notas de reunião.'],
         connection: 'Prazos e eventos ajudam a organizar a execução diária e prevenir atrasos.',
     },
     {
         title: 'Financeiro',
-        route: '/finance',
+        route: '/plataforma/finance',
         meaning: 'Controle financeiro básico do escritório.',
         actions: ['Criar contas a receber.', 'Registrar pagamentos parciais ou totais.', 'Criar contas a pagar.', 'Categorizar receitas e despesas.', 'Acompanhar inadimplência.'],
         connection: 'Cobranças vinculadas a clientes aparecem em relatórios financeiros e no portal do cliente.',
     },
     {
         title: 'Portal e comunicação',
-        route: '/portal',
+        route: '/plataforma/portal',
         meaning: 'Central interna de acessos externos, mensagens e chamados.',
         actions: ['Criar link seguro para cliente.', 'Revogar acesso externo.', 'Registrar mensagens.', 'Criar chamados internos ou a partir de mensagens.'],
         connection: 'O portal externo usa o acesso criado internamente e exibe apenas dados do cliente vinculado ao token.',
     },
     {
         title: 'Relatórios',
-        route: '/reports',
+        route: '/plataforma/reports',
         meaning: 'Indicadores gerenciais, filtros, agendamentos planejados e relatórios mensais.',
         actions: ['Filtrar por período e cliente.', 'Analisar produtividade e documentos.', 'Consultar financeiro conforme permissão.', 'Gerar e liberar relatório mensal para o portal.'],
         connection: 'Consolida dados de todos os módulos e fecha o ciclo de prestação de contas ao cliente.',
@@ -146,7 +146,7 @@ const examples = [
                         </div>
                     </div>
                     <div class="flex flex-wrap gap-2">
-                        <Link href="/login" class="inline-flex h-9 items-center rounded-lg border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-800 hover:bg-slate-50">Entrar</Link>
+                        <Link href="/plataforma/login" class="inline-flex h-9 items-center rounded-lg border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-800 hover:bg-slate-50">Entrar</Link>
                         <a href="#rotina" class="inline-flex h-9 items-center rounded-lg bg-blue-600 px-3 text-sm font-semibold text-white hover:bg-blue-700">Ver fluxos</a>
                     </div>
                 </nav>

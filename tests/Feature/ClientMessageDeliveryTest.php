@@ -51,7 +51,7 @@ class ClientMessageDeliveryTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get('/messages/batch?'.http_build_query([
+            ->get('/plataforma/messages/batch?'.http_build_query([
                 'filter' => MessageBatch::FILTER_OVERDUE,
                 'message_template_id' => $template->id,
             ]))
@@ -89,7 +89,7 @@ class ClientMessageDeliveryTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post('/messages/batch', [
+            ->post('/plataforma/messages/batch', [
                 'filter' => MessageBatch::FILTER_OVERDUE,
                 'message_template_id' => $template->id,
             ])
@@ -127,7 +127,7 @@ class ClientMessageDeliveryTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get('/messages/batch?'.http_build_query([
+            ->get('/plataforma/messages/batch?'.http_build_query([
                 'filter' => MessageBatch::FILTER_OVERDUE,
                 'message_template_id' => $template->id,
             ]))
@@ -143,7 +143,7 @@ class ClientMessageDeliveryTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get('/messages/batch')
+            ->get('/plataforma/messages/batch')
             ->assertForbidden();
     }
 
@@ -168,7 +168,7 @@ class ClientMessageDeliveryTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post("/clients/{$client->id}/messages", [
+            ->post("/plataforma/clients/{$client->id}/messages", [
                 'channel' => MessageTemplate::CHANNEL_WHATSAPP,
                 'message_template_id' => $template->id,
             ])
@@ -183,8 +183,8 @@ class ClientMessageDeliveryTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->from("/clients/{$client->id}?tab=communication")
-            ->post("/clients/{$client->id}/messages/{$message->id}/whatsapp")
+            ->from("/plataforma/clients/{$client->id}?tab=communication")
+            ->post("/plataforma/clients/{$client->id}/messages/{$message->id}/whatsapp")
             ->assertRedirect();
 
         $this->assertSame(ClientMessage::STATUS_SENT, $message->fresh()->status);
@@ -198,7 +198,7 @@ class ClientMessageDeliveryTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post("/clients/{$client->id}/messages", [
+            ->post("/plataforma/clients/{$client->id}/messages", [
                 'channel' => MessageTemplate::CHANNEL_EMAIL,
                 'body' => 'Texto avulso',
             ])
@@ -235,7 +235,7 @@ class ClientMessageDeliveryTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post('/automations', [
+            ->post('/plataforma/automations', [
                 'preset_key' => 'receivable_overdue_email',
                 'message_template_id' => $template->id,
                 'name' => 'Cobrança automática',

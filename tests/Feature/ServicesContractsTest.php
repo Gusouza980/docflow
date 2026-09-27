@@ -34,7 +34,7 @@ class ServicesContractsTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post('/service-types', [
+            ->post('/plataforma/service-types', [
                 'name' => 'BPO Contábil',
                 'default_amount_cents' => '1.500,00',
                 'default_billing_interval' => ServiceType::BILLING_MONTH,
@@ -47,7 +47,7 @@ class ServicesContractsTest extends TestCase
 
         $this->actingAs($otherUser)
             ->withSession(['active_organization_id' => $otherOrganization->id])
-            ->get('/service-types')
+            ->get('/plataforma/service-types')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('ServiceTypes/Index', false)
@@ -68,7 +68,7 @@ class ServicesContractsTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post("/clients/{$client->id}/services", [
+            ->post("/plataforma/clients/{$client->id}/services", [
                 'service_type_id' => $type->id,
                 'status' => ClientService::STATUS_ACTIVE,
                 'starts_at' => now()->toDateString(),
@@ -83,7 +83,7 @@ class ServicesContractsTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get("/clients/{$client->id}?tab=services")
+            ->get("/plataforma/clients/{$client->id}?tab=services")
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Clients/Show', false)
@@ -100,7 +100,7 @@ class ServicesContractsTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post('/contracts', [
+            ->post('/plataforma/contracts', [
                 'client_id' => $client->id,
                 'code' => 'CTR-1001',
                 'status' => Contract::STATUS_ACTIVE,
@@ -128,7 +128,7 @@ class ServicesContractsTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post('/contracts', [
+            ->post('/plataforma/contracts', [
                 'client_id' => $client->id,
                 'code' => 'CTR-REC-1',
                 'status' => Contract::STATUS_ACTIVE,
@@ -162,7 +162,7 @@ class ServicesContractsTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post('/contracts', [
+            ->post('/plataforma/contracts', [
                 'client_id' => $client->id,
                 'code' => 'CTR-ONCE',
                 'status' => Contract::STATUS_ACTIVE,
@@ -205,7 +205,7 @@ class ServicesContractsTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post("/contracts/{$contract->id}/renew")
+            ->post("/plataforma/contracts/{$contract->id}/renew")
             ->assertRedirect();
 
         $this->assertTrue($recurrence->fresh()->end_date->gt($endsAt));
@@ -232,7 +232,7 @@ class ServicesContractsTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post("/contracts/{$contract->id}/renew", [
+            ->post("/plataforma/contracts/{$contract->id}/renew", [
                 'create_receivable_recurrence' => true,
             ])
             ->assertRedirect();
@@ -268,7 +268,7 @@ class ServicesContractsTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post("/contracts/{$contract->id}/cancel", [
+            ->post("/plataforma/contracts/{$contract->id}/cancel", [
                 'cancel_reason' => 'Cliente pediu encerramento',
             ])
             ->assertRedirect();
@@ -288,7 +288,7 @@ class ServicesContractsTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post('/contracts', [
+            ->post('/plataforma/contracts', [
                 'client_id' => $client->id,
                 'code' => 'CTR-ASSIST',
                 'status' => Contract::STATUS_ACTIVE,
@@ -321,7 +321,7 @@ class ServicesContractsTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post("/contracts/{$contract->id}/renew")
+            ->post("/plataforma/contracts/{$contract->id}/renew")
             ->assertRedirect();
 
         $this->assertTrue($contract->fresh()->ends_at->gt($endsAt));
@@ -359,7 +359,7 @@ class ServicesContractsTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get('/contracts?expiring_soon=1')
+            ->get('/plataforma/contracts?expiring_soon=1')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Contracts/Index', false)
@@ -383,12 +383,12 @@ class ServicesContractsTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post("/contracts/{$contract->id}/renew")
+            ->post("/plataforma/contracts/{$contract->id}/renew")
             ->assertForbidden();
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post("/contracts/{$contract->id}/cancel")
+            ->post("/plataforma/contracts/{$contract->id}/cancel")
             ->assertForbidden();
     }
 
@@ -398,7 +398,7 @@ class ServicesContractsTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get('/service-types')
+            ->get('/plataforma/service-types')
             ->assertForbidden();
     }
 
@@ -439,7 +439,7 @@ class ServicesContractsTest extends TestCase
 
         $this->actingAs($professional)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get('/contracts')
+            ->get('/plataforma/contracts')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Contracts/Index', false)
@@ -448,7 +448,7 @@ class ServicesContractsTest extends TestCase
 
         $this->actingAs($admin)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get('/contracts')
+            ->get('/plataforma/contracts')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Contracts/Index', false)

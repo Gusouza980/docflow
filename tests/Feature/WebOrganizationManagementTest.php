@@ -22,27 +22,39 @@ class WebOrganizationManagementTest extends TestCase
         $this->seed(PlanSeeder::class);
     }
 
-    public function test_user_can_create_organization_from_web_and_it_becomes_active(): void
+    public function test_user_without_membership_sees_unassigned_page(): void
     {
         $user = User::factory()->create();
 
         $this->actingAs($user)
-            ->post('/organizations', [
+            ->get('/plataforma/dashboard')
+            ->assertRedirect(route('organizations.unassigned'));
+
+        $this->actingAs($user)
+            ->get('/plataforma/clients')
+            ->assertRedirect(route('organizations.unassigned'));
+
+        $this->actingAs($user)
+            ->get(route('organizations.unassigned'))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page->component('Organizations/Unassigned', false));
+    }
+
+    public function test_tenant_cannot_create_organization_from_web(): void
+    {
+        $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->post('/plataforma/organizations', [
                 'name' => 'Docflow Web',
                 'document' => '12345678901234',
                 'email' => 'office@example.com',
                 'timezone' => 'America/Sao_Paulo',
             ])
-            ->assertRedirect('/organizations')
-            ->assertSessionHas('active_organization_id');
+            ->assertMethodNotAllowed();
 
-        $organization = Organization::firstOrFail();
-
-        $this->assertDatabaseHas('organization_members', [
-            'organization_id' => $organization->id,
-            'user_id' => $user->id,
-            'role' => OrganizationMember::ROLE_ADMIN,
-            'status' => OrganizationMember::STATUS_ACTIVE,
+        $this->assertDatabaseMissing('organizations', [
+            'email' => 'office@example.com',
         ]);
     }
 
@@ -63,7 +75,7 @@ class WebOrganizationManagementTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $first->id])
-            ->post("/organizations/{$second->id}/switch")
+            ->post("/plataforma/organizations/{$second->id}/switch")
             ->assertRedirect()
             ->assertSessionHas('active_organization_id', $second->id);
     }
@@ -80,7 +92,7 @@ class WebOrganizationManagementTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get('/organizations')
+            ->get('/plataforma/organizations')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Organizations/Index', false)
@@ -109,11 +121,11 @@ class WebOrganizationManagementTest extends TestCase
 
         $this->actingAs($admin)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post('/organization-invitations', [
+            ->post('/plataforma/organization-invitations', [
                 'email' => 'invitee@example.com',
                 'role' => OrganizationMember::ROLE_ASSISTANT,
             ])
-            ->assertRedirect('/team');
+            ->assertRedirect('/plataforma/team');
 
         $this->assertDatabaseHas('organization_invitations', [
             'organization_id' => $organization->id,
@@ -123,8 +135,8 @@ class WebOrganizationManagementTest extends TestCase
 
         $this->actingAs($admin)
             ->withSession(['active_organization_id' => $organization->id])
-            ->patch("/organization-members/{$membership->id}/suspend")
-            ->assertRedirect('/team');
+            ->patch("/plataforma/organization-members/{$membership->id}/suspend")
+            ->assertRedirect('/plataforma/team');
 
         $this->assertDatabaseHas('organization_members', [
             'id' => $membership->id,
@@ -145,7 +157,7 @@ class WebOrganizationManagementTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post('/organization-invitations', [
+            ->post('/plataforma/organization-invitations', [
                 'email' => 'invitee@example.com',
                 'role' => OrganizationMember::ROLE_ASSISTANT,
             ])

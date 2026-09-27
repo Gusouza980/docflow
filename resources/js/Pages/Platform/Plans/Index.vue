@@ -28,7 +28,7 @@ const columns = [
         <div class="grid gap-4">
             <Alert v-if="page.props.flash?.status" tone="success">{{ page.props.flash.status }}</Alert>
             <div class="flex justify-end">
-                <Link href="/platform/plans/create"><Button>Novo plano</Button></Link>
+                <Link href="/admin/plans/create"><Button>Novo plano</Button></Link>
             </div>
             <DataTable :columns="columns" :rows="plans" empty-title="Nenhum plano cadastrado">
                 <template #cell-name="{ row }">
@@ -42,7 +42,7 @@ const columns = [
                     <Badge :tone="row.is_active ? 'success' : 'neutral'">{{ row.is_active ? 'Ativo' : 'Inativo' }}</Badge>
                 </template>
                 <template #cell-actions="{ row }">
-                    <Link :href="`/platform/plans/${row.id}/edit`" class="text-sm font-semibold text-violet-700">Editar</Link>
+                    <Link :href="`/admin/plans/${row.id}/edit`" class="text-sm font-semibold text-violet-700">Editar</Link>
                 </template>
             </DataTable>
         </div>

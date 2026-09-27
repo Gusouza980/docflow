@@ -24,7 +24,7 @@ const columns = [
 ];
 
 function applyFilter(overdue = false, status = '') {
-    router.get('/platform/invoices', { overdue: overdue ? 1 : undefined, status: status || undefined }, { preserveState: true });
+    router.get('/admin/invoices', { overdue: overdue ? 1 : undefined, status: status || undefined }, { preserveState: true });
 }
 </script>
 
@@ -40,7 +40,7 @@ function applyFilter(overdue = false, status = '') {
             </div>
             <DataTable :columns="columns" :rows="invoices" empty-title="Nenhuma fatura encontrada">
                 <template #cell-organization="{ row }">
-                    <Link :href="`/platform/organizations/${row.organization.id}`" class="font-semibold text-violet-700">{{ row.organization.name }}</Link>
+                    <Link :href="`/admin/organizations/${row.organization.id}`" class="font-semibold text-violet-700">{{ row.organization.name }}</Link>
                 </template>
                 <template #cell-amount_cents="{ row }">{{ money(row.amount_cents) }}</template>
                 <template #cell-status="{ row }">
@@ -48,8 +48,8 @@ function applyFilter(overdue = false, status = '') {
                 </template>
                 <template #cell-actions="{ row }">
                     <div v-if="row.status === 'open'" class="flex gap-2">
-                        <Link :href="`/platform/invoices/${row.id}/mark-paid`" method="post" as="button" class="text-sm font-semibold text-emerald-700">Marcar paga</Link>
-                        <Link :href="`/platform/invoices/${row.id}/void`" method="post" as="button" class="text-sm font-semibold text-slate-600">Anular</Link>
+                        <Link :href="`/admin/invoices/${row.id}/mark-paid`" method="post" as="button" class="text-sm font-semibold text-emerald-700">Marcar paga</Link>
+                        <Link :href="`/admin/invoices/${row.id}/void`" method="post" as="button" class="text-sm font-semibold text-slate-600">Anular</Link>
                     </div>
                 </template>
             </DataTable>

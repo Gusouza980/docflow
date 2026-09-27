@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Web\RejectDocumentRequestItemRequest;
 use App\Http\Requests\Web\UploadDocumentRequestItemFileRequest;
 use App\Models\Document;
+use App\Models\DocumentRequest;
 use App\Models\DocumentRequestItem;
 use App\Models\DocumentVersion;
 use App\Support\WebOrganizationContext;
@@ -70,6 +71,8 @@ class DocumentRequestItemController extends Controller
                 'rejected_at' => null,
                 'rejection_reason' => null,
             ]);
+
+            $this->completeParentRequestWhenReady($item->documentRequest);
         });
 
         $auditLog->execute('web.document_request_item.approved', $request->user(), $item->organization, $item, request: $request);
@@ -122,5 +125,19 @@ class DocumentRequestItemController extends Controller
     {
         abort_if($item->organization_id !== $organizationId, HttpResponse::HTTP_NOT_FOUND);
         Gate::authorize('update', $item->documentRequest);
+    }
+
+    private function completeParentRequestWhenReady(DocumentRequest $documentRequest): void
+    {
+        $hasOpenItems = $documentRequest->items()
+            ->whereNotIn('status', [DocumentRequestItem::STATUS_APPROVED, DocumentRequestItem::STATUS_CANCELLED])
+            ->exists();
+
+        if (! $hasOpenItems) {
+            $documentRequest->update([
+                'status' => DocumentRequest::STATUS_COMPLETED,
+                'completed_at' => now(),
+            ]);
+        }
     }
 }

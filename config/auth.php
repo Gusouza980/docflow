@@ -44,6 +44,11 @@ return [
             'provider' => 'users',
         ],
 
+        'admin' => [
+            'driver' => 'session',
+            'provider' => 'users',
+        ],
+
         'portal' => [
             'driver' => 'session',
             'provider' => 'portal_accesses',

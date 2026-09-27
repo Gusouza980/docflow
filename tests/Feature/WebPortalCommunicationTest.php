@@ -17,9 +17,11 @@ use App\Models\InternalReminder;
 use App\Models\MessageTemplate;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
+use App\Models\Plan;
 use App\Models\Ticket;
 use App\Models\TicketMessage;
 use App\Models\User;
+use Database\Seeders\PlanSeeder;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
@@ -30,6 +32,13 @@ class WebPortalCommunicationTest extends TestCase
 {
     use LazilyRefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->seed(PlanSeeder::class);
+    }
+
     public function test_admin_can_view_portal_page_and_create_access(): void
     {
         [$user, $organization, $member] = $this->createMember(OrganizationMember::ROLE_ADMIN);
@@ -37,7 +46,7 @@ class WebPortalCommunicationTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get('/portal')
+            ->get('/plataforma/portal')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Portal/Index', false)
@@ -45,19 +54,19 @@ class WebPortalCommunicationTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post('/portal/accesses', [
+            ->post('/plataforma/portal/accesses', [
                 'client_id' => $client->id,
                 'name' => 'Maria Cliente',
                 'email' => 'maria@example.com',
                 'expires_at' => now()->addDays(10)->toDateString(),
             ])
-            ->assertRedirect('/portal')
+            ->assertRedirect('/plataforma/portal')
             ->assertSessionHas('portal_url');
 
         $portalUrl = session('portal_url');
 
         $this->actingAs($user)
-            ->get('/portal')
+            ->get('/plataforma/portal')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('flash.portal_url', $portalUrl));
@@ -91,13 +100,13 @@ class WebPortalCommunicationTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post('/portal/messages', [
+            ->post('/plataforma/portal/messages', [
                 'client_id' => $client->id,
                 'message_template_id' => $template->id,
                 'channel' => 'email',
                 'create_ticket' => true,
             ])
-            ->assertRedirect('/portal')
+            ->assertRedirect('/plataforma/portal')
             ->assertSessionHas('error');
 
         CommunicationConsent::factory()->create([
@@ -110,13 +119,13 @@ class WebPortalCommunicationTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post('/portal/messages', [
+            ->post('/plataforma/portal/messages', [
                 'client_id' => $client->id,
                 'message_template_id' => $template->id,
                 'channel' => 'email',
                 'create_ticket' => true,
             ])
-            ->assertRedirect('/portal');
+            ->assertRedirect('/plataforma/portal');
 
         $this->assertDatabaseHas('client_messages', [
             'organization_id' => $organization->id,
@@ -453,7 +462,7 @@ class WebPortalCommunicationTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get("/clients/{$client->id}/tickets/{$resolvedTicket->id}")
+            ->get("/plataforma/clients/{$client->id}/tickets/{$resolvedTicket->id}")
             ->assertOk()
             ->assertJsonPath('ticket.rating.score', 5)
             ->assertJsonPath('ticket.rating.comment', 'Atendimento excelente.');
@@ -505,7 +514,7 @@ class WebPortalCommunicationTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post("/clients/{$client->id}/messages", [
+            ->post("/plataforma/clients/{$client->id}/messages", [
                 'channel' => 'portal',
                 'body' => 'Mensagem enviada pelo hub do cliente.',
             ])
@@ -770,7 +779,7 @@ class WebPortalCommunicationTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post("/clients/{$client->id}/messages/{$message->id}/ticket")
+            ->post("/plataforma/clients/{$client->id}/messages/{$message->id}/ticket")
             ->assertRedirect()
             ->assertSessionHas('status');
 
@@ -854,7 +863,9 @@ class WebPortalCommunicationTest extends TestCase
 
     private function createMember(string $role, ?Organization $organization = null): array
     {
-        $organization ??= Organization::factory()->create();
+        $organization ??= Organization::factory()->create([
+            'plan_id' => Plan::query()->where('slug', 'profissional')->value('id'),
+        ]);
         $user = User::factory()->create();
         $member = OrganizationMember::factory()->create([
             'organization_id' => $organization->id,

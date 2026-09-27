@@ -35,7 +35,7 @@ const planOptions = computed(() => props.publicPlans.map((plan) => ({
 const selectedPlan = computed(() => props.publicPlans.find((plan) => plan.id === Number(planForm.plan_id)));
 
 function submitPlanChange() {
-    planForm.post('/organizations/billing/change-plan', {
+    planForm.post('/plataforma/organizations/billing/change-plan', {
         preserveScroll: true,
         onSuccess: () => {
             planModalOpen.value = false;
@@ -44,7 +44,7 @@ function submitPlanChange() {
 }
 
 function submitCancel() {
-    cancelForm.post('/organizations/billing/cancel', {
+    cancelForm.post('/plataforma/organizations/billing/cancel', {
         preserveScroll: true,
         onSuccess: () => {
             cancelModalOpen.value = false;
@@ -56,7 +56,7 @@ function submitCancel() {
 
 <template>
     <Head title="Billing" />
-    <AppLayout title="Billing e assinatura" active-nav="organizations" :breadcrumbs="[{ label: 'Organizações', href: '/organizations' }, { label: 'Billing' }]">
+    <AppLayout title="Billing e assinatura" active-nav="organizations" :breadcrumbs="[{ label: 'Organizações', href: '/plataforma/organizations' }, { label: 'Billing' }]">
         <div class="grid gap-4">
             <Alert v-if="page.props.flash?.status" tone="success">{{ page.props.flash.status }}</Alert>
             <Alert v-if="page.props.flash?.error" tone="danger">{{ page.props.flash.error }}</Alert>
@@ -108,7 +108,7 @@ function submitCancel() {
                 <p v-else class="text-sm text-slate-500">Sem faturas registradas.</p>
             </Card>
 
-            <Link href="/organizations/plan" class="text-sm font-semibold text-blue-700 hover:text-blue-900">Ver limites e uso do plano</Link>
+            <Link href="/plataforma/organizations/plan" class="text-sm font-semibold text-blue-700 hover:text-blue-900">Ver limites e uso do plano</Link>
         </div>
 
         <Modal v-if="planModalOpen" open title="Alterar plano" @close="planModalOpen = false">

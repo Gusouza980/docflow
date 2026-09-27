@@ -40,7 +40,7 @@ class AutomationsTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get('/automations')
+            ->get('/plataforma/automations')
             ->assertRedirect(route('organizations.plan.show'));
     }
 
@@ -60,7 +60,7 @@ class AutomationsTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post('/automations', [
+            ->post('/plataforma/automations', [
                 'preset_key' => 'client_created_tasks',
                 'task_template_id' => $template->id,
                 'name' => 'Onboarding automático',
@@ -139,7 +139,7 @@ class AutomationsTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get("/automations/{$rule->id}")
+            ->get("/plataforma/automations/{$rule->id}")
             ->assertNotFound();
     }
 

@@ -55,7 +55,7 @@ function submitCreate() {
     createForm.transform((data) => ({
         ...data,
         default_amount_cents: data.default_amount_cents === '' ? null : data.default_amount_cents,
-    })).post('/service-types', {
+    })).post('/plataforma/service-types', {
         preserveScroll: true,
         onSuccess: () => {
             createModalOpen.value = false;
@@ -80,7 +80,7 @@ function submitEdit() {
     editForm.transform((data) => ({
         ...data,
         default_amount_cents: data.default_amount_cents === '' ? null : data.default_amount_cents,
-    })).patch(`/service-types/${selectedType.value.id}`, {
+    })).patch(`/plataforma/service-types/${selectedType.value.id}`, {
         preserveScroll: true,
         onSuccess: () => {
             editModalOpen.value = false;

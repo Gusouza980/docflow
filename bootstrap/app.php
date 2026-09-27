@@ -2,13 +2,18 @@
 
 use App\Exceptions\PlanFeatureUnavailableException;
 use App\Exceptions\PlanLimitExceededException;
+use App\Http\Middleware\DenyWhenImpersonating;
 use App\Http\Middleware\EnsureOrganizationAccessible;
 use App\Http\Middleware\EnsureOrganizationIsActive;
 use App\Http\Middleware\EnsurePlatformAdmin;
 use App\Http\Middleware\EnsurePortalAuthenticated;
 use App\Http\Middleware\ForceJsonResponse;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\RedirectAdminAwayFromTenant;
+use App\Http\Middleware\RedirectIfAdminAuthenticated;
 use App\Http\Middleware\RedirectIfPortalAuthenticated;
+use App\Http\Middleware\RejectPlatformAdminFromTenantApi;
+use App\Support\AuthArea;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -39,6 +44,26 @@ return Application::configure(basePath: dirname(__DIR__))
             HandleInertiaRequests::class,
         ]);
 
+        $middleware->redirectGuestsTo(function (Request $request): string {
+            if (AuthArea::isAdmin($request)) {
+                return route('admin.login');
+            }
+
+            if ($request->is('portal/*') || $request->is('client-portal') || $request->is('client-portal/*')) {
+                return route('portal.login');
+            }
+
+            return route('login');
+        });
+
+        $middleware->redirectUsersTo(function (Request $request): string {
+            if (AuthArea::isAdmin($request)) {
+                return route('admin.dashboard');
+            }
+
+            return route('dashboard');
+        });
+
         $middleware->api(prepend: [
             ForceJsonResponse::class,
         ]);
@@ -52,6 +77,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'portal.auth' => EnsurePortalAuthenticated::class,
             'portal.guest' => RedirectIfPortalAuthenticated::class,
             'platform.admin' => EnsurePlatformAdmin::class,
+            'admin.guest' => RedirectIfAdminAuthenticated::class,
+            'redirect.admin.away' => RedirectAdminAwayFromTenant::class,
+            'deny.impersonation' => DenyWhenImpersonating::class,
+            'reject.platform.admin.api' => RejectPlatformAdminFromTenantApi::class,
         ]);
 
         $middleware->validateCsrfTokens(except: [
