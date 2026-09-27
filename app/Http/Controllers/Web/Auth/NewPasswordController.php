@@ -26,13 +26,17 @@ class NewPasswordController extends Controller
 
     public function store(ResetPasswordRequest $request): RedirectResponse
     {
+        $user = User::query()->where('email', $request->validated('email'))->first();
+
+        if (! $user || $user->isPlatformAdmin()) {
+            throw ValidationException::withMessages([
+                'email' => [__('passwords.user')],
+            ]);
+        }
+
         $status = Password::reset(
             $request->validated(),
             function (User $user, string $password): void {
-                if ($user->isPlatformAdmin()) {
-                    return;
-                }
-
                 $user->forceFill([
                     'password' => Hash::make($password),
                     'remember_token' => Str::random(60),
@@ -47,14 +51,6 @@ class NewPasswordController extends Controller
         if ($status !== Password::PASSWORD_RESET) {
             throw ValidationException::withMessages([
                 'email' => [__($status)],
-            ]);
-        }
-
-        $user = User::query()->where('email', $request->validated('email'))->first();
-
-        if ($user?->isPlatformAdmin()) {
-            throw ValidationException::withMessages([
-                'email' => [__('passwords.user')],
             ]);
         }
 

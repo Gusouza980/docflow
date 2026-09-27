@@ -9,6 +9,7 @@ use App\Support\Impersonation;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Symfony\Component\HttpFoundation\Response;
 
 class StopImpersonation
 {
@@ -19,6 +20,8 @@ class StopImpersonation
 
     public function execute(Request $request): RedirectResponse
     {
+        abort_unless($this->impersonation->isActive($request), Response::HTTP_FORBIDDEN, 'Não há impersonação ativa.');
+
         $organizationId = $this->impersonation->organizationId($request);
         $impersonator = $request->user('admin');
         $owner = $request->user('web');

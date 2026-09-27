@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Support\Billing\OrganizationAccessibility;
+use App\Support\Impersonation;
 use App\Support\WebOrganizationContext;
 use Closure;
 use Illuminate\Http\Request;
@@ -13,6 +14,7 @@ class EnsureOrganizationAccessible
     public function __construct(
         private WebOrganizationContext $webOrganizationContext,
         private OrganizationAccessibility $organizationAccessibility,
+        private Impersonation $impersonation,
     ) {}
 
     /**
@@ -28,7 +30,13 @@ class EnsureOrganizationAccessible
 
         $organization = $membership->organization;
 
-        if ($request->session()->has('impersonator_id')) {
+        if ($this->impersonation->isActive($request)) {
+            abort_unless(
+                $this->impersonation->organizationId($request) === $membership->organization_id,
+                Response::HTTP_FORBIDDEN,
+                'A impersonação está limitada à organização selecionada.',
+            );
+
             return $next($request);
         }
 

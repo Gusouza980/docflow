@@ -270,7 +270,9 @@ Route::middleware(['redirect.admin.away', 'auth'])->prefix('plataforma')->group(
     Route::post('/organizations/billing/cancel', [OrganizationBillingController::class, 'cancel'])->name('organizations.billing.cancel');
     Route::patch('/organizations/{organization}', [OrganizationController::class, 'update'])->name('organizations.update');
     Route::put('/organizations/{organization}/payment-gateway', [OrganizationPaymentGatewayController::class, 'update'])->name('organizations.payment-gateway.update');
-    Route::post('/organizations/{organization}/switch', [OrganizationController::class, 'switch'])->name('organizations.switch');
+    Route::post('/organizations/{organization}/switch', [OrganizationController::class, 'switch'])
+        ->middleware('deny.impersonation')
+        ->name('organizations.switch');
 
     Route::middleware('org.accessible')->group(function (): void {
         Route::get('/dashboard', DashboardController::class)->name('dashboard');

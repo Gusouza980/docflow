@@ -187,6 +187,34 @@ class WebAuthenticationTest extends TestCase
         $this->assertTrue(Hash::check('new-password', $user->fresh()->password));
     }
 
+    public function test_platform_admin_reset_token_is_not_consumed_on_tenant_reset(): void
+    {
+        $admin = User::factory()->create([
+            'email' => 'platform-reset@example.com',
+            'password' => 'old-password',
+            'is_platform_admin' => true,
+        ]);
+        $token = Password::createToken($admin);
+
+        $this->post('/plataforma/reset-password', [
+            'token' => $token,
+            'email' => 'platform-reset@example.com',
+            'password' => 'new-password',
+            'password_confirmation' => 'new-password',
+        ])->assertSessionHasErrors('email');
+
+        $this->assertTrue(Hash::check('old-password', $admin->fresh()->password));
+
+        $this->post('/admin/reset-password', [
+            'token' => $token,
+            'email' => 'platform-reset@example.com',
+            'password' => 'new-password',
+            'password_confirmation' => 'new-password',
+        ])->assertRedirect('/admin/login');
+
+        $this->assertTrue(Hash::check('new-password', $admin->fresh()->password));
+    }
+
     public function test_api_token_login_still_works_after_web_auth_routes(): void
     {
         User::factory()->create([

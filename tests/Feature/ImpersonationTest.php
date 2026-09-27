@@ -128,6 +128,63 @@ class ImpersonationTest extends TestCase
                 ->where('auth.impersonation.organization_suspended', true));
     }
 
+    public function test_stop_impersonation_is_forbidden_without_active_session(): void
+    {
+        $user = User::factory()->create(['is_platform_admin' => false]);
+        $organization = Organization::factory()->create();
+        OrganizationMember::factory()->create([
+            'organization_id' => $organization->id,
+            'user_id' => $user->id,
+            'role' => OrganizationMember::ROLE_ADMIN,
+            'status' => OrganizationMember::STATUS_ACTIVE,
+        ]);
+
+        $this->actingAs($user)
+            ->withSession(['active_organization_id' => $organization->id])
+            ->post(route('impersonation.stop'))
+            ->assertForbidden();
+
+        $this->assertAuthenticatedAs($user);
+    }
+
+    public function test_impersonation_cannot_switch_to_another_organization(): void
+    {
+        [$admin, $organization, $owner] = $this->provisionTenant();
+        $other = Organization::factory()->create();
+        OrganizationMember::factory()->create([
+            'organization_id' => $other->id,
+            'user_id' => $owner->id,
+            'role' => OrganizationMember::ROLE_ADMIN,
+            'status' => OrganizationMember::STATUS_ACTIVE,
+        ]);
+
+        $this->actingAs($admin, 'admin')
+            ->post(route('admin.organizations.impersonate', $organization))
+            ->assertRedirect(route('dashboard'));
+
+        $this->post(route('organizations.switch', $other))->assertForbidden();
+        $this->assertSame($organization->id, session('active_organization_id'));
+    }
+
+    public function test_admin_logout_during_impersonation_records_stop_audit(): void
+    {
+        [$admin, $organization] = $this->provisionTenant();
+
+        $this->actingAs($admin, 'admin')
+            ->post(route('admin.organizations.impersonate', $organization))
+            ->assertRedirect(route('dashboard'));
+
+        $this->post(route('admin.logout'))->assertRedirect(route('admin.login'));
+
+        $this->assertGuest('web');
+        $this->assertGuest('admin');
+        $this->assertDatabaseHas('platform_audit_logs', [
+            'action' => PlatformAuditLog::ACTION_IMPERSONATION_STOPPED,
+            'platform_admin_user_id' => $admin->id,
+            'subject_id' => $organization->id,
+        ]);
+    }
+
     /**
      * @return array{0: User, 1: Organization, 2: User}
      */

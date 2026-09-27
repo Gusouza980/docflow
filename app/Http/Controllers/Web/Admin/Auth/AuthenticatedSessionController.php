@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Web\Admin\Auth;
 
 use App\Actions\Platform\RecordPlatformAuditLog;
+use App\Actions\Platform\StopImpersonation;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Web\Auth\LoginRequest;
 use App\Models\User;
 use App\Support\AuthArea;
+use App\Support\Impersonation;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -46,8 +48,12 @@ class AuthenticatedSessionController extends Controller
         return AuthArea::intendedWithin($request, '/admin', route('admin.dashboard', absolute: false));
     }
 
-    public function destroy(Request $request, RecordPlatformAuditLog $auditLog): RedirectResponse
+    public function destroy(Request $request, RecordPlatformAuditLog $auditLog, Impersonation $impersonation, StopImpersonation $stopImpersonation): RedirectResponse
     {
+        if ($impersonation->isActive($request)) {
+            $stopImpersonation->execute($request);
+        }
+
         $admin = $request->user('admin');
 
         if ($admin) {
