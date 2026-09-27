@@ -6,9 +6,11 @@ use App\Models\InternalReminder;
 use App\Models\OrganizationMember;
 use App\Models\Plan;
 use App\Models\User;
+use App\Support\AuthArea;
 use App\Support\Billing\OrganizationAccessibility;
 use App\Support\Billing\PlanLimitChecker;
 use App\Support\BuildsClientPortalDashboard;
+use App\Support\Impersonation;
 use App\Support\WebOrganizationContext;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -43,9 +45,15 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
-        $user = $request->user();
+        $isAdminArea = AuthArea::isAdmin($request);
+        $user = $isAdminArea ? $request->user('admin') : $request->user('web');
         $webUser = $user instanceof User ? $user : null;
-        $membership = $webUser ? app(WebOrganizationContext::class)->membership($request) : null;
+        $membership = ($webUser && ! $isAdminArea) ? app(WebOrganizationContext::class)->membership($request) : null;
+        $impersonation = app(Impersonation::class)->share(
+            $request,
+            $isAdminArea ? null : $webUser,
+            $membership?->organization,
+        );
 
         return [
             ...parent::share($request),
@@ -56,6 +64,7 @@ class HandleInertiaRequests extends Middleware
                     'email' => $webUser->email,
                     'is_platform_admin' => $webUser->isPlatformAdmin(),
                 ] : null,
+                'impersonation' => $impersonation,
                 'membership' => $membership ? [
                     'id' => $membership->id,
                     'role' => $membership->role,
@@ -94,7 +103,7 @@ class HandleInertiaRequests extends Middleware
                     'unread_count' => ($webUser && $membership)
                         ? InternalReminder::query()
                             ->where('organization_id', $membership->organization_id)
-                            ->where('user_id', $user->id)
+                            ->where('user_id', $webUser->id)
                             ->whereNull('read_at')
                             ->count()
                         : 0,

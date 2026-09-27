@@ -59,7 +59,7 @@ const createForm = useForm({
 });
 
 function applyFilters() {
-    router.get('/document-requests', filterForm.data(), { preserveState: true, preserveScroll: true });
+    router.get('/plataforma/document-requests', filterForm.data(), { preserveState: true, preserveScroll: true });
 }
 
 function clearFilters() {
@@ -82,7 +82,7 @@ function removeItem(index) {
 }
 
 function submitCreate() {
-    createForm.post('/document-requests', {
+    createForm.post('/plataforma/document-requests', {
         preserveScroll: true,
         onSuccess: () => createModalOpen.value = false,
     });

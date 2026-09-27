@@ -36,7 +36,7 @@ const schedulerColumns = [
 ];
 
 function applyFilters() {
-    router.get('/audit', filterForm.data(), { preserveState: true, preserveScroll: true });
+    router.get('/plataforma/audit', filterForm.data(), { preserveState: true, preserveScroll: true });
 }
 </script>
 

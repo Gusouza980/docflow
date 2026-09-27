@@ -33,7 +33,7 @@ const money = (cents) => new Intl.NumberFormat('pt-BR', { style: 'currency', cur
             <p class="text-sm text-slate-600">
                 Visão global dos tenants cadastrados no Docflow. Use o menu Organizações para suspender, reativar ou registrar notas internas.
                 Consulte o
-                <Link href="/platform/guides" class="font-medium text-violet-700 hover:underline">guia de uso</Link>
+                <Link href="/admin/guides" class="font-medium text-violet-700 hover:underline">guia de uso</Link>
                 para fluxos, limites e portal do cliente.
             </p>
 
@@ -60,12 +60,12 @@ const money = (cents) => new Intl.NumberFormat('pt-BR', { style: 'currency', cur
 
             <Card v-if="metrics.overdue_invoices > 0" title="Faturas vencidas">
                 <p class="text-2xl font-semibold text-red-700">{{ metrics.overdue_invoices }}</p>
-                <Link href="/platform/invoices?overdue=1" class="mt-2 inline-block text-sm font-semibold text-violet-700">Ver faturas vencidas</Link>
+                <Link href="/admin/invoices?overdue=1" class="mt-2 inline-block text-sm font-semibold text-violet-700">Ver faturas vencidas</Link>
             </Card>
 
             <div class="flex flex-wrap gap-3">
-                <Link href="/platform/organizations"><Button>Gerenciar organizações</Button></Link>
-                <Link href="/platform/invoices"><Button variant="secondary">Faturas SaaS</Button></Link>
+                <Link href="/admin/organizations"><Button>Gerenciar organizações</Button></Link>
+                <Link href="/admin/invoices"><Button variant="secondary">Faturas SaaS</Button></Link>
             </div>
         </div>
     </PlatformLayout>

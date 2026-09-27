@@ -52,7 +52,7 @@ const editForm = useForm({
 const channelLabel = (channel) => props.options.channels.find((item) => item.value === channel)?.label ?? channel;
 
 function submitCreate() {
-    createForm.post('/message-templates', { preserveScroll: true, onSuccess: () => createModalOpen.value = false });
+    createForm.post('/plataforma/message-templates', { preserveScroll: true, onSuccess: () => createModalOpen.value = false });
 }
 
 function openEdit(template) {
@@ -69,7 +69,7 @@ function openEdit(template) {
 }
 
 function submitEdit() {
-    editForm.patch(`/message-templates/${selectedTemplate.value.id}`, { preserveScroll: true, onSuccess: () => editModalOpen.value = false });
+    editForm.patch(`/plataforma/message-templates/${selectedTemplate.value.id}`, { preserveScroll: true, onSuccess: () => editModalOpen.value = false });
 }
 
 function destroyTemplate(template) {
@@ -77,13 +77,13 @@ function destroyTemplate(template) {
         return;
     }
 
-    useForm({}).delete(`/message-templates/${template.id}`, { preserveScroll: true });
+    useForm({}).delete(`/plataforma/message-templates/${template.id}`, { preserveScroll: true });
 }
 </script>
 
 <template>
     <Head title="Modelos de mensagem" />
-    <AppLayout title="Modelos de mensagem" active-nav="message-templates" :breadcrumbs="[{ label: 'Portal', href: '/portal' }, { label: 'Modelos de mensagem' }]">
+    <AppLayout title="Modelos de mensagem" active-nav="message-templates" :breadcrumbs="[{ label: 'Portal', href: '/plataforma/portal' }, { label: 'Modelos de mensagem' }]">
         <div class="grid gap-4">
             <Alert v-if="page.props.flash?.status" tone="success">{{ page.props.flash.status }}</Alert>
             <Alert v-if="page.props.flash?.error" tone="danger">{{ page.props.flash.error }}</Alert>

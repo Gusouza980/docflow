@@ -38,11 +38,11 @@ class TenantReceivablePaymentTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->put("/organizations/{$organization->id}/payment-gateway", [
+            ->put("/plataforma/organizations/{$organization->id}/payment-gateway", [
                 'api_key' => 'tenant-asaas-key-9999',
                 'webhook_token' => 'tenant-webhook-token-9999-secure-xx',
             ])
-            ->assertRedirect('/organizations');
+            ->assertRedirect('/plataforma/organizations');
 
         $gateway = $organization->fresh()->paymentGateway;
         $this->assertNotNull($gateway);
@@ -51,7 +51,7 @@ class TenantReceivablePaymentTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get('/organizations')
+            ->get('/plataforma/organizations')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Organizations/Index', false)
@@ -89,10 +89,10 @@ class TenantReceivablePaymentTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post("/finance/receivables/{$receivable->id}/charge", [
+            ->post("/plataforma/finance/receivables/{$receivable->id}/charge", [
                 'billing_type' => 'PIX',
             ])
-            ->assertRedirect('/finance');
+            ->assertRedirect('/plataforma/finance');
 
         $charge = ReceivableCharge::query()->where('receivable_id', $receivable->id)->first();
         $this->assertNotNull($charge);
@@ -124,13 +124,13 @@ class TenantReceivablePaymentTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post("/finance/receivables/{$receivable->id}/charge")
-            ->assertRedirect('/finance');
+            ->post("/plataforma/finance/receivables/{$receivable->id}/charge")
+            ->assertRedirect('/plataforma/finance');
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post("/finance/receivables/{$receivable->id}/charge")
-            ->assertRedirect('/finance');
+            ->post("/plataforma/finance/receivables/{$receivable->id}/charge")
+            ->assertRedirect('/plataforma/finance');
 
         $this->assertSame(1, ReceivableCharge::query()->where('receivable_id', $receivable->id)->count());
 
@@ -144,8 +144,8 @@ class TenantReceivablePaymentTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post("/finance/receivables/{$blocked->id}/charge")
-            ->assertRedirect('/finance')
+            ->post("/plataforma/finance/receivables/{$blocked->id}/charge")
+            ->assertRedirect('/plataforma/finance')
             ->assertSessionHas('error', 'Cadastre o CPF/CNPJ do cliente antes de gerar o Pix.');
 
         $this->assertDatabaseMissing('receivable_charges', ['receivable_id' => $blocked->id]);
@@ -164,12 +164,12 @@ class TenantReceivablePaymentTest extends TestCase
 
         $this->actingAs($assistant)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post("/finance/receivables/{$receivable->id}/charge")
+            ->post("/plataforma/finance/receivables/{$receivable->id}/charge")
             ->assertForbidden();
 
         $this->actingAs($assistant)
             ->withSession(['active_organization_id' => $organization->id])
-            ->put("/organizations/{$organization->id}/payment-gateway", [
+            ->put("/plataforma/organizations/{$organization->id}/payment-gateway", [
                 'api_key' => 'stolen',
                 'webhook_token' => 'stolen-token-that-is-long-enough-32',
             ])

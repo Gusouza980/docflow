@@ -18,7 +18,7 @@ class OrganizationPlanController extends Controller
         $membership = $webOrganizationContext->membership($request);
 
         if (! $membership) {
-            return redirect()->route('organizations.index')->with('error', 'Selecione uma organização para consultar o plano.');
+            return redirect()->route('organizations.unassigned');
         }
 
         abort_unless($membership->isAdmin(), HttpResponse::HTTP_FORBIDDEN);

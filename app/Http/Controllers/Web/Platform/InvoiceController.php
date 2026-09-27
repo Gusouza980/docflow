@@ -64,7 +64,7 @@ class InvoiceController extends Controller
         );
 
         return redirect()
-            ->route('platform.invoices.index')
+            ->route('admin.invoices.index')
             ->with('status', 'Fatura marcada como paga.');
     }
 
@@ -88,7 +88,7 @@ class InvoiceController extends Controller
         );
 
         return redirect()
-            ->route('platform.invoices.index')
+            ->route('admin.invoices.index')
             ->with('status', 'Fatura anulada.');
     }
 }

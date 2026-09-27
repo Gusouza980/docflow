@@ -25,7 +25,7 @@ function openWhatsApp(message) {
         window.open(message.whatsapp_url, '_blank', 'noopener');
     }
 
-    router.post(`/clients/${message.client_id}/messages/${message.id}/whatsapp`, {}, { preserveScroll: true });
+    router.post(`/plataforma/clients/${message.client_id}/messages/${message.id}/whatsapp`, {}, { preserveScroll: true });
 }
 </script>
 
@@ -34,7 +34,7 @@ function openWhatsApp(message) {
     <AppLayout
         title="Lote enviado"
         active-nav="message-batch"
-        :breadcrumbs="[{ label: 'Envio em lote', href: '/messages/batch' }, { label: 'Lote' }]"
+        :breadcrumbs="[{ label: 'Envio em lote', href: '/plataforma/messages/batch' }, { label: 'Lote' }]"
     >
         <div class="grid gap-4">
             <Alert v-if="page.props.flash?.status" tone="success">{{ page.props.flash.status }}</Alert>
@@ -53,11 +53,11 @@ function openWhatsApp(message) {
                 <template #toolbar>
                     <div class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
                         <h2 class="text-sm font-semibold text-slate-950">Destinatários</h2>
-                        <Link href="/messages/batch" class="text-sm font-semibold underline">Novo lote</Link>
+                        <Link href="/plataforma/messages/batch" class="text-sm font-semibold underline">Novo lote</Link>
                     </div>
                 </template>
                 <template #cell-client_name="{ row }">
-                    <Link :href="`/clients/${row.client_id}?tab=communication`" class="font-semibold text-slate-950 underline">
+                    <Link :href="`/plataforma/clients/${row.client_id}?tab=communication`" class="font-semibold text-slate-950 underline">
                         {{ row.client_name }}
                     </Link>
                     <p v-if="row.failure_reason" class="mt-1 text-xs text-red-700">{{ row.failure_reason }}</p>

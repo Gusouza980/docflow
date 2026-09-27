@@ -21,7 +21,7 @@ async function fetchNotifications() {
     loading.value = true;
 
     try {
-        const response = await fetch('/notifications?unread_only=1&limit=8', {
+        const response = await fetch('/plataforma/notifications?unread_only=1&limit=8', {
             headers: {
                 Accept: 'application/json',
                 'X-Requested-With': 'XMLHttpRequest',
@@ -54,7 +54,7 @@ function closePanel() {
 }
 
 function markRead(notification) {
-    router.patch(`/notifications/${notification.id}/read`, {}, {
+    router.patch(`/plataforma/notifications/${notification.id}/read`, {}, {
         preserveState: true,
         preserveScroll: true,
         onSuccess: () => {
@@ -70,7 +70,7 @@ function markRead(notification) {
 }
 
 function markAllRead() {
-    router.post('/notifications/read-all', {}, {
+    router.post('/plataforma/notifications/read-all', {}, {
         preserveState: true,
         preserveScroll: true,
         onSuccess: () => {
@@ -153,7 +153,7 @@ onUnmounted(() => {
             </ul>
 
             <div class="border-t border-slate-100 px-4 py-3">
-                <Link href="/notifications" class="text-sm font-semibold text-blue-700 hover:text-blue-800" @click="closePanel">
+                <Link href="/plataforma/notifications" class="text-sm font-semibold text-blue-700 hover:text-blue-800" @click="closePanel">
                     Ver todas
                 </Link>
             </div>

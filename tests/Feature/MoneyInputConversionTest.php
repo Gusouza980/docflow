@@ -29,7 +29,7 @@ class MoneyInputConversionTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post('/leads', [
+            ->post('/plataforma/leads', [
                 'name' => 'Lead com valor',
                 'stage' => Lead::STAGE_NEW,
                 'estimated_value_cents' => 'R$ 1.250,50',
@@ -49,13 +49,13 @@ class MoneyInputConversionTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->from('/leads')
-            ->post('/leads', [
+            ->from('/plataforma/leads')
+            ->post('/plataforma/leads', [
                 'name' => 'Lead inválido',
                 'stage' => Lead::STAGE_NEW,
                 'estimated_value_cents' => 'abc',
             ])
-            ->assertRedirect('/leads')
+            ->assertRedirect('/plataforma/leads')
             ->assertSessionHasErrors([
                 'estimated_value_cents' => 'Informe um valor válido em reais (ex.: 1.250,00).',
             ]);
@@ -68,13 +68,13 @@ class MoneyInputConversionTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post('/finance/receivables', [
+            ->post('/plataforma/finance/receivables', [
                 'client_id' => $client->id,
                 'description' => 'Honorários',
                 'amount_cents' => '1500.50',
                 'due_at' => now()->addDays(5)->toDateString(),
             ])
-            ->assertRedirect('/finance');
+            ->assertRedirect('/plataforma/finance');
 
         $this->assertDatabaseHas('receivables', [
             'organization_id' => $organization->id,
@@ -91,7 +91,7 @@ class MoneyInputConversionTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->patch("/clients/{$client->id}", [
+            ->patch("/plataforma/clients/{$client->id}", [
                 'display_name' => $client->display_name,
                 'priority' => $client->priority->value,
                 'risk_level' => $client->risk_level,
@@ -114,14 +114,14 @@ class MoneyInputConversionTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->from('/finance')
-            ->post('/finance/receivables', [
+            ->from('/plataforma/finance')
+            ->post('/plataforma/finance/receivables', [
                 'client_id' => $client->id,
                 'description' => 'Honorários',
                 'amount_cents' => '10,123',
                 'due_at' => now()->addDays(5)->toDateString(),
             ])
-            ->assertRedirect('/finance')
+            ->assertRedirect('/plataforma/finance')
             ->assertSessionHasErrors([
                 'amount_cents' => 'Informe um valor válido em reais (ex.: 1.250,00).',
             ]);

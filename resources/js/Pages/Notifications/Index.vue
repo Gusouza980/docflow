@@ -11,7 +11,7 @@ defineProps({
 const page = usePage();
 
 function markRead(notification) {
-    router.patch(`/notifications/${notification.id}/read`, {}, {
+    router.patch(`/plataforma/notifications/${notification.id}/read`, {}, {
         preserveScroll: true,
         onSuccess: () => {
             if (notification.url) {
@@ -22,7 +22,7 @@ function markRead(notification) {
 }
 
 function markAllRead() {
-    router.post('/notifications/read-all', {}, { preserveScroll: true });
+    router.post('/plataforma/notifications/read-all', {}, { preserveScroll: true });
 }
 
 function formatTime(iso) {

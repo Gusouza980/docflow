@@ -86,7 +86,7 @@ class MyDayAndDocumentPackageTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get('/my-day')
+            ->get('/plataforma/my-day')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('MyDay/Index', false)
@@ -100,7 +100,7 @@ class MyDayAndDocumentPackageTest extends TestCase
                 ->where('sections.0.items.0.overdue', true)
                 ->where('sections.1.items.0.title', 'Folha de pagamento')
                 ->where('sections.2.items.0.title', 'Mensalidade agosto')
-                ->where('sections.2.items.0.href', '/finance')
+                ->where('sections.2.items.0.href', '/plataforma/finance')
                 ->where('sections.3.items.0.title', 'Dúvida do cliente'));
     }
 
@@ -190,7 +190,7 @@ class MyDayAndDocumentPackageTest extends TestCase
 
         $this->actingAs($finance)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get('/my-day')
+            ->get('/plataforma/my-day')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('MyDay/Index', false)
@@ -218,7 +218,7 @@ class MyDayAndDocumentPackageTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get('/my-day')
+            ->get('/plataforma/my-day')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('can_access_finance', false)
@@ -232,7 +232,7 @@ class MyDayAndDocumentPackageTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get('/my-day')
+            ->get('/plataforma/my-day')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('MyDay/Index', false)
@@ -245,7 +245,7 @@ class MyDayAndDocumentPackageTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post('/service-types', [
+            ->post('/plataforma/service-types', [
                 'name' => 'Contabilidade',
                 'default_billing_interval' => ServiceType::BILLING_MONTH,
                 'monthly_document_items' => "DAS\nFolha\n\nExtrato",
@@ -305,7 +305,7 @@ class MyDayAndDocumentPackageTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get('/my-day')
+            ->get('/plataforma/my-day')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('counts.tasks', 1)

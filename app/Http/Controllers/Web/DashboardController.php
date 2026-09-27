@@ -20,7 +20,7 @@ class DashboardController extends Controller
         $membership = $webOrganizationContext->membership($request);
 
         if (! $membership) {
-            return redirect()->route('organizations.index')->with('error', 'Selecione uma organização para visualizar o painel.');
+            return redirect()->route('organizations.unassigned');
         }
 
         $payload = $dashboardPayload->fromRequest($request, $membership);

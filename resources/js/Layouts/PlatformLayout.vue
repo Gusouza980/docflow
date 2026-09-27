@@ -11,11 +11,11 @@ const page = usePage();
 const user = page.props.auth?.user ?? { name: 'Admin', email: '' };
 
 const items = [
-    { key: 'dashboard', label: 'Dashboard', icon: '▦', href: '/platform' },
-    { key: 'organizations', label: 'Organizações', icon: '◫', href: '/platform/organizations' },
-    { key: 'plans', label: 'Planos', icon: '◈', href: '/platform/plans' },
-    { key: 'invoices', label: 'Faturas', icon: '$', href: '/platform/invoices' },
-    { key: 'guides', label: 'Guia de uso', icon: '?', href: '/platform/guides' },
+    { key: 'dashboard', label: 'Dashboard', icon: '▦', href: '/admin' },
+    { key: 'organizations', label: 'Organizações', icon: '◫', href: '/admin/organizations' },
+    { key: 'plans', label: 'Planos', icon: '◈', href: '/admin/plans' },
+    { key: 'invoices', label: 'Faturas', icon: '$', href: '/admin/invoices' },
+    { key: 'guides', label: 'Guia de uso', icon: '?', href: '/admin/guides' },
 ];
 </script>
 
@@ -51,14 +51,7 @@ const items = [
                     </div>
                     <div class="mt-auto space-y-2 border-t border-slate-700 pt-3">
                         <Link
-                            href="/dashboard"
-                            class="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-slate-300 transition hover:bg-slate-800 hover:text-white focus:outline-none focus:ring-2 focus:ring-violet-400"
-                        >
-                            <span aria-hidden="true">←</span>
-                            <span>Voltar ao app</span>
-                        </Link>
-                        <Link
-                            href="/logout"
+                            href="/admin/logout"
                             method="post"
                             as="button"
                             type="button"

@@ -26,12 +26,12 @@ const showPastDueWarning = computed(() => summary.value?.status === 'past_due' &
             Seu trial expira em {{ summary.trial_days_left }} {{ summary.trial_days_left === 1 ? 'dia' : 'dias' }}
         </p>
         <p class="mt-1 text-sm">Regularize a assinatura para evitar interrupção do acesso.</p>
-        <Link href="/organizations/plan" class="mt-2 inline-block text-sm font-semibold underline">Ver plano e assinatura</Link>
+        <Link href="/plataforma/organizations/plan" class="mt-2 inline-block text-sm font-semibold underline">Ver plano e assinatura</Link>
     </Alert>
 
     <Alert v-else-if="showPastDueWarning" tone="warning" class="mb-4">
         <p class="font-medium">Assinatura inadimplente — prazo de tolerância ativo</p>
         <p class="mt-1 text-sm">Regularize o pagamento para manter o acesso após o período de tolerância.</p>
-        <Link href="/organizations/plan" class="mt-2 inline-block text-sm font-semibold underline">Ver plano e assinatura</Link>
+        <Link href="/plataforma/organizations/plan" class="mt-2 inline-block text-sm font-semibold underline">Ver plano e assinatura</Link>
     </Alert>
 </template>

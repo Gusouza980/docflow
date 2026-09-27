@@ -34,7 +34,7 @@ class WebClientManagementTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get('/clients')
+            ->get('/plataforma/clients')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Clients/Index', false)
@@ -49,7 +49,7 @@ class WebClientManagementTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post('/clients', [
+            ->post('/plataforma/clients', [
                 'type' => Client::TYPE_INDIVIDUAL,
                 'display_name' => 'Maria Silva',
                 'document_number' => '123.456.789-01',
@@ -84,7 +84,7 @@ class WebClientManagementTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get("/clients/{$client->id}")
+            ->get("/plataforma/clients/{$client->id}")
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Clients/Show', false)
@@ -103,13 +103,13 @@ class WebClientManagementTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post("/clients/{$client->id}/contacts", [
+            ->post("/plataforma/clients/{$client->id}/contacts", [
                 'name' => 'Ana Financeiro',
                 'email' => 'ana@example.com',
                 'type' => 'financial',
                 'is_primary' => true,
             ])
-            ->assertRedirect("/clients/{$client->id}");
+            ->assertRedirect("/plataforma/clients/{$client->id}");
 
         $this->assertDatabaseHas('client_contacts', [
             'client_id' => $client->id,
@@ -119,7 +119,7 @@ class WebClientManagementTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post('/client-tags', [
+            ->post('/plataforma/client-tags', [
                 'name' => 'VIP',
                 'color' => '#0f766e',
             ])
@@ -129,8 +129,8 @@ class WebClientManagementTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post("/clients/{$client->id}/tags/{$tag->id}")
-            ->assertRedirect("/clients/{$client->id}");
+            ->post("/plataforma/clients/{$client->id}/tags/{$tag->id}")
+            ->assertRedirect("/plataforma/clients/{$client->id}");
 
         $this->assertDatabaseHas('client_tag', [
             'client_id' => $client->id,
@@ -155,7 +155,7 @@ class WebClientManagementTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get('/dashboard')
+            ->get('/plataforma/dashboard')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Dashboard/Index', false)

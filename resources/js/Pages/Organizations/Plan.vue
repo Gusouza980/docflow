@@ -15,7 +15,7 @@ const money = (cents) => new Intl.NumberFormat('pt-BR', { style: 'currency', cur
 
 <template>
     <Head title="Plano e uso" />
-    <AppLayout title="Plano e uso" active-nav="organizations" :breadcrumbs="[{ label: 'Organizações', href: '/organizations' }, { label: 'Plano' }]">
+    <AppLayout title="Plano e uso" active-nav="organizations" :breadcrumbs="[{ label: 'Organizações', href: '/plataforma/organizations' }, { label: 'Plano' }]">
         <div class="grid gap-4">
             <Alert v-if="page.props.flash?.status" tone="success">{{ page.props.flash.status }}</Alert>
             <Alert v-if="page.props.flash?.error" tone="danger">{{ page.props.flash.error }}</Alert>
@@ -71,7 +71,7 @@ const money = (cents) => new Intl.NumberFormat('pt-BR', { style: 'currency', cur
             </Card>
 
             <p class="text-sm text-slate-500">Para alterar de plano ou ampliar limites, entre em contato com o suporte Docflow.</p>
-            <Link href="/organizations" class="text-sm font-semibold text-blue-700 hover:text-blue-900">Voltar para organizações</Link>
+            <Link href="/plataforma/organizations" class="text-sm font-semibold text-blue-700 hover:text-blue-900">Voltar para organizações</Link>
         </div>
     </AppLayout>
 </template>

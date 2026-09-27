@@ -34,7 +34,7 @@ defineProps({
                 <Link
                     v-for="guide in guides"
                     :key="guide.slug"
-                    :href="`/platform/guides/${guide.slug}`"
+                    :href="`/admin/guides/${guide.slug}`"
                     class="block rounded-lg transition hover:ring-2 hover:ring-violet-300"
                 >
                     <Card>

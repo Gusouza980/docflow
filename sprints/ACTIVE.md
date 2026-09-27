@@ -1,8 +1,8 @@
 # Sprint ativa
 
-**Status:** Horizonte 5 concluído  
-**Última sync:** 2026-08-13  
-**Branch:** `feat/sprint-26-meu-dia-ciclo-mensal`
+**Status:** Sprint 27 concluída  
+**Última sync:** 2026-09-27  
+**Branch:** `feat/sprint-27-separacao-admin-tenant`
 
 ## Concluído
 
@@ -19,15 +19,15 @@
 | [24](sprint-24-cliente-paga-cobranca/TASKS.md) | Cliente paga (Asaas do tenant) | [x] |
 | [25](sprint-25-comunicacao-real/TASKS.md) | Comunicação que sai de verdade | [x] |
 | [26](sprint-26-meu-dia-ciclo-mensal/TASKS.md) | Meu dia + pacote documental | [x] |
+| [27](sprint-27-separacao-admin-tenant/TASKS.md) | Separação admin/tenant + impersonação | [x] |
 
 ## Em foco
 
-Horizonte 5 fechado (23–26). Verticais jurídico/contábil ficam para o Horizonte 6, após uso real.
-
-Plano: [Horizonte 5](horizonte-05-rotina-diaria/README.md).
+Sprint 27 fechada. Próximo: aguardar priorização.
 
 ## Notas
 
-- Verticais jurídico/contábil ficam para o Horizonte 6, após uso real.
-- Asaas do tenant (cobrança do cliente) é Sprint 24, separado do billing SaaS.
-- WhatsApp Business API fora do H5; Sprint 25 usa e-mail/portal + `wa.me`.
+- Cadastro de tenant: só platform admin em `/admin`.
+- Impersonação: como o usuário dono, com banner para sair.
+- Portal do cliente não muda.
+- PHPStan não faz parte deste repositório (somente PHPUnit + Pint).

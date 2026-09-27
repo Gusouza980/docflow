@@ -53,7 +53,7 @@ class PortalCommunicationPolishTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->patch("/portal/profile-updates/{$update->id}/approve")
+            ->patch("/plataforma/portal/profile-updates/{$update->id}/approve")
             ->assertRedirect(route('portal.index'));
 
         $access->refresh();
@@ -79,7 +79,7 @@ class PortalCommunicationPolishTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->patch("/portal/profile-updates/{$update->id}/reject", [
+            ->patch("/plataforma/portal/profile-updates/{$update->id}/reject", [
                 'review_notes' => 'E-mail corporativo inválido.',
             ])
             ->assertRedirect(route('portal.index'));
@@ -101,13 +101,13 @@ class PortalCommunicationPolishTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get('/message-templates')
+            ->get('/plataforma/message-templates')
             ->assertOk()
             ->assertInertia(fn ($page) => $page->component('MessageTemplates/Index', false));
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post('/message-templates', [
+            ->post('/plataforma/message-templates', [
                 'name' => 'Boas-vindas',
                 'channel' => 'portal',
                 'purpose' => 'general',
@@ -131,7 +131,7 @@ class PortalCommunicationPolishTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post('/announcements', [
+            ->post('/plataforma/announcements', [
                 'title' => 'Feriado',
                 'body' => 'Escritório fechado na segunda.',
                 'client_id' => $client->id,
@@ -191,7 +191,7 @@ class PortalCommunicationPolishTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post("/clients/{$client->id}/tickets/{$ticket->id}/messages", [
+            ->post("/plataforma/clients/{$client->id}/tickets/{$ticket->id}/messages", [
                 'body' => 'Recebemos sua solicitação.',
                 'visible_to_client' => true,
             ])

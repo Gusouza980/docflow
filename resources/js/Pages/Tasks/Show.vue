@@ -46,32 +46,32 @@ const checklistForm = useForm({ title: '', is_required: false });
 const completeForm = useForm({ completion_notes: '' });
 
 function submitEdit() {
-    editForm.patch(`/tasks/${props.task.id}`, { preserveScroll: true, onSuccess: () => editModalOpen.value = false });
+    editForm.patch(`/plataforma/tasks/${props.task.id}`, { preserveScroll: true, onSuccess: () => editModalOpen.value = false });
 }
 
 function submitStatus() {
-    statusForm.patch(`/tasks/${props.task.id}/status`, { preserveScroll: true });
+    statusForm.patch(`/plataforma/tasks/${props.task.id}/status`, { preserveScroll: true });
 }
 
 function submitChecklist() {
-    checklistForm.post(`/tasks/${props.task.id}/checklist-items`, {
+    checklistForm.post(`/plataforma/tasks/${props.task.id}/checklist-items`, {
         preserveScroll: true,
         onSuccess: () => checklistModalOpen.value = false,
     });
 }
 
 function toggleChecklist(item) {
-    useForm({ is_completed: !item.is_completed }).patch(`/task-checklist-items/${item.id}`, { preserveScroll: true });
+    useForm({ is_completed: !item.is_completed }).patch(`/plataforma/task-checklist-items/${item.id}`, { preserveScroll: true });
 }
 
 function submitComplete() {
-    completeForm.patch(`/tasks/${props.task.id}/complete`, { preserveScroll: true, onSuccess: () => completeModalOpen.value = false });
+    completeForm.patch(`/plataforma/tasks/${props.task.id}/complete`, { preserveScroll: true, onSuccess: () => completeModalOpen.value = false });
 }
 </script>
 
 <template>
     <Head :title="task.title" />
-    <AppLayout :title="task.title" active-nav="tasks" :breadcrumbs="[{ label: 'Tarefas', href: '/tasks' }, { label: task.title }]">
+    <AppLayout :title="task.title" active-nav="tasks" :breadcrumbs="[{ label: 'Tarefas', href: '/plataforma/tasks' }, { label: task.title }]">
         <div class="grid gap-4">
             <Alert v-if="page.props.flash?.status" tone="success">{{ page.props.flash.status }}</Alert>
             <Alert v-if="page.props.flash?.error" tone="danger">{{ page.props.flash.error }}</Alert>

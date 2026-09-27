@@ -17,7 +17,7 @@ const form = useForm({
 });
 
 function submit() {
-    form.post('/reset-password', {
+    form.post('/plataforma/reset-password', {
         preserveScroll: true,
         onFinish: () => form.reset('password', 'password_confirmation'),
     });
@@ -32,7 +32,7 @@ function submit() {
             <TextInput id="password" v-model="form.password" type="password" label="Nova senha" required :error="form.errors.password" />
             <TextInput id="password_confirmation" v-model="form.password_confirmation" type="password" label="Confirmar senha" required :error="form.errors.password_confirmation" />
             <Button type="submit" :loading="form.processing" :disabled="form.processing">Redefinir senha</Button>
-            <Link href="/login" class="text-center text-sm font-semibold text-blue-700 hover:text-blue-800">Voltar para o login</Link>
+            <Link href="/plataforma/login" class="text-center text-sm font-semibold text-blue-700 hover:text-blue-800">Voltar para o login</Link>
         </form>
     </AuthLayout>
 </template>

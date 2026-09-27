@@ -45,11 +45,11 @@ const form = useForm({
 
 function submit() {
     if (isEditing.value) {
-        form.patch(`/platform/plans/${props.plan.id}`, { preserveScroll: true });
+        form.patch(`/admin/plans/${props.plan.id}`, { preserveScroll: true });
         return;
     }
 
-    form.post('/platform/plans', { preserveScroll: true });
+    form.post('/admin/plans', { preserveScroll: true });
 }
 </script>
 
@@ -88,7 +88,7 @@ function submit() {
             </Card>
             <div class="flex gap-2">
                 <Button type="submit" :disabled="form.processing">{{ isEditing ? 'Salvar' : 'Criar plano' }}</Button>
-                <Link href="/platform/plans"><Button variant="secondary" type="button">Voltar</Button></Link>
+                <Link href="/admin/plans"><Button variant="secondary" type="button">Voltar</Button></Link>
             </div>
         </form>
     </PlatformLayout>

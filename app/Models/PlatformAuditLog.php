@@ -23,6 +23,10 @@ class PlatformAuditLog extends Model
 
     public const ACTION_TENANT_PROVISIONED = 'platform.tenant.provisioned';
 
+    public const ACTION_IMPERSONATION_STARTED = 'platform.impersonation.started';
+
+    public const ACTION_IMPERSONATION_STOPPED = 'platform.impersonation.stopped';
+
     protected $fillable = [
         'platform_admin_user_id',
         'action',

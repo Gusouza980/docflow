@@ -39,7 +39,7 @@ class WebFinanceManagementTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get('/finance')
+            ->get('/plataforma/finance')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Finance/Index', false)
@@ -56,45 +56,45 @@ class WebFinanceManagementTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post('/finance/categories', [
+            ->post('/plataforma/finance/categories', [
                 'name' => 'Honorários',
                 'type' => FinancialCategory::TYPE_INCOME,
             ])
-            ->assertRedirect('/finance');
+            ->assertRedirect('/plataforma/finance');
 
         $category = FinancialCategory::firstOrFail();
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post('/finance/receivables', [
+            ->post('/plataforma/finance/receivables', [
                 'client_id' => $client->id,
                 'financial_category_id' => $category->id,
                 'description' => 'Honorários mensais',
                 'amount_cents' => '1.000,00',
                 'due_at' => now()->addDays(5)->toDateString(),
             ])
-            ->assertRedirect('/finance');
+            ->assertRedirect('/plataforma/finance');
 
         $receivable = Receivable::firstOrFail();
         $this->assertSame(100000, $receivable->amount_cents);
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post("/finance/receivables/{$receivable->id}/payments", [
+            ->post("/plataforma/finance/receivables/{$receivable->id}/payments", [
                 'amount_cents' => '400,00',
                 'paid_at' => now()->toDateString(),
             ])
-            ->assertRedirect('/finance');
+            ->assertRedirect('/plataforma/finance');
 
         $this->assertSame(Receivable::STATUS_PARTIAL, $receivable->fresh()->status);
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post("/finance/receivables/{$receivable->id}/payments", [
+            ->post("/plataforma/finance/receivables/{$receivable->id}/payments", [
                 'amount_cents' => '600,00',
                 'paid_at' => now()->toDateString(),
             ])
-            ->assertRedirect('/finance');
+            ->assertRedirect('/plataforma/finance');
 
         $this->assertSame(Receivable::STATUS_PAID, $receivable->fresh()->status);
         $this->assertSame(100000, $receivable->fresh()->paid_amount_cents);
@@ -107,7 +107,7 @@ class WebFinanceManagementTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post('/finance/payables', [
+            ->post('/plataforma/finance/payables', [
                 'client_id' => $client->id,
                 'description' => 'Custas',
                 'vendor_name' => 'Tribunal',
@@ -115,18 +115,18 @@ class WebFinanceManagementTest extends TestCase
                 'due_at' => now()->addDay()->toDateString(),
                 'is_reimbursable' => true,
             ])
-            ->assertRedirect('/finance');
+            ->assertRedirect('/plataforma/finance');
 
         $payable = Payable::firstOrFail();
         $this->assertSame(25000, $payable->amount_cents);
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post("/finance/payables/{$payable->id}/payments", [
+            ->post("/plataforma/finance/payables/{$payable->id}/payments", [
                 'amount_cents' => '250,00',
                 'paid_at' => now()->toDateString(),
             ])
-            ->assertRedirect('/finance');
+            ->assertRedirect('/plataforma/finance');
 
         $this->assertSame(Payable::STATUS_PAID, $payable->fresh()->status);
         $this->assertTrue($payable->fresh()->is_reimbursable);
@@ -138,7 +138,7 @@ class WebFinanceManagementTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get('/finance')
+            ->get('/plataforma/finance')
             ->assertForbidden();
     }
 
@@ -156,15 +156,15 @@ class WebFinanceManagementTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post("/finance/recurrences/{$recurrence->id}/generate")
-            ->assertRedirect('/finance');
+            ->post("/plataforma/finance/recurrences/{$recurrence->id}/generate")
+            ->assertRedirect('/plataforma/finance');
 
         $this->assertDatabaseCount('receivables', 1);
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post("/finance/recurrences/{$recurrence->id}/generate")
-            ->assertRedirect('/finance');
+            ->post("/plataforma/finance/recurrences/{$recurrence->id}/generate")
+            ->assertRedirect('/plataforma/finance');
 
         $this->assertDatabaseCount('receivables', 1);
     }
@@ -184,12 +184,12 @@ class WebFinanceManagementTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->patch("/finance/receivables/{$receivable->id}/renegotiate", [
+            ->patch("/plataforma/finance/receivables/{$receivable->id}/renegotiate", [
                 'renegotiation_reason' => 'Cliente solicitou parcelamento',
                 'amount_cents' => '800,00',
                 'due_at' => now()->addDays(15)->toDateString(),
             ])
-            ->assertRedirect('/finance');
+            ->assertRedirect('/plataforma/finance');
 
         $receivable->refresh();
         $this->assertSame(Receivable::STATUS_RENEGOTIATED, $receivable->status);
@@ -215,11 +215,11 @@ class WebFinanceManagementTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post("/finance/receivables/{$receivable->id}/reminders", [
+            ->post("/plataforma/finance/receivables/{$receivable->id}/reminders", [
                 'channel' => ReceivableReminder::CHANNEL_EMAIL,
                 'notes' => 'Cliente informado por e-mail.',
             ])
-            ->assertRedirect('/finance');
+            ->assertRedirect('/plataforma/finance');
 
         $this->assertDatabaseHas('receivable_reminders', [
             'receivable_id' => $receivable->id,

@@ -74,7 +74,7 @@ async function loadTicket() {
     loading.value = true;
 
     try {
-        const response = await fetch(`/clients/${props.clientId}/tickets/${props.ticketId}`, {
+        const response = await fetch(`/plataforma/clients/${props.clientId}/tickets/${props.ticketId}`, {
             headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
             credentials: 'same-origin',
         });
@@ -105,7 +105,7 @@ watch(() => [props.open, props.ticketId], () => {
 }, { immediate: true });
 
 function submitUpdate() {
-    updateForm.patch(`/clients/${props.clientId}/tickets/${props.ticketId}`, {
+    updateForm.patch(`/plataforma/clients/${props.clientId}/tickets/${props.ticketId}`, {
         preserveScroll: true,
         onSuccess: () => loadTicket(),
     });
@@ -113,7 +113,7 @@ function submitUpdate() {
 
 function submitReply() {
     replyForm.visible_to_client = internalNote.value ? false : replyVisibleToClient.value;
-    replyForm.post(`/clients/${props.clientId}/tickets/${props.ticketId}/messages`, {
+    replyForm.post(`/plataforma/clients/${props.clientId}/tickets/${props.ticketId}/messages`, {
         preserveScroll: true,
         forceFormData: true,
         onSuccess: () => {

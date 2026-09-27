@@ -97,8 +97,8 @@ class PlanFeaturesBackfillTest extends TestCase
             ],
         ]);
 
-        $this->actingAs($admin)
-            ->patch("/platform/plans/{$plan->id}", [
+        $this->actingAs($admin, 'admin')
+            ->patch("/admin/plans/{$plan->id}", [
                 'slug' => 'unlimited',
                 'name' => 'Unlimited',
                 'description' => 'Tudo incluso',

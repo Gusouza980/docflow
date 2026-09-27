@@ -86,7 +86,7 @@ const heroCards = computed(() => {
                 key: 'received',
                 label: 'Recebido no período',
                 value: money(props.value.received_cents),
-                href: '/finance',
+                href: '/plataforma/finance',
                 delta: formatDelta(props.value.received_delta_cents, { money: true }),
                 deltaHint: formatDeltaPercent(props.value.received_delta_percent),
                 tone: (props.value.received_delta_cents ?? 0) >= 0 ? 'positive' : 'danger',
@@ -95,20 +95,20 @@ const heroCards = computed(() => {
                 key: 'open',
                 label: 'Em aberto',
                 value: money(props.value.open_receivables_cents),
-                href: '/finance?status=open',
+                href: '/plataforma/finance?status=open',
             },
             {
                 key: 'overdue',
                 label: 'Vencido',
                 value: money(props.value.overdue_receivables_cents),
-                href: '/finance?status=open',
+                href: '/plataforma/finance?status=open',
                 tone: (props.value.overdue_receivables_cents ?? 0) > 0 ? 'danger' : null,
             },
             {
                 key: 'net',
                 label: 'Saldo líquido do período',
                 value: money(props.value.net_period_cents),
-                href: '/finance',
+                href: '/plataforma/finance',
                 subtitle: 'Recebido − despesas pagas',
                 tone: (props.value.net_period_cents ?? 0) >= 0 ? 'positive' : 'danger',
             },
@@ -120,7 +120,7 @@ const heroCards = computed(() => {
             key: 'completed_tasks',
             label: 'Tarefas concluídas',
             value: props.value?.completed_tasks ?? 0,
-            href: '/tasks',
+            href: '/plataforma/tasks',
             delta: formatDelta(props.value?.completed_tasks_delta),
             subtitle: 'No período selecionado',
             tone: 'positive',
@@ -129,7 +129,7 @@ const heroCards = computed(() => {
             key: 'approved_documents',
             label: 'Docs aprovados',
             value: props.value?.approved_documents ?? 0,
-            href: '/document-requests',
+            href: '/plataforma/document-requests',
             delta: formatDelta(props.value?.approved_documents_delta),
             subtitle: 'No período selecionado',
         },
@@ -137,7 +137,7 @@ const heroCards = computed(() => {
             key: 'active_clients',
             label: 'Clientes ativos',
             value: props.value?.active_clients ?? props.metrics.active_clients ?? 0,
-            href: '/clients?status=active',
+            href: '/plataforma/clients?status=active',
         },
     ];
 });
@@ -151,7 +151,7 @@ const secondaryCards = computed(() => {
                 key: 'mrr',
                 label: 'MRR estimado',
                 value: money(props.contracts_revenue.mrr_cents),
-                href: '/contracts',
+                href: '/plataforma/contracts',
                 subtitle: `${props.contracts_revenue.active_contracts ?? 0} contrato(s) ativo(s)`,
                 tone: 'positive',
             },
@@ -159,7 +159,7 @@ const secondaryCards = computed(() => {
                 key: 'at_risk',
                 label: 'Valor em risco (30d)',
                 value: money(props.contracts_revenue.at_risk_cents),
-                href: props.contracts_revenue.href || '/contracts?expiring_soon=1',
+                href: props.contracts_revenue.href || '/plataforma/contracts?expiring_soon=1',
                 subtitle: `${props.contracts_revenue.expiring_count ?? 0} contrato(s) a vencer`,
                 tone: (props.contracts_revenue.at_risk_cents ?? 0) > 0 ? 'warning' : null,
             },
@@ -172,14 +172,14 @@ const secondaryCards = computed(() => {
                 key: 'pipeline',
                 label: 'Pipeline aberto',
                 value: money(props.commercial.pipeline_cents),
-                href: props.commercial.href || '/leads',
+                href: props.commercial.href || '/plataforma/leads',
                 subtitle: `${props.commercial.open_leads ?? 0} lead(s) em andamento`,
             },
             {
                 key: 'gained',
                 label: 'Ganho no período',
                 value: money(props.commercial.gained_cents),
-                href: props.commercial.href || '/leads',
+                href: props.commercial.href || '/plataforma/leads',
                 subtitle: 'Leads convertidos + propostas aceitas',
                 tone: 'positive',
             },
@@ -202,7 +202,7 @@ const roiCards = computed(() => {
             key: 'hours',
             label: 'Tempo economizado (est.)',
             value: formatSavedTime(props.docflow_roi.estimated_minutes_saved),
-            href: props.docflow_roi.href || '/automations',
+            href: props.docflow_roi.href || '/plataforma/automations',
             delta: minutesDelta ? `${minutesPrefix}${formatSavedTime(minutesDelta)}` : null,
             subtitle: 'Estimativa por tipo de ação, não cronometragem',
             tone: 'positive',
@@ -211,7 +211,7 @@ const roiCards = computed(() => {
             key: 'runs',
             label: 'Automações no período',
             value: props.docflow_roi.runs ?? 0,
-            href: props.docflow_roi.href || '/automations',
+            href: props.docflow_roi.href || '/plataforma/automations',
             delta: formatDelta(props.docflow_roi.runs_delta),
             subtitle: 'Execuções concluídas',
         },
@@ -220,22 +220,22 @@ const roiCards = computed(() => {
 
 const operationCards = computed(() => {
     const cards = [
-        { key: 'open_tasks', label: 'Tarefas abertas', value: props.metrics.open_tasks ?? 0, href: '/tasks' },
-        { key: 'overdue_tasks', label: 'Tarefas atrasadas', value: props.metrics.overdue_tasks ?? 0, href: '/tasks?flag=overdue', tone: props.metrics.overdue_tasks > 0 ? 'danger' : null },
-        { key: 'completed_tasks', label: 'Tarefas concluídas', value: props.metrics.completed_tasks ?? 0, href: '/tasks', subtitle: 'No período' },
-        { key: 'pending_documents', label: 'Docs pendentes', value: props.metrics.pending_documents ?? 0, href: '/document-requests' },
-        { key: 'overdue_documents', label: 'Docs vencidos', value: props.metrics.overdue_documents ?? 0, href: '/document-requests?overdue=1', tone: props.metrics.overdue_documents > 0 ? 'danger' : null },
-        { key: 'due_soon_documents', label: 'Docs a vencer (7d)', value: props.metrics.due_soon_documents ?? 0, href: '/document-requests', tone: props.metrics.due_soon_documents > 0 ? 'warning' : null },
-        { key: 'open_tickets', label: 'Chamados abertos', value: props.metrics.open_tickets ?? 0, href: '/reports' },
-        { key: 'active_clients', label: 'Clientes ativos', value: props.metrics.active_clients ?? 0, href: '/clients?status=active' },
-        { key: 'expiring_contracts', label: 'Contratos a vencer (30d)', value: props.metrics.expiring_contracts ?? 0, href: '/contracts?expiring_soon=1', tone: (props.metrics.expiring_contracts ?? 0) > 0 ? 'warning' : null },
+        { key: 'open_tasks', label: 'Tarefas abertas', value: props.metrics.open_tasks ?? 0, href: '/plataforma/tasks' },
+        { key: 'overdue_tasks', label: 'Tarefas atrasadas', value: props.metrics.overdue_tasks ?? 0, href: '/plataforma/tasks?flag=overdue', tone: props.metrics.overdue_tasks > 0 ? 'danger' : null },
+        { key: 'completed_tasks', label: 'Tarefas concluídas', value: props.metrics.completed_tasks ?? 0, href: '/plataforma/tasks', subtitle: 'No período' },
+        { key: 'pending_documents', label: 'Docs pendentes', value: props.metrics.pending_documents ?? 0, href: '/plataforma/document-requests' },
+        { key: 'overdue_documents', label: 'Docs vencidos', value: props.metrics.overdue_documents ?? 0, href: '/plataforma/document-requests?overdue=1', tone: props.metrics.overdue_documents > 0 ? 'danger' : null },
+        { key: 'due_soon_documents', label: 'Docs a vencer (7d)', value: props.metrics.due_soon_documents ?? 0, href: '/plataforma/document-requests', tone: props.metrics.due_soon_documents > 0 ? 'warning' : null },
+        { key: 'open_tickets', label: 'Chamados abertos', value: props.metrics.open_tickets ?? 0, href: '/plataforma/reports' },
+        { key: 'active_clients', label: 'Clientes ativos', value: props.metrics.active_clients ?? 0, href: '/plataforma/clients?status=active' },
+        { key: 'expiring_contracts', label: 'Contratos a vencer (30d)', value: props.metrics.expiring_contracts ?? 0, href: '/plataforma/contracts?expiring_soon=1', tone: (props.metrics.expiring_contracts ?? 0) > 0 ? 'warning' : null },
     ];
 
     if (props.can_access_finance) {
         cards.push(
-            { key: 'open_receivables', label: 'Cobranças em aberto', value: money(props.metrics.open_receivables_cents), href: '/finance?status=open', isMoney: true },
-            { key: 'overdue_receivables', label: 'Cobranças vencidas', value: money(props.metrics.overdue_receivables_cents), href: '/finance?status=open', tone: (props.metrics.overdue_receivables_cents ?? 0) > 0 ? 'danger' : null, isMoney: true },
-            { key: 'received', label: 'Recebido no período', value: money(props.metrics.received_cents), href: '/finance', isMoney: true },
+            { key: 'open_receivables', label: 'Cobranças em aberto', value: money(props.metrics.open_receivables_cents), href: '/plataforma/finance?status=open', isMoney: true },
+            { key: 'overdue_receivables', label: 'Cobranças vencidas', value: money(props.metrics.overdue_receivables_cents), href: '/plataforma/finance?status=open', tone: (props.metrics.overdue_receivables_cents ?? 0) > 0 ? 'danger' : null, isMoney: true },
+            { key: 'received', label: 'Recebido no período', value: money(props.metrics.received_cents), href: '/plataforma/finance', isMoney: true },
         );
     }
 
@@ -277,7 +277,7 @@ const hasOperationalData = computed(() => {
 });
 
 function applyFilters() {
-    router.get('/dashboard', filterForm.data(), { preserveState: true, preserveScroll: true });
+    router.get('/plataforma/dashboard', filterForm.data(), { preserveState: true, preserveScroll: true });
 }
 
 function valueClass(tone) {
@@ -349,27 +349,27 @@ function deltaClass(tone) {
                 <div class="mt-4 flex flex-wrap items-center justify-center gap-2">
                     <Link
                         v-if="can_access_finance"
-                        href="/finance"
+                        href="/plataforma/finance"
                         class="rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800"
                     >
                         Registrar cobrança
                     </Link>
                     <Link
-                        href="/contracts"
+                        href="/plataforma/contracts"
                         class="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:border-slate-400"
                     >
                         Criar contrato
                     </Link>
                     <Link
                         v-if="can_access_crm"
-                        href="/leads"
+                        href="/plataforma/leads"
                         class="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:border-slate-400"
                     >
                         Abrir lead
                     </Link>
                     <Link
                         v-if="can_access_automations"
-                        href="/automations"
+                        href="/plataforma/automations"
                         class="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:border-slate-400"
                     >
                         Ativar automação
@@ -441,7 +441,7 @@ function deltaClass(tone) {
                     <p class="text-sm font-medium text-slate-700">Nenhuma automação rodou neste período</p>
                     <p class="mt-1 text-sm text-slate-500">Ative uma regra para estimar o tempo que a equipe deixa de gastar à mão.</p>
                     <Link
-                        href="/automations"
+                        href="/plataforma/automations"
                         class="mt-3 inline-flex rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800"
                     >
                         Ver automações

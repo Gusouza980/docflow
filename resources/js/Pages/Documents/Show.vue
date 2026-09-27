@@ -58,14 +58,14 @@ const versionForm = useForm({
 });
 
 function submitEdit() {
-    editForm.patch(`/documents/${props.document.id}`, {
+    editForm.patch(`/plataforma/documents/${props.document.id}`, {
         preserveScroll: true,
         onSuccess: () => editModalOpen.value = false,
     });
 }
 
 function submitVersion() {
-    versionForm.post(`/documents/${props.document.id}/versions`, {
+    versionForm.post(`/plataforma/documents/${props.document.id}/versions`, {
         preserveScroll: true,
         onSuccess: () => versionModalOpen.value = false,
     });
@@ -74,7 +74,7 @@ function submitVersion() {
 
 <template>
     <Head :title="document.title" />
-    <AppLayout :title="document.title" active-nav="documents" :breadcrumbs="[{ label: 'Documentos', href: '/documents' }, { label: document.title }]">
+    <AppLayout :title="document.title" active-nav="documents" :breadcrumbs="[{ label: 'Documentos', href: '/plataforma/documents' }, { label: document.title }]">
         <div class="grid gap-4">
             <Alert v-if="page.props.flash?.status" tone="success">{{ page.props.flash.status }}</Alert>
             <Alert v-if="page.props.flash?.error" tone="danger">{{ page.props.flash.error }}</Alert>

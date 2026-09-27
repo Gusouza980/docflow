@@ -31,7 +31,7 @@ defineProps({
 
         <div class="mt-auto border-t border-slate-200 pt-3">
             <Link
-                href="/logout"
+                href="/plataforma/logout"
                 method="post"
                 as="button"
                 type="button"

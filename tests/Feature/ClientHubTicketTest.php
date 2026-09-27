@@ -24,7 +24,7 @@ class ClientHubTicketTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post("/clients/{$client->id}/tickets", [
+            ->post("/plataforma/clients/{$client->id}/tickets", [
                 'title' => 'Segunda via de guia',
                 'description' => 'Cliente solicitou segunda via.',
                 'priority' => 'high',
@@ -44,13 +44,13 @@ class ClientHubTicketTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get("/clients/{$client->id}/tickets/{$ticket->id}")
+            ->get("/plataforma/clients/{$client->id}/tickets/{$ticket->id}")
             ->assertOk()
             ->assertJsonPath('ticket.title', 'Segunda via de guia');
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->patch("/clients/{$client->id}/tickets/{$ticket->id}", [
+            ->patch("/plataforma/clients/{$client->id}/tickets/{$ticket->id}", [
                 'status' => Ticket::STATUS_WAITING_CLIENT,
                 'priority' => 'high',
                 'assigned_to_member_id' => $member->id,
@@ -60,7 +60,7 @@ class ClientHubTicketTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post("/clients/{$client->id}/tickets/{$ticket->id}/messages", [
+            ->post("/plataforma/clients/{$client->id}/tickets/{$ticket->id}/messages", [
                 'body' => 'Por favor, envie o comprovante.',
                 'visible_to_client' => true,
             ])
@@ -118,7 +118,7 @@ class ClientHubTicketTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get("/clients/{$client->id}?tab=tickets&ticket_filter=open")
+            ->get("/plataforma/clients/{$client->id}?tab=tickets&ticket_filter=open")
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->where('tab', 'tickets')

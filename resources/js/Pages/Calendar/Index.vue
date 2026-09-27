@@ -57,7 +57,7 @@ const notesForm = useForm({
 });
 
 function applyFilters() {
-    router.get('/calendar', filterForm.data(), { preserveState: true, preserveScroll: true });
+    router.get('/plataforma/calendar', filterForm.data(), { preserveState: true, preserveScroll: true });
 }
 
 function addParticipant() {
@@ -69,7 +69,7 @@ function addTaskFromNotes() {
 }
 
 function submitCreate() {
-    createForm.post('/calendar-events', { preserveScroll: true, onSuccess: () => createModalOpen.value = false });
+    createForm.post('/plataforma/calendar-events', { preserveScroll: true, onSuccess: () => createModalOpen.value = false });
 }
 
 function openNotes(event) {
@@ -79,7 +79,7 @@ function openNotes(event) {
 }
 
 function submitNotes() {
-    notesForm.post(`/calendar-events/${selectedEvent.value.id}/notes`, { preserveScroll: true, onSuccess: () => notesModalOpen.value = false });
+    notesForm.post(`/plataforma/calendar-events/${selectedEvent.value.id}/notes`, { preserveScroll: true, onSuccess: () => notesModalOpen.value = false });
 }
 </script>
 

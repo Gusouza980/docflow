@@ -50,7 +50,7 @@ class PlanController extends Controller
         $plan = Plan::create($data);
 
         return redirect()
-            ->route('platform.plans.edit', $plan)
+            ->route('admin.plans.edit', $plan)
             ->with('status', 'Plano criado.');
     }
 
@@ -74,7 +74,7 @@ class PlanController extends Controller
         $plan->update($data);
 
         return redirect()
-            ->route('platform.plans.edit', $plan)
+            ->route('admin.plans.edit', $plan)
             ->with('status', 'Plano atualizado.');
     }
 

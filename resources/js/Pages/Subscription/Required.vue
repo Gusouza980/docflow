@@ -26,10 +26,10 @@ const page = usePage();
                 <p v-if="organization" class="mt-3 text-sm text-slate-500">Organização: <strong>{{ organization.name }}</strong></p>
 
                 <div class="mt-6 flex flex-wrap gap-3">
-                    <Link v-if="canManagePlan" href="/organizations/plan">
+                    <Link v-if="canManagePlan" href="/plataforma/organizations/plan">
                         <Button>Ver plano e assinatura</Button>
                     </Link>
-                    <Link href="/organizations">
+                    <Link href="/plataforma/organizations">
                         <Button variant="secondary">Trocar organização</Button>
                     </Link>
                 </div>

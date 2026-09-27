@@ -12,6 +12,7 @@ use App\Models\DocumentRequestItem;
 use App\Models\Organization;
 use App\Models\OrganizationMember;
 use App\Models\User;
+use Database\Seeders\PlanSeeder;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -21,6 +22,13 @@ use Tests\TestCase;
 class WebDocumentManagementTest extends TestCase
 {
     use LazilyRefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->seed(PlanSeeder::class);
+    }
 
     public function test_documents_page_lists_only_active_organization_documents(): void
     {
@@ -41,7 +49,7 @@ class WebDocumentManagementTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get('/documents')
+            ->get('/plataforma/documents')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Documents/Index', false)
@@ -61,19 +69,19 @@ class WebDocumentManagementTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post('/document-categories', [
+            ->post('/plataforma/document-categories', [
                 'name' => 'Contrato social',
                 'validity_days' => 365,
                 'sensitivity' => DocumentSensitivity::Sensitive->value,
                 'is_active' => true,
             ])
-            ->assertRedirect('/documents');
+            ->assertRedirect('/plataforma/documents');
 
         $category = DocumentCategory::firstOrFail();
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post('/documents', [
+            ->post('/plataforma/documents', [
                 'client_id' => $client->id,
                 'document_category_id' => $category->id,
                 'title' => 'Contrato assinado',
@@ -89,10 +97,10 @@ class WebDocumentManagementTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post("/documents/{$document->id}/versions", [
+            ->post("/plataforma/documents/{$document->id}/versions", [
                 'file' => UploadedFile::fake()->create('contrato-v2.pdf', 100, 'application/pdf'),
             ])
-            ->assertRedirect("/documents/{$document->id}");
+            ->assertRedirect("/plataforma/documents/{$document->id}");
 
         $this->assertSame(2, $document->versions()->count());
         $this->assertNotNull($firstVersion->fresh()->replaced_at);
@@ -107,7 +115,7 @@ class WebDocumentManagementTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post('/document-requests', [
+            ->post('/plataforma/document-requests', [
                 'client_id' => $client->id,
                 'title' => 'Documentos iniciais',
                 'due_at' => now()->addDays(7)->toDateString(),
@@ -125,17 +133,17 @@ class WebDocumentManagementTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post("/document-request-items/{$item->id}/upload", [
+            ->post("/plataforma/document-request-items/{$item->id}/upload", [
                 'file' => UploadedFile::fake()->create('contrato.pdf', 100, 'application/pdf'),
             ])
-            ->assertRedirect("/document-requests/{$documentRequest->id}");
+            ->assertRedirect("/plataforma/document-requests/{$documentRequest->id}");
 
         $this->assertSame(DocumentRequestItem::STATUS_RECEIVED, $item->fresh()->status);
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->patch("/document-request-items/{$item->id}/approve")
-            ->assertRedirect("/document-requests/{$documentRequest->id}");
+            ->patch("/plataforma/document-request-items/{$item->id}/approve")
+            ->assertRedirect("/plataforma/document-requests/{$documentRequest->id}");
 
         $this->assertSame(DocumentRequestItem::STATUS_APPROVED, $item->fresh()->status);
         $this->assertSame(DocumentRequest::STATUS_COMPLETED, $documentRequest->fresh()->status);
@@ -158,7 +166,7 @@ class WebDocumentManagementTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->get('/document-requests')
+            ->get('/plataforma/document-requests')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('DocumentRequests/Index', false)

@@ -21,7 +21,7 @@ class ReportExportAndScheduleTest extends TestCase
 
         $response = $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post('/reports/export', [
+            ->post('/plataforma/reports/export', [
                 'report_type' => 'overview',
                 'filters' => [
                     'start_date' => now()->startOfMonth()->toDateString(),
@@ -50,7 +50,7 @@ class ReportExportAndScheduleTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post('/reports/export', [
+            ->post('/plataforma/reports/export', [
                 'report_type' => 'finance',
             ])
             ->assertForbidden();
@@ -111,7 +111,7 @@ class ReportExportAndScheduleTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post("/reports/schedules/{$schedule->id}/run")
+            ->post("/plataforma/reports/schedules/{$schedule->id}/run")
             ->assertRedirect(route('reports.index'));
 
         $this->assertDatabaseHas('generated_reports', [

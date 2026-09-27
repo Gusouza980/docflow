@@ -21,15 +21,8 @@ defineProps({
         </div>
         <div class="flex flex-wrap items-center gap-3">
             <SearchInput class="w-full sm:w-64" placeholder="Buscar no sistema" label="Busca global" />
-            <Link href="/organizations" class="inline-flex h-10 items-center rounded-lg border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+            <Link href="/plataforma/organizations" class="inline-flex h-10 items-center rounded-lg border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">
                 {{ organization }}
-            </Link>
-            <Link
-                v-if="user.is_platform_admin"
-                href="/platform"
-                class="inline-flex h-10 items-center rounded-lg border border-violet-300 bg-violet-50 px-3 text-sm font-semibold text-violet-800 hover:bg-violet-100"
-            >
-                Platform
             </Link>
             <NotificationBell />
             <div class="flex items-center gap-2">

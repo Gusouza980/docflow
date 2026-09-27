@@ -62,12 +62,12 @@ function toggleClient(clientId, checked) {
 
 function reviewRecipients() {
     syncSendForm();
-    previewForm.get('/messages/batch', { preserveScroll: true });
+    previewForm.get('/plataforma/messages/batch', { preserveScroll: true });
 }
 
 function sendBatch() {
     syncSendForm();
-    sendForm.post('/messages/batch');
+    sendForm.post('/plataforma/messages/batch');
 }
 </script>
 
@@ -76,7 +76,7 @@ function sendBatch() {
     <AppLayout
         title="Envio em lote"
         active-nav="message-batch"
-        :breadcrumbs="[{ label: 'Portal', href: '/portal' }, { label: 'Envio em lote' }]"
+        :breadcrumbs="[{ label: 'Portal', href: '/plataforma/portal' }, { label: 'Envio em lote' }]"
     >
         <div class="grid gap-4">
             <Alert v-if="page.props.flash?.status" tone="success">{{ page.props.flash.status }}</Alert>
@@ -153,7 +153,7 @@ function sendBatch() {
                 </DataTable>
 
                 <div class="flex flex-wrap items-center justify-end gap-2">
-                    <Link href="/message-templates" class="text-sm font-semibold underline">Editar modelos</Link>
+                    <Link href="/plataforma/message-templates" class="text-sm font-semibold underline">Editar modelos</Link>
                     <Button
                         v-if="can.send"
                         :disabled="sendForm.processing || !preview.ready.length"

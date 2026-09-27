@@ -77,7 +77,7 @@ class TeamNotificationTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->getJson('/notifications')
+            ->getJson('/plataforma/notifications')
             ->assertOk()
             ->assertJsonPath('unread_count', 1)
             ->assertJsonPath('notifications.0.title', 'Chamado aberto pelo portal');
@@ -98,7 +98,7 @@ class TeamNotificationTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->post("/clients/{$client->id}/tickets/{$ticket->id}/messages", [
+            ->post("/plataforma/clients/{$client->id}/tickets/{$ticket->id}/messages", [
                 'body' => 'Recebemos sua solicitação.',
                 'visible_to_client' => true,
             ])
@@ -127,7 +127,7 @@ class TeamNotificationTest extends TestCase
 
         $this->actingAs($user)
             ->withSession(['active_organization_id' => $organization->id])
-            ->patch("/notifications/{$reminder->id}/read")
+            ->patch("/plataforma/notifications/{$reminder->id}/read")
             ->assertRedirect();
 
         $this->assertNotNull($reminder->fresh()->read_at);

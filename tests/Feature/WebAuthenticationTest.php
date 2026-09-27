@@ -17,7 +17,7 @@ class WebAuthenticationTest extends TestCase
 
     public function test_login_page_is_rendered(): void
     {
-        $this->get('/login')
+        $this->get('/plataforma/login')
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page->component('Auth/Login', false));
     }
@@ -29,10 +29,10 @@ class WebAuthenticationTest extends TestCase
             'password' => 'password',
         ]);
 
-        $this->post('/login', [
+        $this->post('/plataforma/login', [
             'email' => 'web-user@example.com',
             'password' => 'password',
-        ])->assertRedirect('/dashboard');
+        ])->assertRedirect('/plataforma/dashboard');
 
         $this->assertAuthenticatedAs($user);
     }
@@ -53,17 +53,37 @@ class WebAuthenticationTest extends TestCase
                 'HTTP_X_FORWARDED_PORT' => '443',
                 'HTTP_X_FORWARDED_FOR' => '203.0.113.10',
             ])
-            ->post('/login', [
+            ->post('/plataforma/login', [
                 'email' => 'web-user@example.com',
                 'password' => 'password',
             ]);
 
         $response->assertRedirect();
         $this->assertSame('https', parse_url((string) $response->headers->get('Location'), PHP_URL_SCHEME));
-        $this->assertSame('/dashboard', parse_url((string) $response->headers->get('Location'), PHP_URL_PATH));
+        $this->assertSame('/plataforma/dashboard', parse_url((string) $response->headers->get('Location'), PHP_URL_PATH));
     }
 
-    public function test_platform_admin_is_redirected_to_platform_after_login(): void
+    public function test_platform_admin_cannot_use_tenant_login(): void
+    {
+        User::factory()->create([
+            'email' => 'platform@docflow.test',
+            'password' => 'password',
+            'is_platform_admin' => true,
+        ]);
+
+        $this->from('/plataforma/login')
+            ->post('/plataforma/login', [
+                'email' => 'platform@docflow.test',
+                'password' => 'password',
+            ])
+            ->assertRedirect('/plataforma/login')
+            ->assertSessionHasErrors('email');
+
+        $this->assertGuest('web');
+        $this->assertGuest('admin');
+    }
+
+    public function test_platform_admin_can_login_on_admin_guard(): void
     {
         $admin = User::factory()->create([
             'email' => 'platform@docflow.test',
@@ -71,12 +91,13 @@ class WebAuthenticationTest extends TestCase
             'is_platform_admin' => true,
         ]);
 
-        $this->post('/login', [
+        $this->post('/admin/login', [
             'email' => 'platform@docflow.test',
             'password' => 'password',
-        ])->assertRedirect('/platform');
+        ])->assertRedirect('/admin');
 
-        $this->assertAuthenticatedAs($admin);
+        $this->assertAuthenticatedAs($admin, 'admin');
+        $this->assertGuest('web');
     }
 
     public function test_user_cannot_login_with_invalid_web_credentials(): void
@@ -86,15 +107,41 @@ class WebAuthenticationTest extends TestCase
             'password' => 'password',
         ]);
 
-        $this->from('/login')
-            ->post('/login', [
+        $this->from('/plataforma/login')
+            ->post('/plataforma/login', [
                 'email' => 'web-user@example.com',
                 'password' => 'wrong-password',
             ])
-            ->assertRedirect('/login')
+            ->assertRedirect('/plataforma/login')
             ->assertSessionHasErrors('email');
 
         $this->assertGuest();
+    }
+
+    public function test_legacy_login_and_dashboard_urls_redirect_to_plataforma(): void
+    {
+        $this->get('/login')->assertRedirect('/plataforma/login');
+        $this->get('/dashboard')->assertRedirect('/plataforma/dashboard');
+        $this->get('/platform')->assertRedirect('/admin');
+    }
+
+    public function test_tenant_cannot_login_on_admin_guard(): void
+    {
+        User::factory()->create([
+            'email' => 'tenant@example.com',
+            'password' => 'password',
+        ]);
+
+        $this->from('/admin/login')
+            ->post('/admin/login', [
+                'email' => 'tenant@example.com',
+                'password' => 'password',
+            ])
+            ->assertRedirect('/admin/login')
+            ->assertSessionHasErrors('email');
+
+        $this->assertGuest('admin');
+        $this->assertGuest('web');
     }
 
     public function test_authenticated_user_can_logout_web_session(): void
@@ -102,8 +149,8 @@ class WebAuthenticationTest extends TestCase
         $user = User::factory()->create();
 
         $this->actingAs($user)
-            ->post('/logout')
-            ->assertRedirect('/login');
+            ->post('/plataforma/logout')
+            ->assertRedirect('/plataforma/login');
 
         $this->assertGuest();
     }
@@ -113,7 +160,7 @@ class WebAuthenticationTest extends TestCase
         Notification::fake();
         $user = User::factory()->create(['email' => 'reset@example.com']);
 
-        $this->post('/forgot-password', [
+        $this->post('/plataforma/forgot-password', [
             'email' => 'reset@example.com',
         ])
             ->assertRedirect()
@@ -130,14 +177,42 @@ class WebAuthenticationTest extends TestCase
         ]);
         $token = Password::createToken($user);
 
-        $this->post('/reset-password', [
+        $this->post('/plataforma/reset-password', [
             'token' => $token,
             'email' => 'reset@example.com',
             'password' => 'new-password',
             'password_confirmation' => 'new-password',
-        ])->assertRedirect('/login');
+        ])->assertRedirect('/plataforma/login');
 
         $this->assertTrue(Hash::check('new-password', $user->fresh()->password));
+    }
+
+    public function test_platform_admin_reset_token_is_not_consumed_on_tenant_reset(): void
+    {
+        $admin = User::factory()->create([
+            'email' => 'platform-reset@example.com',
+            'password' => 'old-password',
+            'is_platform_admin' => true,
+        ]);
+        $token = Password::createToken($admin);
+
+        $this->post('/plataforma/reset-password', [
+            'token' => $token,
+            'email' => 'platform-reset@example.com',
+            'password' => 'new-password',
+            'password_confirmation' => 'new-password',
+        ])->assertSessionHasErrors('email');
+
+        $this->assertTrue(Hash::check('old-password', $admin->fresh()->password));
+
+        $this->post('/admin/reset-password', [
+            'token' => $token,
+            'email' => 'platform-reset@example.com',
+            'password' => 'new-password',
+            'password_confirmation' => 'new-password',
+        ])->assertRedirect('/admin/login');
+
+        $this->assertTrue(Hash::check('new-password', $admin->fresh()->password));
     }
 
     public function test_api_token_login_still_works_after_web_auth_routes(): void

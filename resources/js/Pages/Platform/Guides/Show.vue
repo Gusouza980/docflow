@@ -15,12 +15,12 @@ defineProps({
     <PlatformLayout
         :title="guide.title"
         active-nav="guides"
-        :breadcrumbs="[{ label: 'Platform' }, { label: 'Guia de uso', href: '/platform/guides' }, { label: guide.title }]"
+        :breadcrumbs="[{ label: 'Platform' }, { label: 'Guia de uso', href: '/admin/guides' }, { label: guide.title }]"
     >
         <div class="grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
             <aside class="self-start rounded-lg border border-slate-200 bg-white p-3 lg:sticky lg:top-4">
                 <Link
-                    href="/platform/guides"
+                    href="/admin/guides"
                     class="mb-2 block rounded-md px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500 hover:bg-slate-50 hover:text-violet-700"
                 >
                     ← Todos os guias
@@ -28,7 +28,7 @@ defineProps({
                 <Link
                     v-for="item in guides"
                     :key="item.slug"
-                    :href="`/platform/guides/${item.slug}`"
+                    :href="`/admin/guides/${item.slug}`"
                     :class="[
                         'block rounded-md px-3 py-2 text-sm font-medium transition',
                         item.slug === guide.slug

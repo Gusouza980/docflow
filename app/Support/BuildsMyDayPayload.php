@@ -123,7 +123,7 @@ class BuildsMyDayPayload
                 clientName: $receivable->client?->display_name,
                 dueAt: $receivable->due_at,
                 status: $receivable->status,
-                href: '/finance',
+                href: route('finance.index', absolute: false),
             ))
             ->all();
     }

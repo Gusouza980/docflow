@@ -37,7 +37,7 @@ class SubscriptionController extends Controller
         );
 
         return redirect()
-            ->route('platform.organizations.show', $organization)
+            ->route('admin.organizations.show', $organization)
             ->with('status', 'Plano da assinatura atualizado.');
     }
 
@@ -59,7 +59,7 @@ class SubscriptionController extends Controller
         );
 
         return redirect()
-            ->route('platform.organizations.show', $organization)
+            ->route('admin.organizations.show', $organization)
             ->with('status', "Trial estendido em {$days} dias.");
     }
 
@@ -80,7 +80,7 @@ class SubscriptionController extends Controller
         );
 
         return redirect()
-            ->route('platform.organizations.show', $organization)
+            ->route('admin.organizations.show', $organization)
             ->with('status', 'Assinatura cancelada e organização suspensa.');
     }
 
@@ -101,7 +101,7 @@ class SubscriptionController extends Controller
         );
 
         return redirect()
-            ->route('platform.organizations.show', $organization)
+            ->route('admin.organizations.show', $organization)
             ->with('status', 'Assinatura reativada.');
     }
 
@@ -122,7 +122,7 @@ class SubscriptionController extends Controller
         );
 
         return redirect()
-            ->route('platform.organizations.show', $organization)
+            ->route('admin.organizations.show', $organization)
             ->with('status', 'Assinatura pausada.');
     }
 
@@ -143,7 +143,7 @@ class SubscriptionController extends Controller
         );
 
         return redirect()
-            ->route('platform.organizations.show', $organization)
+            ->route('admin.organizations.show', $organization)
             ->with('status', 'Assinatura marcada como inadimplente.');
     }
 }

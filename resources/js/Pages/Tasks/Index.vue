@@ -65,7 +65,7 @@ const createForm = useForm({
 });
 
 function applyFilters() {
-    router.get('/tasks', filterForm.data(), { preserveState: true, preserveScroll: true });
+    router.get('/plataforma/tasks', filterForm.data(), { preserveState: true, preserveScroll: true });
 }
 
 function clearFilters() {
@@ -78,7 +78,7 @@ function clearFilters() {
 }
 
 function submitCreate() {
-    createForm.post('/tasks', {
+    createForm.post('/plataforma/tasks', {
         preserveScroll: true,
         onSuccess: () => createModalOpen.value = false,
     });

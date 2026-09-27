@@ -45,19 +45,19 @@ const messageForm = useForm({ client_id: '', message_template_id: '', channel: '
 const ticketForm = useForm({ client_id: '', assigned_to_member_id: '', title: '', description: '', priority: 'normal', visible_to_client: true, due_at: '' });
 
 function submitAccess() {
-    accessForm.post('/portal/accesses', { preserveScroll: true, onSuccess: () => accessModalOpen.value = false });
+    accessForm.post('/plataforma/portal/accesses', { preserveScroll: true, onSuccess: () => accessModalOpen.value = false });
 }
 
 function submitMessage() {
-    messageForm.post('/portal/messages', { preserveScroll: true, onSuccess: () => messageModalOpen.value = false });
+    messageForm.post('/plataforma/portal/messages', { preserveScroll: true, onSuccess: () => messageModalOpen.value = false });
 }
 
 function submitTicket() {
-    ticketForm.post('/portal/tickets', { preserveScroll: true, onSuccess: () => ticketModalOpen.value = false });
+    ticketForm.post('/plataforma/portal/tickets', { preserveScroll: true, onSuccess: () => ticketModalOpen.value = false });
 }
 
 function revokeAccess(access) {
-    useForm({}).patch(`/portal/accesses/${access.id}/revoke`, { preserveScroll: true });
+    useForm({}).patch(`/plataforma/portal/accesses/${access.id}/revoke`, { preserveScroll: true });
 }
 
 async function copyPortalUrl() {
@@ -73,7 +73,7 @@ async function copyPortalUrl() {
 }
 
 function approveProfileUpdate(update) {
-    useForm({}).patch(`/portal/profile-updates/${update.id}/approve`, { preserveScroll: true });
+    useForm({}).patch(`/plataforma/portal/profile-updates/${update.id}/approve`, { preserveScroll: true });
 }
 
 function openRejectProfileUpdate(update) {
@@ -83,7 +83,7 @@ function openRejectProfileUpdate(update) {
 }
 
 function submitRejectProfileUpdate() {
-    rejectForm.patch(`/portal/profile-updates/${selectedProfileUpdate.value.id}/reject`, {
+    rejectForm.patch(`/plataforma/portal/profile-updates/${selectedProfileUpdate.value.id}/reject`, {
         preserveScroll: true,
         onSuccess: () => {
             rejectModalOpen.value = false;
@@ -125,9 +125,9 @@ function formatChanges(changes) {
             </div>
 
             <div v-if="can.manage" class="flex flex-wrap gap-2">
-                <Link href="/messages/batch"><Button variant="secondary" size="sm">Envio em lote</Button></Link>
-                <Link href="/message-templates"><Button variant="secondary" size="sm">Modelos de mensagem</Button></Link>
-                <Link href="/announcements"><Button variant="secondary" size="sm">Comunicados</Button></Link>
+                <Link href="/plataforma/messages/batch"><Button variant="secondary" size="sm">Envio em lote</Button></Link>
+                <Link href="/plataforma/message-templates"><Button variant="secondary" size="sm">Modelos de mensagem</Button></Link>
+                <Link href="/plataforma/announcements"><Button variant="secondary" size="sm">Comunicados</Button></Link>
             </div>
 
             <div v-if="can.manage" class="flex flex-wrap justify-end gap-2">

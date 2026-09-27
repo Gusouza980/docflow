@@ -21,6 +21,10 @@ class RecordAuditLog
         array $metadata = [],
         ?Request $request = null,
     ): AuditLog {
+        if ($request !== null && $request->hasSession() && $request->session()->has('impersonator_id')) {
+            $metadata['impersonator_id'] = (int) $request->session()->get('impersonator_id');
+        }
+
         return AuditLog::create([
             'organization_id' => $organization?->id,
             'user_id' => $user?->id,

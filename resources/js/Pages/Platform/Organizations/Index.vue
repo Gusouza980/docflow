@@ -50,7 +50,7 @@ function closeCreateModal() {
 }
 
 function provisionTenant() {
-    createForm.post('/platform/organizations', {
+    createForm.post('/admin/organizations', {
         preserveScroll: true,
         onSuccess: () => {
             createModalOpen.value = false;
@@ -69,7 +69,7 @@ const columns = [
 ];
 
 function applyFilters() {
-    router.get('/platform/organizations', filterForm.data(), { preserveState: true, preserveScroll: true });
+    router.get('/admin/organizations', filterForm.data(), { preserveState: true, preserveScroll: true });
 }
 </script>
 
@@ -100,7 +100,7 @@ function applyFilters() {
                 </template>
                 <template #cell-status="{ row }"><StatusPill :status="row.status" /></template>
                 <template #cell-actions="{ row }">
-                    <Link :href="`/platform/organizations/${row.id}`" class="text-sm font-semibold text-violet-700 hover:text-violet-900">Detalhes</Link>
+                    <Link :href="`/admin/organizations/${row.id}`" class="text-sm font-semibold text-violet-700 hover:text-violet-900">Detalhes</Link>
                 </template>
             </DataTable>
 
@@ -109,13 +109,13 @@ function applyFilters() {
                 <div class="flex gap-2">
                     <Link
                         v-if="organizations.meta.current_page > 1"
-                        :href="`/platform/organizations?page=${organizations.meta.current_page - 1}`"
+                        :href="`/admin/organizations?page=${organizations.meta.current_page - 1}`"
                         preserve-state
                         class="rounded-lg border border-slate-300 px-3 py-1.5 hover:bg-slate-50"
                     >Anterior</Link>
                     <Link
                         v-if="organizations.meta.current_page < organizations.meta.last_page"
-                        :href="`/platform/organizations?page=${organizations.meta.current_page + 1}`"
+                        :href="`/admin/organizations?page=${organizations.meta.current_page + 1}`"
                         preserve-state
                         class="rounded-lg border border-slate-300 px-3 py-1.5 hover:bg-slate-50"
                     >Próxima</Link>

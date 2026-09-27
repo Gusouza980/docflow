@@ -39,7 +39,7 @@ const createForm = useForm({
 const selectedPreset = computed(() => props.presets.find((item) => item.value === createForm.preset_key));
 
 function submitCreate() {
-    createForm.post('/automations', {
+    createForm.post('/plataforma/automations', {
         preserveScroll: true,
         onSuccess: () => {
             createModalOpen.value = false;

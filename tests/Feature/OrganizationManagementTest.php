@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Models\AuditLog;
 use App\Models\Organization;
 use App\Models\OrganizationInvitation;
 use App\Models\OrganizationMember;
@@ -15,35 +14,45 @@ class OrganizationManagementTest extends TestCase
 {
     use LazilyRefreshDatabase;
 
-    public function test_user_can_create_organization_and_becomes_admin(): void
+    public function test_user_cannot_create_organization_via_api(): void
     {
         $user = User::factory()->create();
         Sanctum::actingAs($user);
 
-        $response = $this->postJson('/api/v1/organizations', [
+        $this->postJson('/api/v1/organizations', [
             'name' => 'Docflow Office',
             'document' => '12345678901234',
             'email' => 'office@example.com',
+        ])->assertMethodNotAllowed();
+
+        $this->assertDatabaseMissing('organizations', [
+            'email' => 'office@example.com',
+        ]);
+    }
+
+    public function test_platform_admin_cannot_login_via_tenant_api(): void
+    {
+        User::factory()->create([
+            'email' => 'platform@docflow.test',
+            'password' => 'password',
+            'is_platform_admin' => true,
         ]);
 
-        $response
-            ->assertCreated()
-            ->assertJsonPath('data.name', 'Docflow Office');
+        $this->postJson('/api/v1/auth/login', [
+            'email' => 'platform@docflow.test',
+            'password' => 'password',
+            'device_name' => 'Mobile',
+        ])->assertUnprocessable();
+    }
 
-        $organization = Organization::firstOrFail();
+    public function test_platform_admin_cannot_use_tenant_api_even_with_token(): void
+    {
+        $admin = User::factory()->create(['is_platform_admin' => true]);
+        Sanctum::actingAs($admin);
 
-        $this->assertDatabaseHas('organization_members', [
-            'organization_id' => $organization->id,
-            'user_id' => $user->id,
-            'role' => OrganizationMember::ROLE_ADMIN,
-            'status' => OrganizationMember::STATUS_ACTIVE,
-        ]);
-
-        $this->assertDatabaseHas('audit_logs', [
-            'organization_id' => $organization->id,
-            'user_id' => $user->id,
-            'action' => 'organization.created',
-        ]);
+        $this->getJson('/api/v1/organizations')
+            ->assertForbidden()
+            ->assertJsonPath('message', 'Platform administrators cannot use the tenant API.');
     }
 
     public function test_user_only_lists_organizations_where_membership_is_active(): void

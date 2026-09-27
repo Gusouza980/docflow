@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Api\V1;
 
 use App\Enums\ClientPriority;
+use App\Models\Client;
 use App\Models\OrganizationMember;
 use App\Support\OrganizationContext;
 use Illuminate\Foundation\Http\FormRequest;

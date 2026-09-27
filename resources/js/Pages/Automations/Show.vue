@@ -23,11 +23,11 @@ const columns = [
 ];
 
 function pause() {
-    actionForm.post(`/automations/${props.rule.id}/pause`, { preserveScroll: true });
+    actionForm.post(`/plataforma/automations/${props.rule.id}/pause`, { preserveScroll: true });
 }
 
 function resume() {
-    actionForm.post(`/automations/${props.rule.id}/resume`, { preserveScroll: true });
+    actionForm.post(`/plataforma/automations/${props.rule.id}/resume`, { preserveScroll: true });
 }
 </script>
 
@@ -36,7 +36,7 @@ function resume() {
     <AppLayout
         :title="rule.name"
         active-nav="automations"
-        :breadcrumbs="[{ label: 'Automações', href: '/automations' }, { label: rule.name }]"
+        :breadcrumbs="[{ label: 'Automações', href: '/plataforma/automations' }, { label: rule.name }]"
     >
         <div class="grid gap-4">
             <Alert v-if="page.props.flash?.status" tone="success">{{ page.props.flash.status }}</Alert>

@@ -45,7 +45,7 @@ function addItem() {
 }
 
 function submitCreate() {
-    createForm.post('/onboarding-templates', {
+    createForm.post('/plataforma/onboarding-templates', {
         preserveScroll: true,
         onSuccess: () => {
             createOpen.value = false;
@@ -62,7 +62,7 @@ function openStart(template) {
 }
 
 function submitStart() {
-    startForm.post(`/onboarding-templates/${selectedTemplate.value.id}/start`, {
+    startForm.post(`/plataforma/onboarding-templates/${selectedTemplate.value.id}/start`, {
         preserveScroll: true,
         onSuccess: () => {
             startOpen.value = false;

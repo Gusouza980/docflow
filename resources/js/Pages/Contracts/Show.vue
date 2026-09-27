@@ -33,7 +33,7 @@ const money = (cents) => {
 };
 
 function renew() {
-    renewForm.post(`/contracts/${props.contract.id}/renew`, { preserveScroll: true });
+    renewForm.post(`/plataforma/contracts/${props.contract.id}/renew`, { preserveScroll: true });
 }
 
 function cancel() {
@@ -41,7 +41,7 @@ function cancel() {
         return;
     }
 
-    cancelForm.post(`/contracts/${props.contract.id}/cancel`, { preserveScroll: true });
+    cancelForm.post(`/plataforma/contracts/${props.contract.id}/cancel`, { preserveScroll: true });
 }
 </script>
 
@@ -50,7 +50,7 @@ function cancel() {
     <AppLayout
         :title="`Contrato ${contract.code}`"
         active-nav="contracts"
-        :breadcrumbs="[{ label: 'Contratos', href: '/contracts' }, { label: contract.code }]"
+        :breadcrumbs="[{ label: 'Contratos', href: '/plataforma/contracts' }, { label: contract.code }]"
     >
         <div class="grid gap-4">
             <Alert v-if="page.props.flash?.status" tone="success">{{ page.props.flash.status }}</Alert>
