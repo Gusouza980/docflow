@@ -2,7 +2,7 @@
 import { Link } from '@inertiajs/vue3';
 
 defineProps({
-    items: { type: Array, default: () => [] },
+    groups: { type: Array, default: () => [] },
     active: { type: String, default: null },
     collapsed: { type: Boolean, default: false },
 });
@@ -12,21 +12,24 @@ defineProps({
     <nav class="flex h-full flex-col border-r border-slate-200 bg-white p-3" aria-label="Navegação principal">
         <div class="mb-5 px-3 py-2 font-bold text-slate-950">{{ collapsed ? 'D' : 'Docflow' }}</div>
 
-        <div class="flex-1">
-            <Link
-                v-for="item in items"
-                :key="item.key"
-                :href="item.href ?? '#'"
-                prefetch
-                :aria-current="active === item.key ? 'page' : undefined"
-                :class="[
-                    'mb-1 flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-blue-300',
-                    active === item.key ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900',
-                ]"
-            >
-                <span class="inline-flex h-5 w-5 items-center justify-center" aria-hidden="true">{{ item.icon ?? '·' }}</span>
-                <span v-if="!collapsed">{{ item.label }}</span>
-            </Link>
+        <div class="flex-1 overflow-y-auto">
+            <div v-for="group in groups" :key="group.key" class="mb-4">
+                <p v-if="!collapsed && group.label" class="px-3 pb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">{{ group.label }}</p>
+                <Link
+                    v-for="item in group.items"
+                    :key="item.key"
+                    :href="item.href ?? '#'"
+                    prefetch
+                    :aria-current="active === item.key ? 'page' : undefined"
+                    :class="[
+                        'mb-1 flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-blue-300',
+                        active === item.key ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900',
+                    ]"
+                >
+                    <span class="inline-flex h-5 w-5 items-center justify-center" aria-hidden="true">{{ item.icon ?? '·' }}</span>
+                    <span v-if="!collapsed">{{ item.label }}</span>
+                </Link>
+            </div>
         </div>
 
         <div class="mt-auto border-t border-slate-200 pt-3">

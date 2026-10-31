@@ -36,6 +36,10 @@ class DeliverOutboundClientMessage
         ?MessageBatch $batch = null,
         array $variables = [],
         bool $deliverNow = true,
+        ?int $ticketId = null,
+        ?int $taskId = null,
+        ?int $documentId = null,
+        ?int $receivableId = null,
     ): ClientMessage {
         $rawSubject = $subject ?? $template?->subject;
         $renderedSubject = filled($rawSubject) ? $this->renderText((string) $rawSubject, $variables) : null;
@@ -59,6 +63,10 @@ class DeliverOutboundClientMessage
             'client_id' => $client->id,
             'message_template_id' => $template?->id,
             'batch_id' => $batch?->id,
+            'ticket_id' => $ticketId,
+            'task_id' => $taskId,
+            'document_id' => $documentId,
+            'receivable_id' => $receivableId,
             'sent_by_user_id' => $sentBy?->id,
             'channel' => $channel,
             'direction' => ClientMessage::DIRECTION_OUTBOUND,

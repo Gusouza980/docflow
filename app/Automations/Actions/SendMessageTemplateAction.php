@@ -5,6 +5,7 @@ namespace App\Automations\Actions;
 use App\Actions\Communication\DeliverOutboundClientMessage;
 use App\Models\AutomationRule;
 use App\Models\Client;
+use App\Models\ClientMessage;
 use App\Models\MessageTemplate;
 use App\Models\Receivable;
 use App\Support\Communication\ClientMessageDestination;
@@ -49,6 +50,15 @@ class SendMessageTemplateAction
         }
 
         $receivable = $subject instanceof Receivable ? $subject : null;
+
+        if ($receivable !== null && $this->reminderAlreadySentToday($receivable, $template)) {
+            return [
+                'skipped' => true,
+                'reason' => 'Lembrete deste modelo já saiu hoje.',
+                'client_id' => $client->id,
+            ];
+        }
+
         $reason = $this->destination->skipReason($client, $template->channel, $template->purpose);
 
         if ($reason !== null) {
@@ -66,6 +76,7 @@ class SendMessageTemplateAction
             subject: $template->subject,
             template: $template,
             variables: $this->destination->variablesFor($client, $receivable),
+            receivableId: $receivable?->id,
         );
 
         return [
@@ -79,6 +90,19 @@ class SendMessageTemplateAction
     /**
      * @param  array<string, mixed>  $context
      */
+    private function reminderAlreadySentToday(Receivable $receivable, MessageTemplate $template): bool
+    {
+        if ($receivable->last_portal_reminder_at?->isToday()) {
+            return true;
+        }
+
+        return ClientMessage::query()
+            ->where('receivable_id', $receivable->id)
+            ->where('message_template_id', $template->id)
+            ->whereDate('created_at', now()->toDateString())
+            ->exists();
+    }
+
     private function resolveClient(Model $subject, array $context): ?Client
     {
         if ($subject instanceof Client) {

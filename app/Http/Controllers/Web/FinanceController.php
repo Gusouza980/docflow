@@ -6,6 +6,7 @@ use App\Actions\Finance\CreateReceivableAsaasCharge;
 use App\Actions\Finance\GenerateReceivableRecurrences;
 use App\Actions\Finance\NotifyOverdueReceivableToClient;
 use App\Actions\Finance\RenegotiateReceivable;
+use App\Actions\Finance\RestoreClientStanding;
 use App\Actions\Organizations\RecordAuditLog;
 use App\Exceptions\AsaasApiException;
 use App\Http\Controllers\Controller;
@@ -21,10 +22,13 @@ use App\Models\Client;
 use App\Models\FinancialCategory;
 use App\Models\OrganizationMember;
 use App\Models\Payable;
+use App\Models\Plan;
 use App\Models\Receivable;
 use App\Models\ReceivableCharge;
 use App\Models\ReceivableRecurrence;
 use App\Models\ReceivableReminder;
+use App\Models\Ticket;
+use App\Support\Billing\PlanLimitChecker;
 use App\Support\WebOrganizationContext;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -102,6 +106,7 @@ class FinanceController extends Controller
             'filters' => [
                 'status' => $request->string('status')->toString(),
                 'client_id' => $request->string('client_id')->toString(),
+                'receivable' => $request->string('receivable')->toString(),
             ],
             'options' => $this->options($membership),
             'payment_gateway' => $this->paymentGatewaySummary($membership),
@@ -134,7 +139,7 @@ class FinanceController extends Controller
         return redirect()->route('finance.index')->with('status', 'Conta a receber criada.');
     }
 
-    public function payReceivable(StoreReceivablePaymentRequest $request, Receivable $receivable, WebOrganizationContext $webOrganizationContext, RecordAuditLog $auditLog): RedirectResponse
+    public function payReceivable(StoreReceivablePaymentRequest $request, Receivable $receivable, WebOrganizationContext $webOrganizationContext, RecordAuditLog $auditLog, RestoreClientStanding $restoreClientStanding): RedirectResponse
     {
         $membership = $this->financeMembership($request, $webOrganizationContext);
         abort_if($receivable->organization_id !== $membership->organization_id, HttpResponse::HTTP_NOT_FOUND);
@@ -159,11 +164,12 @@ class FinanceController extends Controller
         });
 
         $auditLog->execute('web.finance.receivable.paid', $request->user(), $receivable->organization, $receivable, request: $request);
+        $restoreClientStanding->execute($receivable->client);
 
         return redirect()->route('finance.index')->with('status', 'Pagamento registrado.');
     }
 
-    public function cancelReceivable(Request $request, Receivable $receivable, WebOrganizationContext $webOrganizationContext, RecordAuditLog $auditLog): RedirectResponse
+    public function cancelReceivable(Request $request, Receivable $receivable, WebOrganizationContext $webOrganizationContext, RecordAuditLog $auditLog, RestoreClientStanding $restoreClientStanding): RedirectResponse
     {
         $membership = $this->financeMembership($request, $webOrganizationContext);
         abort_if($receivable->organization_id !== $membership->organization_id, HttpResponse::HTTP_NOT_FOUND);
@@ -177,6 +183,7 @@ class FinanceController extends Controller
         ]);
 
         $auditLog->execute('web.finance.receivable.cancelled', $request->user(), $receivable->organization, $receivable, request: $request);
+        $restoreClientStanding->execute($receivable->client);
 
         return redirect()->route('finance.index')->with('status', 'Cobrança cancelada.');
     }
@@ -187,6 +194,7 @@ class FinanceController extends Controller
         RecordAuditLog $auditLog,
     ): RedirectResponse {
         $membership = $this->financeMembership($request, $webOrganizationContext);
+        $this->assertFinanceAdvanced($membership);
         $data = $request->validated();
         $startDate = Carbon::parse($data['start_date']);
 
@@ -210,6 +218,7 @@ class FinanceController extends Controller
         RecordAuditLog $auditLog,
     ): RedirectResponse {
         $membership = $this->financeMembership($request, $webOrganizationContext);
+        $this->assertFinanceAdvanced($membership);
         abort_if($recurrence->organization_id !== $membership->organization_id, HttpResponse::HTTP_NOT_FOUND);
 
         $generated = $generateReceivableRecurrences->execute($recurrence);
@@ -238,6 +247,7 @@ class FinanceController extends Controller
         RecordAuditLog $auditLog,
     ): RedirectResponse {
         $membership = $this->financeMembership($request, $webOrganizationContext);
+        $this->assertFinanceAdvanced($membership);
         abort_if($receivable->organization_id !== $membership->organization_id, HttpResponse::HTTP_NOT_FOUND);
 
         $data = $request->validated();
@@ -263,6 +273,7 @@ class FinanceController extends Controller
         RecordAuditLog $auditLog,
     ): RedirectResponse {
         $membership = $this->financeMembership($request, $webOrganizationContext);
+        $this->assertFinanceAdvanced($membership);
         abort_if($receivable->organization_id !== $membership->organization_id, HttpResponse::HTTP_NOT_FOUND);
 
         $billingType = strtoupper((string) $request->input('billing_type', ReceivableCharge::TYPE_PIX));
@@ -281,6 +292,45 @@ class FinanceController extends Controller
         return redirect()->route('finance.index')->with('status', $charge->billing_type === ReceivableCharge::TYPE_BOLETO
             ? 'Boleto gerado. O cliente já pode pagar no portal.'
             : 'Pix gerado. O cliente já pode pagar no portal.');
+    }
+
+    public function openReceivableTicket(
+        Request $request,
+        Receivable $receivable,
+        WebOrganizationContext $webOrganizationContext,
+        RecordAuditLog $auditLog,
+    ): RedirectResponse {
+        $membership = $this->financeMembership($request, $webOrganizationContext);
+        abort_if($receivable->organization_id !== $membership->organization_id, HttpResponse::HTTP_NOT_FOUND);
+        abort_if($receivable->client_id === null, HttpResponse::HTTP_UNPROCESSABLE_ENTITY);
+
+        $ticket = Ticket::query()
+            ->where('organization_id', $membership->organization_id)
+            ->where('receivable_id', $receivable->id)
+            ->whereNotIn('status', [Ticket::STATUS_RESOLVED, Ticket::STATUS_CLOSED])
+            ->first();
+
+        if ($ticket === null) {
+            $ticket = Ticket::query()->create([
+                'organization_id' => $membership->organization_id,
+                'client_id' => $receivable->client_id,
+                'receivable_id' => $receivable->id,
+                'opened_by_user_id' => $request->user()->id,
+                'title' => 'Cobrança: '.$receivable->description,
+                'description' => 'Chamado aberto a partir da cobrança.',
+                'visible_to_client' => false,
+            ]);
+
+            $auditLog->execute('web.finance.receivable.ticket_opened', $request->user(), $membership->organization, $ticket, [
+                'receivable_id' => $receivable->id,
+            ], $request);
+        }
+
+        return redirect()->route('clients.show', [
+            'client' => $receivable->client_id,
+            'tab' => 'tickets',
+            'ticket' => $ticket->id,
+        ]);
     }
 
     public function storeReceivableReminder(
@@ -363,6 +413,7 @@ class FinanceController extends Controller
         return Receivable::query()
             ->whereBelongsTo($membership->organization)
             ->when($request->integer('client_id'), fn (Builder $query, int $clientId) => $query->where('client_id', $clientId))
+            ->when($request->integer('receivable'), fn (Builder $query, int $receivableId) => $query->whereKey($receivableId))
             ->when($request->string('status')->toString(), fn (Builder $query, string $status) => $query->where('status', $status));
     }
 
@@ -472,5 +523,14 @@ class FinanceController extends Controller
     private function canAccessFinance(OrganizationMember $membership): bool
     {
         return in_array($membership->role, [OrganizationMember::ROLE_ADMIN, OrganizationMember::ROLE_MANAGER, OrganizationMember::ROLE_FINANCE], true);
+    }
+
+    private function assertFinanceAdvanced(OrganizationMember $membership): void
+    {
+        if (! Plan::query()->exists()) {
+            return;
+        }
+
+        app(PlanLimitChecker::class)->assertFeature($membership->organization, 'finance_advanced');
     }
 }

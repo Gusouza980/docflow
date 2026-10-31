@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Models\Client;
+use App\Models\Deadline;
 use App\Models\DocumentRequestItem;
 use App\Models\OrganizationMember;
 use App\Models\Receivable;
@@ -27,6 +28,7 @@ class BuildsMyDayPayload
         $documents = $this->documents($membership);
         $receivables = $canAccessFinance ? $this->receivables($membership) : [];
         $tickets = $this->tickets($membership);
+        $deadlines = $this->deadlines($membership);
 
         return [
             'sections' => [
@@ -34,13 +36,15 @@ class BuildsMyDayPayload
                 ['key' => 'documents', 'label' => 'Documentos', 'items' => $documents],
                 ['key' => 'receivables', 'label' => 'Cobranças', 'items' => $receivables],
                 ['key' => 'tickets', 'label' => 'Chamados', 'items' => $tickets],
+                ['key' => 'deadlines', 'label' => 'Prazos', 'items' => $deadlines],
             ],
             'counts' => [
                 'tasks' => count($tasks),
                 'documents' => count($documents),
                 'receivables' => count($receivables),
                 'tickets' => count($tickets),
-                'total' => count($tasks) + count($documents) + count($receivables) + count($tickets),
+                'deadlines' => count($deadlines),
+                'total' => count($tasks) + count($documents) + count($receivables) + count($tickets) + count($deadlines),
             ],
             'can_access_finance' => $canAccessFinance,
         ];
@@ -123,7 +127,34 @@ class BuildsMyDayPayload
                 clientName: $receivable->client?->display_name,
                 dueAt: $receivable->due_at,
                 status: $receivable->status,
-                href: route('finance.index', absolute: false),
+                href: route('finance.index', ['receivable' => $receivable->id], absolute: false),
+            ))
+            ->all();
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function deadlines(OrganizationMember $membership): array
+    {
+        return Deadline::query()
+            ->with('client')
+            ->where('organization_id', $membership->organization_id)
+            ->where('assigned_to_member_id', $membership->id)
+            ->whereNotIn('status', [Deadline::STATUS_COMPLETED, Deadline::STATUS_CANCELLED])
+            ->where(fn (Builder $query) => $this->visibleClients($query, $membership, 'client_id', allowMissingClient: true))
+            ->orderByRaw('case when due_at is not null and due_at < ? then 0 else 1 end', [now()->toDateString()])
+            ->orderBy('due_at')
+            ->limit(20)
+            ->get()
+            ->map(fn (Deadline $deadline): array => $this->item(
+                id: 'deadline-'.$deadline->id,
+                type: 'deadline',
+                title: $deadline->title,
+                clientName: $deadline->client?->display_name,
+                dueAt: $deadline->due_at,
+                status: $deadline->status,
+                href: route('deadlines.index', ['client_id' => $deadline->client_id], absolute: false),
             ))
             ->all();
     }

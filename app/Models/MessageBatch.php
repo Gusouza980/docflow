@@ -25,6 +25,7 @@ class MessageBatch extends Model
         'message_template_id',
         'channel',
         'filter',
+        'fingerprint',
         'skipped_count',
     ];
 

@@ -60,8 +60,8 @@ function submitProposal() {
     });
 }
 
-function updateProposalStatus(proposalId, status) {
-    useForm({ status }).patch(`/plataforma/leads/${props.lead.id}/proposals/${proposalId}/status`, { preserveScroll: true });
+function updateProposalStatus(proposalId, status, createContract = false) {
+    useForm({ status, create_contract: createContract }).patch(`/plataforma/leads/${props.lead.id}/proposals/${proposalId}/status`, { preserveScroll: true });
 }
 
 function convertLead() {
@@ -154,9 +154,10 @@ const money = formatBrlCurrency;
                                 <Badge tone="secondary">{{ proposal.status_label }}</Badge>
                             </div>
                             <p class="mt-1 text-xs text-slate-500">{{ money(proposal.amount_cents) }}</p>
-                            <div v-if="can.manage" class="mt-2 flex flex-wrap gap-2">
+                            <div v-if="can.manage" class="mt-2 flex flex-wrap items-center gap-2">
                                 <Button size="sm" variant="secondary" @click="updateProposalStatus(proposal.id, 'sent')">Enviada</Button>
                                 <Button size="sm" variant="secondary" @click="updateProposalStatus(proposal.id, 'accepted')">Aceita</Button>
+                                <Button v-if="lead.client && proposal.status !== 'accepted'" size="sm" variant="secondary" @click="updateProposalStatus(proposal.id, 'accepted', true)">Aceitar e criar contrato</Button>
                                 <Button size="sm" variant="secondary" @click="updateProposalStatus(proposal.id, 'rejected')">Recusada</Button>
                             </div>
                         </li>

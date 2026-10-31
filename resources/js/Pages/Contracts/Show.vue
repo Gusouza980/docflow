@@ -36,6 +36,10 @@ function renew() {
     renewForm.post(`/plataforma/contracts/${props.contract.id}/renew`, { preserveScroll: true });
 }
 
+function activate() {
+    useForm({}).post(`/plataforma/contracts/${props.contract.id}/activate`, { preserveScroll: true });
+}
+
 function cancel() {
     if (!window.confirm('Cancelar este contrato?')) {
         return;
@@ -106,6 +110,11 @@ function cancel() {
 
             <Card v-if="can.manage && contract.status !== 'canceled'" title="Ações">
                 <div class="grid gap-4 lg:grid-cols-2">
+                    <form v-if="contract.status === 'draft'" class="grid gap-3" @submit.prevent="activate">
+                        <p class="text-sm font-semibold text-slate-900">Ativar</p>
+                        <p class="text-sm text-slate-500">Contratos mensais ou anuais com a opção de cobrança passam a gerar a recorrência ao serem ativados.</p>
+                        <Button type="submit" size="sm">Ativar contrato</Button>
+                    </form>
                     <form class="grid gap-3" @submit.prevent="renew">
                         <p class="text-sm font-semibold text-slate-900">Renovar</p>
                         <TextInput id="renew-ends-at" v-model="renewForm.ends_at" type="date" label="Nova data de término (opcional)" :error="renewForm.errors.ends_at" />

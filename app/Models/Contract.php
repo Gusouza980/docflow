@@ -39,6 +39,7 @@ class Contract extends Model
         'starts_at',
         'ends_at',
         'auto_renew',
+        'creates_receivable_recurrence',
         'scope_included',
         'scope_excluded',
         'canceled_at',
@@ -58,6 +59,7 @@ class Contract extends Model
             'starts_at' => 'date',
             'ends_at' => 'date',
             'auto_renew' => 'boolean',
+            'creates_receivable_recurrence' => 'boolean',
             'canceled_at' => 'datetime',
         ];
     }

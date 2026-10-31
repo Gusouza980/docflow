@@ -20,6 +20,7 @@ class UpdateProposalStatusRequest extends FormRequest
     {
         return [
             'status' => ['required', 'string', Rule::in(array_keys(Proposal::statusLabels()))],
+            'create_contract' => ['sometimes', 'boolean'],
         ];
     }
 }

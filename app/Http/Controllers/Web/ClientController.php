@@ -17,6 +17,7 @@ use App\Models\ClientService;
 use App\Models\ClientTag;
 use App\Models\CommunicationConsent;
 use App\Models\Contract;
+use App\Models\Deadline;
 use App\Models\Document;
 use App\Models\DocumentRequest;
 use App\Models\Lead;
@@ -25,7 +26,9 @@ use App\Models\MessageTemplate;
 use App\Models\OrganizationMember;
 use App\Models\Plan;
 use App\Models\Proposal;
+use App\Models\Receivable;
 use App\Models\ServiceType;
+use App\Models\Task;
 use App\Models\Ticket;
 use App\Support\Billing\PlanLimitChecker;
 use App\Support\BuildsClientPortalDashboard;
@@ -304,6 +307,42 @@ class ClientController extends Controller
                             && $contract->ends_at->gte(now()->startOfDay())
                             && $contract->ends_at->lte(now()->addDays(30)->endOfDay()),
                     ]),
+                'tasks' => $client->tasks()
+                    ->latest('id')
+                    ->limit(20)
+                    ->get()
+                    ->map(fn (Task $task): array => [
+                        'id' => $task->id,
+                        'title' => $task->title,
+                        'status' => $task->status,
+                        'due_at' => DisplayFormat::date($task->due_at),
+                        'href' => route('tasks.show', $task, absolute: false),
+                    ]),
+                'deadlines' => $client->deadlines()
+                    ->latest('id')
+                    ->limit(20)
+                    ->get()
+                    ->map(fn (Deadline $deadline): array => [
+                        'id' => $deadline->id,
+                        'title' => $deadline->title,
+                        'status' => $deadline->status,
+                        'due_at' => DisplayFormat::date($deadline->due_at),
+                        'href' => route('deadlines.index', ['client_id' => $client->id], absolute: false),
+                    ]),
+                'receivables' => $this->memberCanAccessFinance($membership)
+                    ? $client->receivables()
+                        ->latest('id')
+                        ->limit(20)
+                        ->get()
+                        ->map(fn (Receivable $receivable): array => [
+                            'id' => $receivable->id,
+                            'description' => $receivable->description,
+                            'status' => $receivable->status,
+                            'amount_cents' => $receivable->amount_cents,
+                            'due_at' => DisplayFormat::date($receivable->due_at),
+                            'href' => route('finance.index', ['receivable' => $receivable->id], absolute: false),
+                        ])
+                    : [],
             ],
             'options' => [
                 ...$this->options($membership),
@@ -342,6 +381,7 @@ class ClientController extends Controller
             ],
             'can' => [
                 'update' => $request->user()->can('update', $client),
+                'finance' => $this->memberCanAccessFinance($membership),
             ],
         ]);
     }
@@ -397,6 +437,15 @@ class ClientController extends Controller
                 ->whereDate('due_at', '<', now()->toDateString())
                 ->whereNotIn('status', [Ticket::STATUS_RESOLVED, Ticket::STATUS_CLOSED]))
             ->when($filter === 'closed', fn ($query) => $query->whereIn('status', [Ticket::STATUS_RESOLVED, Ticket::STATUS_CLOSED]));
+    }
+
+    private function memberCanAccessFinance(OrganizationMember $membership): bool
+    {
+        return in_array($membership->role, [
+            OrganizationMember::ROLE_ADMIN,
+            OrganizationMember::ROLE_MANAGER,
+            OrganizationMember::ROLE_FINANCE,
+        ], true);
     }
 
     private function clientQuery(Request $request, OrganizationMember $membership): Builder

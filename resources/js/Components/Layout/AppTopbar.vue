@@ -1,9 +1,22 @@
 <script setup>
-import { Link } from '@inertiajs/vue3';
+import { ref } from 'vue';
+import { Link, router } from '@inertiajs/vue3';
 import Avatar from '../UI/Avatar.vue';
 import NotificationBell from './NotificationBell.vue';
 import SearchInput from '../Forms/SearchInput.vue';
 import Breadcrumbs from '../Navigation/Breadcrumbs.vue';
+
+const query = ref('');
+
+function search() {
+    const term = query.value.trim();
+
+    if (term === '') {
+        return;
+    }
+
+    router.get('/plataforma/search', { q: term });
+}
 
 defineProps({
     title: { type: String, required: true },
@@ -20,7 +33,9 @@ defineProps({
             <h1 class="mt-1 truncate text-lg font-semibold text-slate-950">{{ title }}</h1>
         </div>
         <div class="flex flex-wrap items-center gap-3">
-            <SearchInput class="w-full sm:w-64" placeholder="Buscar no sistema" label="Busca global" />
+            <form class="w-full sm:w-64" @submit.prevent="search">
+                <SearchInput v-model="query" placeholder="Buscar clientes e tarefas" label="Busca global" />
+            </form>
             <Link href="/plataforma/organizations" class="inline-flex h-10 items-center rounded-lg border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50">
                 {{ organization }}
             </Link>

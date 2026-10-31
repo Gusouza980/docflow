@@ -32,7 +32,7 @@ class WebAuthenticationTest extends TestCase
         $this->post('/plataforma/login', [
             'email' => 'web-user@example.com',
             'password' => 'password',
-        ])->assertRedirect('/plataforma/dashboard');
+        ])->assertRedirect('/plataforma/my-day');
 
         $this->assertAuthenticatedAs($user);
     }
@@ -60,7 +60,7 @@ class WebAuthenticationTest extends TestCase
 
         $response->assertRedirect();
         $this->assertSame('https', parse_url((string) $response->headers->get('Location'), PHP_URL_SCHEME));
-        $this->assertSame('/plataforma/dashboard', parse_url((string) $response->headers->get('Location'), PHP_URL_PATH));
+        $this->assertSame('/plataforma/my-day', parse_url((string) $response->headers->get('Location'), PHP_URL_PATH));
     }
 
     public function test_platform_admin_cannot_use_tenant_login(): void

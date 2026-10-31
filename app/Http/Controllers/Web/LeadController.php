@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Web;
 
+use App\Actions\Contracts\CreateContract;
 use App\Actions\Crm\ConvertLeadToClient;
 use App\Actions\Crm\UpdateLeadStage;
 use App\Http\Controllers\Controller;
@@ -11,6 +12,7 @@ use App\Http\Requests\Web\StoreLeadRequest;
 use App\Http\Requests\Web\StoreProposalRequest;
 use App\Http\Requests\Web\UpdateLeadStageRequest;
 use App\Http\Requests\Web\UpdateProposalStatusRequest;
+use App\Models\Contract;
 use App\Models\Lead;
 use App\Models\LeadActivity;
 use App\Models\OrganizationMember;
@@ -23,6 +25,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
+use InvalidArgumentException;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 class LeadController extends Controller
@@ -209,7 +212,7 @@ class LeadController extends Controller
 
         try {
             $updateLeadStage->execute($lead, $data['stage'], $data['lost_reason'] ?? null);
-        } catch (\InvalidArgumentException $exception) {
+        } catch (InvalidArgumentException $exception) {
             return back()->with('error', $exception->getMessage());
         }
 
@@ -273,6 +276,7 @@ class LeadController extends Controller
         Proposal $proposal,
         WebOrganizationContext $webOrganizationContext,
         PlanLimitChecker $planLimitChecker,
+        CreateContract $createContract,
     ): RedirectResponse {
         $membership = $webOrganizationContext->membership($request);
         abort_unless($membership, HttpResponse::HTTP_NOT_FOUND);
@@ -290,6 +294,28 @@ class LeadController extends Controller
                 ? now()
                 : null,
         ]);
+
+        if ($status === Proposal::STATUS_ACCEPTED && $request->boolean('create_contract') && $proposal->contract_id === null) {
+            if ($lead->client_id === null) {
+                return back()->with('error', 'Converta o lead em cliente antes de criar o contrato.');
+            }
+
+            try {
+                $contract = $createContract->execute($lead->client, [
+                    'code' => 'PROP-'.$proposal->id,
+                    'status' => Contract::STATUS_DRAFT,
+                    'amount_cents' => $proposal->amount_cents,
+                    'billing_interval' => Contract::BILLING_MONTH,
+                    'starts_at' => now()->toDateString(),
+                    'create_receivable_recurrence' => (int) $proposal->amount_cents > 0,
+                    'created_by_user_id' => $request->user()->id,
+                ]);
+            } catch (InvalidArgumentException $exception) {
+                return back()->with('error', $exception->getMessage());
+            }
+
+            $proposal->update(['contract_id' => $contract->id]);
+        }
 
         return back()->with('status', 'Status da proposta atualizado.');
     }
@@ -319,7 +345,7 @@ class LeadController extends Controller
                 actor: $membership,
                 startOnboarding: $startOnboarding,
             );
-        } catch (\InvalidArgumentException $exception) {
+        } catch (InvalidArgumentException $exception) {
             return back()->with('error', $exception->getMessage());
         }
 

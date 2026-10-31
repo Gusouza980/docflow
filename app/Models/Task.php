@@ -28,6 +28,9 @@ class Task extends Model
     protected $fillable = [
         'organization_id',
         'client_id',
+        'contract_id',
+        'document_request_id',
+        'ticket_id',
         'assigned_to_member_id',
         'created_by_user_id',
         'task_template_id',
@@ -64,6 +67,21 @@ class Task extends Model
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);
+    }
+
+    public function contract(): BelongsTo
+    {
+        return $this->belongsTo(Contract::class);
+    }
+
+    public function documentRequest(): BelongsTo
+    {
+        return $this->belongsTo(DocumentRequest::class);
+    }
+
+    public function ticket(): BelongsTo
+    {
+        return $this->belongsTo(Ticket::class);
     }
 
     public function assignee(): BelongsTo

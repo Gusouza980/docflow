@@ -4,6 +4,8 @@ namespace App\Actions\Crm;
 
 use App\Enums\TaskPriority;
 use App\Models\Client;
+use App\Models\DocumentRequest;
+use App\Models\DocumentRequestItem;
 use App\Models\OnboardingTemplate;
 use App\Models\OnboardingTemplateItem;
 use App\Models\Task;
@@ -50,6 +52,25 @@ class StartClientOnboarding
             }
 
             $baseDate = now();
+            $dueInDays = (int) $template->items->max('due_in_days');
+
+            $request = DocumentRequest::query()->create([
+                'organization_id' => $client->organization_id,
+                'client_id' => $client->id,
+                'requested_by_user_id' => $actorUserId,
+                'title' => 'Onboarding — '.$template->name,
+                'instructions' => 'Documentos do onboarding.',
+                'due_at' => $baseDate->copy()->addDays($dueInDays)->toDateString(),
+                'status' => DocumentRequest::STATUS_PENDING,
+            ]);
+
+            foreach ($template->items as $item) {
+                $request->items()->create([
+                    'organization_id' => $client->organization_id,
+                    'title' => $item->title,
+                    'status' => DocumentRequestItem::STATUS_REQUESTED,
+                ]);
+            }
 
             return $template->items->map(function (OnboardingTemplateItem $item) use ($client, $actorUserId, $assignedMemberId, $baseDate): Task {
                 return Task::query()->create([

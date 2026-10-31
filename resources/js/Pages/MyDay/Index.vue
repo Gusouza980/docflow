@@ -28,7 +28,7 @@ const columns = [
         <div class="grid gap-4">
             <Alert v-if="page.props.flash?.status" tone="success">{{ page.props.flash.status }}</Alert>
             <p class="text-sm text-slate-600">
-                {{ counts.total || 0 }} pendência(s) no seu escopo — tarefas, documentos, cobranças e chamados.
+                {{ counts.total || 0 }} pendência(s) no seu escopo — tarefas, documentos, prazos, cobranças e chamados.
             </p>
 
             <p v-if="!counts.total" class="rounded-lg border border-slate-200 bg-white px-4 py-8 text-center text-sm text-slate-500">

@@ -226,7 +226,7 @@ const operationCards = computed(() => {
         { key: 'pending_documents', label: 'Docs pendentes', value: props.metrics.pending_documents ?? 0, href: '/plataforma/document-requests' },
         { key: 'overdue_documents', label: 'Docs vencidos', value: props.metrics.overdue_documents ?? 0, href: '/plataforma/document-requests?overdue=1', tone: props.metrics.overdue_documents > 0 ? 'danger' : null },
         { key: 'due_soon_documents', label: 'Docs a vencer (7d)', value: props.metrics.due_soon_documents ?? 0, href: '/plataforma/document-requests', tone: props.metrics.due_soon_documents > 0 ? 'warning' : null },
-        { key: 'open_tickets', label: 'Chamados abertos', value: props.metrics.open_tickets ?? 0, href: '/plataforma/reports' },
+        { key: 'open_tickets', label: 'Chamados abertos', value: props.metrics.open_tickets ?? 0, href: '/plataforma/portal' },
         { key: 'active_clients', label: 'Clientes ativos', value: props.metrics.active_clients ?? 0, href: '/plataforma/clients?status=active' },
         { key: 'expiring_contracts', label: 'Contratos a vencer (30d)', value: props.metrics.expiring_contracts ?? 0, href: '/plataforma/contracts?expiring_soon=1', tone: (props.metrics.expiring_contracts ?? 0) > 0 ? 'warning' : null },
     ];

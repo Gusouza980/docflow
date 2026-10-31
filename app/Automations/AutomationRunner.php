@@ -6,6 +6,7 @@ use App\Automations\Actions\CreateDocumentRequestAction;
 use App\Automations\Actions\CreateTasksFromTemplateAction;
 use App\Automations\Actions\NotifyOrganizationMembersAction;
 use App\Automations\Actions\SendMessageTemplateAction;
+use App\Jobs\Automations\RunAutomationRule;
 use App\Models\AutomationLog;
 use App\Models\AutomationRule;
 use App\Models\Organization;
@@ -31,6 +32,25 @@ class AutomationRunner
      * @param  array<string, mixed>  $context
      */
     public function dispatch(
+        Organization $organization,
+        string $trigger,
+        Model $subject,
+        array $context = [],
+        ?string $dedupeSuffix = null,
+    ): void {
+        if ($subject->getAttribute('organization_id')) {
+            RunAutomationRule::dispatchFor($subject, $trigger, $context, $dedupeSuffix);
+
+            return;
+        }
+
+        $this->execute($organization, $trigger, $subject, $context, $dedupeSuffix);
+    }
+
+    /**
+     * @param  array<string, mixed>  $context
+     */
+    public function execute(
         Organization $organization,
         string $trigger,
         Model $subject,

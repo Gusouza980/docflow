@@ -231,6 +231,10 @@ function submitReminder() {
     });
 }
 
+function openTicket(receivable) {
+    router.post(`/plataforma/finance/receivables/${receivable.id}/ticket`, {}, { preserveScroll: true });
+}
+
 function generateCharge(receivable, billingType = 'PIX') {
     useForm({ billing_type: billingType }).post(`/plataforma/finance/receivables/${receivable.id}/charge`, { preserveScroll: true });
 }
@@ -305,7 +309,7 @@ async function copyText(value) {
                 <template #cell-status="{ row }"><StatusPill :status="row.status" /></template>
                 <template #cell-amount="{ row }"><span>{{ money(row.balance_cents) }}</span><span class="block text-xs text-slate-500">de {{ money(row.amount_cents) }}</span></template>
                 <template #cell-due_at="{ row }"><span :class="row.is_overdue ? 'font-semibold text-red-700' : ''"><DisplayDate :value="row.due_at" fallback="Sem prazo" /></span></template>
-                <template #cell-actions="{ row }"><div class="flex flex-wrap justify-end gap-2"><Button v-if="row.charge" size="sm" variant="secondary" @click="openCharge(row)">Ver Pix</Button><Button v-else-if="payment_gateway.connected && row.can_charge" size="sm" @click="generateCharge(row)">Gerar Pix</Button><Button v-if="row.can_renegotiate" size="sm" variant="secondary" @click="openRenegotiate(row)">Renegociar</Button><Button v-if="row.is_overdue" size="sm" variant="secondary" @click="openReminder(row)">Lembrete</Button><Button v-if="!['paid', 'cancelled', 'renegotiated'].includes(row.status)" size="sm" variant="secondary" @click="openPayment('receivable', row)">Baixar</Button><Button v-if="!['paid', 'cancelled', 'renegotiated'].includes(row.status)" size="sm" variant="danger" @click="openCancel(row)">Cancelar</Button></div></template>
+                <template #cell-actions="{ row }"><div class="flex flex-wrap justify-end gap-2"><Button v-if="row.charge" size="sm" variant="secondary" @click="openCharge(row)">Ver Pix</Button><Button v-else-if="payment_gateway.connected && row.can_charge" size="sm" @click="generateCharge(row)">Gerar Pix</Button><Button v-if="row.can_renegotiate" size="sm" variant="secondary" @click="openRenegotiate(row)">Renegociar</Button><Button v-if="row.is_overdue" size="sm" variant="secondary" @click="openReminder(row)">Lembrete</Button><Button size="sm" variant="secondary" @click="openTicket(row)">Abrir chamado</Button><Button v-if="!['paid', 'cancelled', 'renegotiated'].includes(row.status)" size="sm" variant="secondary" @click="openPayment('receivable', row)">Baixar</Button><Button v-if="!['paid', 'cancelled', 'renegotiated'].includes(row.status)" size="sm" variant="danger" @click="openCancel(row)">Cancelar</Button></div></template>
             </DataTable>
             <Pagination :current-page="receivables.meta.current_page" :total-pages="receivables.meta.last_page" :per-page="receivables.meta.per_page" />
 

@@ -43,6 +43,7 @@ class CreateContract
                 'starts_at' => $data['starts_at'],
                 'ends_at' => $data['ends_at'] ?? null,
                 'auto_renew' => $data['auto_renew'] ?? false,
+                'creates_receivable_recurrence' => (bool) ($data['create_receivable_recurrence'] ?? false),
                 'scope_included' => $data['scope_included'] ?? null,
                 'scope_excluded' => $data['scope_excluded'] ?? null,
             ]);

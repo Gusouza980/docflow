@@ -4,7 +4,9 @@ namespace App\Console\Commands\Reports;
 
 use App\Actions\Organizations\RecordAuditLog;
 use App\Actions\Reports\RunReportSchedule;
+use App\Models\Plan;
 use App\Models\ReportSchedule;
+use App\Support\Billing\PlanLimitChecker;
 use App\Support\SchedulerRunLogger;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
@@ -20,8 +22,9 @@ class RunReportSchedulesCommand extends Command
         RunReportSchedule $runReportSchedule,
         RecordAuditLog $auditLog,
         SchedulerRunLogger $schedulerRunLogger,
+        PlanLimitChecker $planLimitChecker,
     ): int {
-        $meta = $schedulerRunLogger->run($this->signature, function () use ($runReportSchedule, $auditLog): array {
+        $meta = $schedulerRunLogger->run($this->signature, function () use ($runReportSchedule, $auditLog, $planLimitChecker): array {
             $schedules = ReportSchedule::query()
                 ->with(['client', 'organization'])
                 ->where('is_active', true)
@@ -37,6 +40,12 @@ class RunReportSchedulesCommand extends Command
 
             foreach ($schedules as $schedule) {
                 $processed++;
+
+                if (Plan::query()->exists() && ! $planLimitChecker->hasFeature($schedule->organization, 'reports_scheduling')) {
+                    $skipped++;
+
+                    continue;
+                }
 
                 try {
                     $report = $runReportSchedule->execute($schedule);

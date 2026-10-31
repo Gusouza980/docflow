@@ -16,6 +16,13 @@ class ProcessTenantReceivableWebhook implements ShouldQueue
 {
     use Queueable;
 
+    public int $tries = 5;
+
+    public function backoff(): int
+    {
+        return 30;
+    }
+
     /**
      * @param  array<string, mixed>  $payload
      */
@@ -65,9 +72,7 @@ class ProcessTenantReceivableWebhook implements ShouldQueue
             ->first();
 
         if ($charge === null) {
-            $event->update(['processed_at' => now()]);
-
-            return;
+            throw new RuntimeException('Receivable charge is not available yet.');
         }
 
         $organization = Organization::query()->with('paymentGateway')->find($this->organizationId);

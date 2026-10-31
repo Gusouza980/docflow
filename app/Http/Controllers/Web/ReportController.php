@@ -13,10 +13,12 @@ use App\Http\Requests\Web\StoreReportScheduleRequest;
 use App\Models\Client;
 use App\Models\GeneratedReport;
 use App\Models\OrganizationMember;
+use App\Models\Plan;
 use App\Models\ReportDelivery;
 use App\Models\ReportSchedule;
 use App\Models\SavedReportFilter;
 use App\Reports\ReportMetrics;
+use App\Support\Billing\PlanLimitChecker;
 use App\Support\WebOrganizationContext;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -174,6 +176,10 @@ class ReportController extends Controller
     {
         $membership = $this->membership($request, $webOrganizationContext);
         abort_unless($membership->isAdmin() || $membership->isManager(), HttpResponse::HTTP_FORBIDDEN);
+
+        if (Plan::query()->exists()) {
+            app(PlanLimitChecker::class)->assertFeature($membership->organization, 'reports_scheduling');
+        }
 
         ReportSchedule::create([
             ...$request->validated(),

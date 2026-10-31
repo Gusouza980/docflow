@@ -22,6 +22,7 @@ class Proposal extends Model
 
     protected $fillable = [
         'lead_id',
+        'contract_id',
         'title',
         'amount_cents',
         'status',
@@ -59,5 +60,10 @@ class Proposal extends Model
     public function lead(): BelongsTo
     {
         return $this->belongsTo(Lead::class);
+    }
+
+    public function contract(): BelongsTo
+    {
+        return $this->belongsTo(Contract::class);
     }
 }
