@@ -10,6 +10,7 @@ use App\Models\Organization;
 use App\Models\Receivable;
 use App\Models\User;
 use App\Support\Communication\ClientMessageDestination;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 
 class SendMessageBatch
@@ -55,7 +56,43 @@ class SendMessageBatch
             return $existing;
         }
 
-        $batch = DB::transaction(function () use ($organization, $user, $template, $filter, $preview, $fingerprint): MessageBatch {
+        try {
+            $batch = $this->createBatch($organization, $user, $template, $filter, $preview, $fingerprint);
+        } catch (UniqueConstraintViolationException) {
+            return MessageBatch::query()
+                ->where('organization_id', $organization->id)
+                ->where('fingerprint', $fingerprint)
+                ->firstOrFail();
+        }
+
+        if (config('queue.default') === 'sync') {
+            foreach ($batch->messages()->where('status', ClientMessage::STATUS_QUEUED)->get() as $message) {
+                try {
+                    $this->deliverOutboundClientMessage->process($message);
+                } catch (\Throwable $exception) {
+                    $message->update([
+                        'status' => ClientMessage::STATUS_FAILED,
+                        'failure_reason' => $exception->getMessage(),
+                    ]);
+                }
+            }
+        }
+
+        return $batch->fresh() ?? $batch;
+    }
+
+    /**
+     * @param  array{ready: list<array<string, mixed>>, skipped: list<mixed>}  $preview
+     */
+    private function createBatch(
+        Organization $organization,
+        User $user,
+        MessageTemplate $template,
+        string $filter,
+        array $preview,
+        string $fingerprint,
+    ): MessageBatch {
+        return DB::transaction(function () use ($organization, $user, $template, $filter, $preview, $fingerprint): MessageBatch {
             $batch = MessageBatch::query()->create([
                 'organization_id' => $organization->id,
                 'created_by_user_id' => $user->id,
@@ -90,21 +127,6 @@ class SendMessageBatch
 
             return $batch;
         });
-
-        if (config('queue.default') === 'sync') {
-            foreach ($batch->messages()->where('status', ClientMessage::STATUS_QUEUED)->get() as $message) {
-                try {
-                    $this->deliverOutboundClientMessage->process($message);
-                } catch (\Throwable $exception) {
-                    $message->update([
-                        'status' => ClientMessage::STATUS_FAILED,
-                        'failure_reason' => $exception->getMessage(),
-                    ]);
-                }
-            }
-        }
-
-        return $batch->fresh() ?? $batch;
     }
 
     private function oldestOverdueReceivable(Client $client): ?Receivable
