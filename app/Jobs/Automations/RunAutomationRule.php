@@ -4,7 +4,6 @@ namespace App\Jobs\Automations;
 
 use App\Automations\AutomationRunner;
 use App\Models\Organization;
-use App\Models\Plan;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Queue\Queueable;
@@ -12,8 +11,6 @@ use Illuminate\Foundation\Queue\Queueable;
 class RunAutomationRule implements ShouldQueue
 {
     use Queueable;
-
-    public bool $afterCommit = true;
 
     /**
      * @param  array<string, mixed>  $context
@@ -29,10 +26,6 @@ class RunAutomationRule implements ShouldQueue
 
     public function handle(AutomationRunner $runner): void
     {
-        if (! Plan::query()->exists()) {
-            return;
-        }
-
         $organization = Organization::query()->find($this->organizationId);
 
         if ($organization === null) {
@@ -47,7 +40,7 @@ class RunAutomationRule implements ShouldQueue
             return;
         }
 
-        $runner->dispatch(
+        $runner->execute(
             organization: $organization,
             trigger: $this->trigger,
             subject: $subject,

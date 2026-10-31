@@ -38,13 +38,31 @@ class SendMessageBatch
             $clientIds,
         );
 
-        $batch = DB::transaction(function () use ($organization, $user, $template, $filter, $preview): MessageBatch {
+        $readyIds = collect($preview['ready'])->pluck('client_id')->map(fn ($id): int => (int) $id)->sort()->values();
+        $fingerprint = hash('sha256', implode('|', [
+            $template->id,
+            $filter,
+            now()->toDateString(),
+            $readyIds->implode(','),
+        ]));
+
+        $existing = MessageBatch::query()
+            ->where('organization_id', $organization->id)
+            ->where('fingerprint', $fingerprint)
+            ->first();
+
+        if ($existing) {
+            return $existing;
+        }
+
+        $batch = DB::transaction(function () use ($organization, $user, $template, $filter, $preview, $fingerprint): MessageBatch {
             $batch = MessageBatch::query()->create([
                 'organization_id' => $organization->id,
                 'created_by_user_id' => $user->id,
                 'message_template_id' => $template->id,
                 'channel' => $template->channel,
                 'filter' => $filter,
+                'fingerprint' => $fingerprint,
                 'skipped_count' => count($preview['skipped']),
             ]);
 
@@ -66,6 +84,7 @@ class SendMessageBatch
                     batch: $batch,
                     variables: $this->destination->variablesFor($client, $receivable),
                     deliverNow: false,
+                    receivableId: $receivable?->id,
                 );
             }
 

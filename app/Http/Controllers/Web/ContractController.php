@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Web;
 
+use App\Actions\Contracts\ActivateContract;
 use App\Actions\Contracts\CancelContract;
 use App\Actions\Contracts\CreateContract;
 use App\Actions\Contracts\RenewContract;
@@ -161,6 +162,29 @@ class ContractController extends Controller
                 'manage' => $request->user()->can('manage', $contract),
             ],
         ]);
+    }
+
+    public function activate(
+        Request $request,
+        Contract $contract,
+        WebOrganizationContext $webOrganizationContext,
+        ActivateContract $activateContract,
+        RecordAuditLog $auditLog,
+    ): RedirectResponse {
+        $membership = $webOrganizationContext->membership($request);
+        abort_unless($membership, HttpResponse::HTTP_NOT_FOUND);
+        abort_unless($contract->organization_id === $membership->organization_id, HttpResponse::HTTP_NOT_FOUND);
+        Gate::authorize('manage', $contract);
+
+        try {
+            $contract = $activateContract->execute($contract, $request->user()->id);
+        } catch (InvalidArgumentException $exception) {
+            return back()->with('error', $exception->getMessage());
+        }
+
+        $auditLog->execute('web.contract.activated', $request->user(), $membership->organization, $contract, request: $request);
+
+        return back()->with('status', 'Contrato ativado.');
     }
 
     public function renew(

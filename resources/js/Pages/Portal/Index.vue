@@ -164,12 +164,12 @@ function formatChanges(changes) {
             <div class="grid gap-4 xl:grid-cols-2">
                 <DataTable :columns="messageColumns" :rows="messages" empty-title="Nenhuma mensagem registrada">
                     <template #toolbar><div class="border-b border-slate-200 px-4 py-3"><h2 class="text-sm font-semibold text-slate-950">Comunicação recente</h2></div></template>
-                    <template #cell-subject="{ row }"><div class="min-w-64"><p class="font-semibold text-slate-950">{{ row.subject || row.client.name }}</p><p class="mt-1 line-clamp-2 text-xs text-slate-500">{{ row.body }}</p></div></template>
+                    <template #cell-subject="{ row }"><div class="min-w-64"><Link :href="row.href" class="font-semibold text-slate-950 hover:text-blue-700">{{ row.subject || row.client.name }}</Link><p class="mt-1 line-clamp-2 text-xs text-slate-500">{{ row.body }}</p></div></template>
                     <template #cell-status="{ row }"><StatusPill :status="row.status" /></template>
                 </DataTable>
                 <DataTable :columns="ticketColumns" :rows="tickets" empty-title="Nenhum chamado encontrado">
                     <template #toolbar><div class="border-b border-slate-200 px-4 py-3"><h2 class="text-sm font-semibold text-slate-950">Chamados</h2></div></template>
-                    <template #cell-title="{ row }"><div class="min-w-64"><p class="font-semibold text-slate-950">{{ row.title }}</p><p class="mt-1 text-xs text-slate-500">{{ row.client.name }} · {{ row.assigned_to || 'Sem responsável' }}</p></div></template>
+                    <template #cell-title="{ row }"><div class="min-w-64"><Link :href="row.href" class="font-semibold text-slate-950 hover:text-blue-700">{{ row.title }}</Link><p class="mt-1 text-xs text-slate-500">{{ row.client.name }} · {{ row.assigned_to || 'Sem responsável' }}</p></div></template>
                     <template #cell-status="{ row }"><StatusPill :status="row.status" /></template>
                 </DataTable>
             </div>

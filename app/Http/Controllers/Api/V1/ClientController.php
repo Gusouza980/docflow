@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Actions\Organizations\RecordAuditLog;
+use App\Automations\AutomationRunner;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\StoreClientRequest;
 use App\Http\Requests\Api\V1\StoreClientResponsibleRequest;
@@ -11,6 +12,7 @@ use App\Http\Requests\Api\V1\UpdateClientRequest;
 use App\Http\Requests\Api\V1\UpdateClientStatusRequest;
 use App\Http\Resources\ClientResource;
 use App\Models\AuditLog;
+use App\Models\AutomationRule;
 use App\Models\Client;
 use App\Models\OrganizationMember;
 use App\Support\Billing\PlanLimitChecker;
@@ -83,6 +85,16 @@ class ClientController extends Controller
         });
 
         $auditLog->execute('client.created', $request->user(), $organizationContext->organization(), $client, request: $request);
+
+        app(AutomationRunner::class)->dispatch(
+            organization: $organizationContext->organization(),
+            trigger: AutomationRule::TRIGGER_CLIENT_CREATED,
+            subject: $client,
+            context: [
+                'assigned_to_member_id' => $client->primary_responsible_member_id,
+                'source' => 'api_store',
+            ],
+        );
 
         return (new ClientResource($client->load($this->defaultRelations())))
             ->response()

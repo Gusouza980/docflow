@@ -37,6 +37,7 @@ class Ticket extends Model
     protected $fillable = [
         'organization_id',
         'client_id',
+        'receivable_id',
         'opened_by_user_id',
         'assigned_to_member_id',
         'source_message_id',
@@ -69,6 +70,11 @@ class Ticket extends Model
     public function organization(): BelongsTo
     {
         return $this->belongsTo(Organization::class);
+    }
+
+    public function receivable(): BelongsTo
+    {
+        return $this->belongsTo(Receivable::class);
     }
 
     public function client(): BelongsTo

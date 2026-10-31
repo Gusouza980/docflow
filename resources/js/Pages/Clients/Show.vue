@@ -49,6 +49,9 @@ const hubTabs = computed(() => [
     ...(page.props.auth?.permissions?.can_access_crm ? [{ value: 'commercial', label: 'Comercial' }] : []),
     { value: 'services', label: 'Serviços' },
     { value: 'contracts', label: 'Contratos' },
+    { value: 'tasks', label: 'Tarefas' },
+    { value: 'deadlines', label: 'Prazos' },
+    ...(props.can.finance ? [{ value: 'finance', label: 'Financeiro' }] : []),
     { value: 'communication', label: 'Comunicação' },
     { value: 'documents', label: 'Documentos' },
     { value: 'requests', label: 'Solicitações' },
@@ -80,6 +83,9 @@ const money = (cents) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(cents) / 100);
 };
 
+const taskColumns = [{ key: 'title', label: 'Tarefa' }, { key: 'status', label: 'Status' }, { key: 'due_at', label: 'Prazo' }];
+const deadlineColumns = [{ key: 'title', label: 'Prazo' }, { key: 'status', label: 'Status' }, { key: 'due_at', label: 'Vencimento' }];
+const financeColumns = [{ key: 'description', label: 'Cobrança' }, { key: 'status', label: 'Status' }, { key: 'amount_cents', label: 'Valor' }, { key: 'due_at', label: 'Vencimento' }];
 const documentColumns = [{ key: 'title', label: 'Documento' }, { key: 'status', label: 'Status' }, { key: 'expires_at', label: 'Vencimento' }];
 const requestColumns = [{ key: 'title', label: 'Solicitação' }, { key: 'status', label: 'Status' }, { key: 'due_at', label: 'Prazo' }];
 const ticketColumns = [
@@ -722,6 +728,28 @@ function copyPortalUrl() {
                             </div>
                         </form>
                     </section>
+                </div>
+
+                <div v-else-if="activeTab === 'tasks'">
+                    <DataTable :columns="taskColumns" :rows="hub.tasks" empty-title="Nenhuma tarefa deste cliente">
+                        <template #cell-title="{ row }"><Link :href="row.href" class="font-semibold text-slate-950 hover:text-blue-700">{{ row.title }}</Link></template>
+                        <template #cell-status="{ row }"><StatusPill :status="row.status" /></template>
+                    </DataTable>
+                </div>
+
+                <div v-else-if="activeTab === 'deadlines'">
+                    <DataTable :columns="deadlineColumns" :rows="hub.deadlines" empty-title="Nenhum prazo deste cliente">
+                        <template #cell-title="{ row }"><Link :href="row.href" class="font-semibold text-slate-950 hover:text-blue-700">{{ row.title }}</Link></template>
+                        <template #cell-status="{ row }"><StatusPill :status="row.status" /></template>
+                    </DataTable>
+                </div>
+
+                <div v-else-if="activeTab === 'finance'">
+                    <DataTable :columns="financeColumns" :rows="hub.receivables" empty-title="Nenhuma cobrança deste cliente">
+                        <template #cell-description="{ row }"><Link :href="row.href" class="font-semibold text-slate-950 hover:text-blue-700">{{ row.description }}</Link></template>
+                        <template #cell-status="{ row }"><StatusPill :status="row.status" /></template>
+                        <template #cell-amount_cents="{ row }">{{ money(row.amount_cents) }}</template>
+                    </DataTable>
                 </div>
 
                 <div v-else-if="activeTab === 'documents'">

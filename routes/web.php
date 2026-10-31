@@ -56,6 +56,7 @@ use App\Http\Controllers\Web\Platform\UsageGuideController as PlatformUsageGuide
 use App\Http\Controllers\Web\PortalClientNotificationController;
 use App\Http\Controllers\Web\PortalController;
 use App\Http\Controllers\Web\ReportController;
+use App\Http\Controllers\Web\SearchController;
 use App\Http\Controllers\Web\ServiceTypeController;
 use App\Http\Controllers\Web\SubscriptionRequiredController;
 use App\Http\Controllers\Web\TaskChecklistItemController;
@@ -277,6 +278,7 @@ Route::middleware(['redirect.admin.away', 'auth'])->prefix('plataforma')->group(
     Route::middleware('org.accessible')->group(function (): void {
         Route::get('/dashboard', DashboardController::class)->name('dashboard');
         Route::get('/my-day', MyDayController::class)->name('my-day');
+        Route::get('/search', SearchController::class)->name('search');
         Route::get('/notifications', [InternalNotificationController::class, 'index'])->name('notifications.index');
         Route::get('/notifications/unread-count', [InternalNotificationController::class, 'unreadCount'])->name('notifications.unread-count');
         Route::patch('/notifications/{reminder}/read', [InternalNotificationController::class, 'markRead'])->name('notifications.read');
@@ -332,6 +334,7 @@ Route::middleware(['redirect.admin.away', 'auth'])->prefix('plataforma')->group(
         Route::get('/contracts', [ContractController::class, 'index'])->name('contracts.index');
         Route::post('/contracts', [ContractController::class, 'store'])->name('contracts.store');
         Route::get('/contracts/{contract}', [ContractController::class, 'show'])->name('contracts.show');
+        Route::post('/contracts/{contract}/activate', [ContractController::class, 'activate'])->name('contracts.activate');
         Route::post('/contracts/{contract}/renew', [ContractController::class, 'renew'])->name('contracts.renew');
         Route::post('/contracts/{contract}/cancel', [ContractController::class, 'cancel'])->name('contracts.cancel');
 
@@ -392,6 +395,7 @@ Route::middleware(['redirect.admin.away', 'auth'])->prefix('plataforma')->group(
         Route::post('/finance/receivables', [FinanceController::class, 'storeReceivable'])->name('finance.receivables.store');
         Route::post('/finance/receivables/{receivable}/payments', [FinanceController::class, 'payReceivable'])->name('finance.receivables.payments.store');
         Route::post('/finance/receivables/{receivable}/charge', [FinanceController::class, 'chargeReceivable'])->name('finance.receivables.charge');
+        Route::post('/finance/receivables/{receivable}/ticket', [FinanceController::class, 'openReceivableTicket'])->name('finance.receivables.ticket');
         Route::patch('/finance/receivables/{receivable}/cancel', [FinanceController::class, 'cancelReceivable'])->name('finance.receivables.cancel');
         Route::patch('/finance/receivables/{receivable}/renegotiate', [FinanceController::class, 'renegotiateReceivable'])->name('finance.receivables.renegotiate');
         Route::post('/finance/receivables/{receivable}/reminders', [FinanceController::class, 'storeReceivableReminder'])->name('finance.receivables.reminders.store');

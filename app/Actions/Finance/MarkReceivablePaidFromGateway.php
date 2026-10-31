@@ -8,9 +8,13 @@ use Illuminate\Support\Facades\DB;
 
 class MarkReceivablePaidFromGateway
 {
+    public function __construct(
+        private RestoreClientStanding $restoreClientStanding,
+    ) {}
+
     public function execute(Receivable $receivable, string $providerPaymentId, int $amountCents): Receivable
     {
-        return DB::transaction(function () use ($receivable, $providerPaymentId, $amountCents): Receivable {
+        $receivable = DB::transaction(function () use ($receivable, $providerPaymentId, $amountCents): Receivable {
             $receivable = Receivable::query()->lockForUpdate()->findOrFail($receivable->id);
 
             if ($receivable->status === Receivable::STATUS_PAID) {
@@ -54,7 +58,11 @@ class MarkReceivablePaidFromGateway
 
             $receivable->charge?->update(['status' => ReceivableCharge::STATUS_CONFIRMED]);
 
-            return $receivable->fresh(['charge']);
+            return $receivable->fresh(['charge', 'client']);
         });
+
+        $this->restoreClientStanding->execute($receivable->client);
+
+        return $receivable;
     }
 }

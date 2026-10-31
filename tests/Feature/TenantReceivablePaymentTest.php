@@ -280,10 +280,14 @@ class TenantReceivablePaymentTest extends TestCase
             'payment' => ['id' => 'pay_saas_invoice', 'value' => 99, 'externalReference' => 'invoice:1'],
         ], [
             'asaas-access-token' => 'tenant-webhook-token-0001-secure-xx',
-        ])->assertOk();
+        ])->assertServerError();
 
         $this->assertSame(Receivable::STATUS_OPEN, $receivable->fresh()->status);
         $this->assertDatabaseCount('payments', 0);
+        $this->assertDatabaseHas('tenant_receivable_webhook_events', [
+            'event_id' => 'evt_unknown',
+            'processed_at' => null,
+        ]);
     }
 
     public function test_tenant_webhook_does_not_reopen_cancelled_receivable(): void

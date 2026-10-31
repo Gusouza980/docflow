@@ -9,6 +9,7 @@ use App\Models\Document;
 use App\Models\Organization;
 use App\Models\Receivable;
 use App\Support\Billing\PlanLimitChecker;
+use App\Support\SchedulerRunLogger;
 use Illuminate\Console\Command;
 
 class DispatchDueAutomationsCommand extends Command
@@ -17,8 +18,20 @@ class DispatchDueAutomationsCommand extends Command
 
     protected $description = 'Dispara automações temporais (documentos, contratos e cobranças).';
 
-    public function handle(AutomationRunner $runner, PlanLimitChecker $planLimitChecker): int
+    public function handle(AutomationRunner $runner, PlanLimitChecker $planLimitChecker, SchedulerRunLogger $schedulerRunLogger): int
     {
+        $meta = $schedulerRunLogger->run($this->signature, function () use ($runner, $planLimitChecker): array {
+            return ['organizations' => $this->dispatchDue($runner, $planLimitChecker)];
+        });
+
+        $this->info(sprintf('Automações temporais despachadas para %d organizações.', $meta['organizations'] ?? 0));
+
+        return self::SUCCESS;
+    }
+
+    private function dispatchDue(AutomationRunner $runner, PlanLimitChecker $planLimitChecker): int
+    {
+        $processed = 0;
         $organizationIds = AutomationRule::query()
             ->where('is_active', true)
             ->whereIn('trigger', [
@@ -35,6 +48,8 @@ class DispatchDueAutomationsCommand extends Command
             if ($organization === null || ! $planLimitChecker->hasFeature($organization, 'automations')) {
                 continue;
             }
+
+            $processed++;
 
             Document::query()
                 ->where('organization_id', $organization->id)
@@ -94,8 +109,6 @@ class DispatchDueAutomationsCommand extends Command
                 });
         }
 
-        $this->info('Automações temporais despachadas.');
-
-        return self::SUCCESS;
+        return $processed;
     }
 }

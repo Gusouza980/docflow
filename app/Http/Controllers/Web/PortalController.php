@@ -253,6 +253,7 @@ class PortalController extends Controller
             'status' => $message->status,
             'subject' => $message->subject,
             'body' => $message->body,
+            'href' => route('clients.show', ['client' => $message->client_id, 'tab' => 'tickets'], absolute: false),
             'created_at' => $message->created_at?->toISOString(),
         ];
     }
@@ -268,6 +269,7 @@ class PortalController extends Controller
             'assigned_to' => $ticket->assignedTo?->user?->name,
             'visible_to_client' => $ticket->visible_to_client,
             'due_at' => $ticket->due_at?->toDateString(),
+            'href' => route('clients.show', ['client' => $ticket->client_id, 'tab' => 'tickets'], absolute: false),
         ];
     }
 }

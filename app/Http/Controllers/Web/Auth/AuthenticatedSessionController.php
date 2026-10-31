@@ -47,7 +47,7 @@ class AuthenticatedSessionController extends Controller
 
         $auditLog->execute('web.auth.login', $user, request: $request);
 
-        return AuthArea::intendedWithin($request, '/plataforma', route('dashboard', absolute: false));
+        return AuthArea::intendedWithin($request, '/plataforma', route('my-day', absolute: false));
     }
 
     public function destroy(Request $request, RecordAuditLog $auditLog, Impersonation $impersonation, StopImpersonation $stopImpersonation): RedirectResponse

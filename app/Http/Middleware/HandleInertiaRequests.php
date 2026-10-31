@@ -84,6 +84,14 @@ class HandleInertiaRequests extends Middleware
                         && ($membership->isAdmin() || $membership->isManager())
                         && Plan::query()->exists()
                         && app(PlanLimitChecker::class)->hasFeature($membership->organization, 'automations')),
+                    'can_access_finance' => (bool) ($membership && in_array($membership->role, [
+                        OrganizationMember::ROLE_ADMIN,
+                        OrganizationMember::ROLE_MANAGER,
+                        OrganizationMember::ROLE_FINANCE,
+                    ], true)),
+                    'can_access_audit' => (bool) ($membership
+                        && ($membership->isAdmin() || $membership->isManager())
+                        && (! Plan::query()->exists() || app(PlanLimitChecker::class)->hasFeature($membership->organization, 'audit'))),
                 ],
                 'plan_summary' => function () use ($webUser, $membership) {
                     if (! $webUser || ! $membership?->isAdmin() || ! Plan::query()->exists()) {

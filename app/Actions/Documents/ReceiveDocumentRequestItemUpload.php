@@ -34,6 +34,7 @@ class ReceiveDocumentRequestItemUpload
                 $document = Document::create([
                     'organization_id' => $item->organization_id,
                     'client_id' => $item->documentRequest->client_id,
+                    'client_service_id' => $item->documentRequest->client_service_id,
                     'document_category_id' => $item->document_category_id,
                     'created_by_user_id' => $uploadedByUserId,
                     'title' => $data['title'] ?? $item->title,

@@ -67,7 +67,7 @@ class MyDayAndDocumentPackageTest extends TestCase
             'due_at' => now()->toDateString(),
         ]);
 
-        Receivable::factory()->create([
+        $receivable = Receivable::factory()->create([
             'organization_id' => $organization->id,
             'client_id' => $client->id,
             'created_by_user_id' => $user->id,
@@ -100,7 +100,8 @@ class MyDayAndDocumentPackageTest extends TestCase
                 ->where('sections.0.items.0.overdue', true)
                 ->where('sections.1.items.0.title', 'Folha de pagamento')
                 ->where('sections.2.items.0.title', 'Mensalidade agosto')
-                ->where('sections.2.items.0.href', '/plataforma/finance')
+                ->where('sections.2.items.0.href', '/plataforma/finance?receivable='.$receivable->id)
+                ->where('counts.deadlines', 0)
                 ->where('sections.3.items.0.title', 'Dúvida do cliente'));
     }
 

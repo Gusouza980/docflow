@@ -5,6 +5,7 @@ namespace App\Automations\Actions;
 use App\Models\AutomationRule;
 use App\Models\Client;
 use App\Models\DocumentRequest;
+use App\Models\DocumentRequestItem;
 use Illuminate\Database\Eloquent\Model;
 use InvalidArgumentException;
 
@@ -25,6 +26,12 @@ class CreateDocumentRequestAction
             throw new InvalidArgumentException('client_id é obrigatório para create_document_request.');
         }
 
+        $items = $params['items'] ?? null;
+
+        if (! is_array($items) || $items === []) {
+            throw new InvalidArgumentException('items é obrigatório para create_document_request.');
+        }
+
         $request = DocumentRequest::query()->create([
             'organization_id' => $rule->organization_id,
             'client_id' => $clientId,
@@ -34,6 +41,21 @@ class CreateDocumentRequestAction
             'instructions' => $params['instructions'] ?? 'Criada por automação.',
         ]);
 
-        return ['document_request_id' => $request->id];
+        foreach ($items as $item) {
+            $title = is_array($item) ? ($item['title'] ?? null) : (is_string($item) ? $item : null);
+
+            if (! is_string($title) || trim($title) === '') {
+                throw new InvalidArgumentException('Cada item da solicitação precisa de um título.');
+            }
+
+            $request->items()->create([
+                'organization_id' => $rule->organization_id,
+                'title' => trim($title),
+                'document_category_id' => is_array($item) ? ($item['document_category_id'] ?? null) : null,
+                'status' => DocumentRequestItem::STATUS_REQUESTED,
+            ]);
+        }
+
+        return ['document_request_id' => $request->id, 'items' => $request->items()->count()];
     }
 }

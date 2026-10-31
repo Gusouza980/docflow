@@ -30,6 +30,7 @@ class Document extends Model
     protected $fillable = [
         'organization_id',
         'client_id',
+        'client_service_id',
         'document_category_id',
         'created_by_user_id',
         'title',
@@ -68,6 +69,11 @@ class Document extends Model
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);
+    }
+
+    public function clientService(): BelongsTo
+    {
+        return $this->belongsTo(ClientService::class);
     }
 
     public function category(): BelongsTo

@@ -1,8 +1,8 @@
 # Sprint ativa
 
-**Status:** Sprint 27 concluída  
-**Última sync:** 2026-09-27  
-**Branch:** `feat/sprint-27-separacao-admin-tenant`
+**Status:** Sprint 28 concluída  
+**Última sync:** 2026-10-31  
+**Branch:** `feat/sprint-28-coesao`
 
 ## Concluído
 
@@ -20,10 +20,11 @@
 | [25](sprint-25-comunicacao-real/TASKS.md) | Comunicação que sai de verdade | [x] |
 | [26](sprint-26-meu-dia-ciclo-mensal/TASKS.md) | Meu dia + pacote documental | [x] |
 | [27](sprint-27-separacao-admin-tenant/TASKS.md) | Separação admin/tenant + impersonação | [x] |
+| [28](sprint-28-coesao/TASKS.md) | Coesão dos fluxos, rotina e vínculos | [x] |
 
 ## Em foco
 
-Sprint 27 fechada. Próximo: aguardar priorização.
+Sprint 28 fechada. Próximo: aguardar priorização.
 
 ## Notas
 
